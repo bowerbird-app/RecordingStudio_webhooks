@@ -14,12 +14,16 @@ module RecordingStudioWebhooks
     attr_reader :providers, :actions, :default_policy, :queue_name, :dispatcher,
       :max_payload_bytes, :content_types, :secret_redaction_keys, :provenance_keys,
       :authorization_hook, :rate_limiter, :admin_authorizer, :admin_recording_scope,
-      :provider_roots, :action_roots
+      :provider_roots, :action_roots, :framework_policy_overrides,
+      :default_policy_overrides, :global_policy_overrides, :recording_studio_parent_types
     attr_reader :automatic_discovery
 
     def initialize
       @providers = Registry.new(ProviderDefinition)
       @actions = Registry.new(ActionDefinition)
+      @framework_policy_overrides = {}
+      @default_policy_overrides = {}
+      @global_policy_overrides = {}
       @default_policy = Policy.default
       @queue_name = "recording_studio_webhooks"
       @dispatcher = :sidekiq
@@ -35,10 +39,34 @@ module RecordingStudioWebhooks
       @provider_roots = [].freeze
       @action_roots = [].freeze
       @automatic_discovery = false
+      @recording_studio_parent_types = [].freeze
     end
 
     def default_policy=(value)
-      @default_policy = Policy.new(value)
+      @default_policy_overrides = ImmutableSnapshot.build(Policy.normalize_override(value))
+      @default_policy = Policy.new(Policy::DEFAULT_VALUES.merge(@default_policy_overrides))
+    end
+
+    # The first three PolicyResolver slots are host configurable here. The
+    # remaining slots live with their natural owners: provider registrations,
+    # immutable endpoint snapshots and event rules, and action registrations.
+    def framework_policy=(value)
+      @framework_policy_overrides = ImmutableSnapshot.build(Policy.normalize_override(value))
+    end
+
+    def global_policy=(value)
+      @global_policy_overrides = ImmutableSnapshot.build(Policy.normalize_override(value))
+    end
+
+    def framework_policy = Policy.new(Policy::DEFAULT_VALUES.merge(framework_policy_overrides))
+
+    def global_policy
+      Policy.new(
+        Policy::DEFAULT_VALUES
+          .merge(framework_policy_overrides)
+          .merge(default_policy_overrides)
+          .merge(global_policy_overrides)
+      )
     end
 
     def queue_name=(value)
@@ -48,7 +76,7 @@ module RecordingStudioWebhooks
       @queue_name = queue.freeze
     end
 
-    # Accepts :sidekiq, :active_job, or a callable receiving an action-plan UUID.
+    # Accepts :sidekiq, :active_job, or a callable receiving an action-attempt UUID.
     def dispatcher=(value)
       unless %i[sidekiq active_job].include?(value) || value.respond_to?(:call)
         raise ConfigurationError, "dispatcher must be :sidekiq, :active_job, or callable"
@@ -135,6 +163,18 @@ module RecordingStudioWebhooks
       @automatic_discovery = value
     end
 
+    # Endpoint snapshots are child recordables beneath one of these root
+    # recordable types. Leave this empty to use Recording Studio's configured
+    # root types automatically; set it to make the allowed hierarchy explicit.
+    def recording_studio_parent_types=(value)
+      @recording_studio_parent_types = Array(value).map do |type|
+        name = type.is_a?(Class) ? type.name : type.to_s
+        raise ConfigurationError, "Recording Studio parent type is invalid" if name.empty?
+
+        name.freeze
+      end.uniq.sort.freeze
+    end
+
     def provider(name, implementation = nil, **options, &)
       providers.register(name, implementation, **options, &)
     end
@@ -178,7 +218,18 @@ module RecordingStudioWebhooks
         provenance_keys: provenance_keys,
         admin_authorizer_configured: !admin_authorizer.nil?,
         admin_recording_scope_configured: !admin_recording_scope.nil?,
+        policy_slots: {
+          framework_default: framework_policy_overrides,
+          configuration_default: default_policy_overrides,
+          global: global_policy_overrides,
+          provider: "provider registration policy",
+          provider_event: "provider event policy",
+          endpoint: "endpoint snapshot policy",
+          endpoint_event: "endpoint event policy",
+          action: "action registration policy (execution_mode ignored)"
+        },
         default_policy: default_policy.to_h,
+        recording_studio_parent_types: recording_studio_parent_types,
         providers: providers.all.map(&:snapshot),
         actions: actions.all.map(&:snapshot),
         automatic_discovery: automatic_discovery

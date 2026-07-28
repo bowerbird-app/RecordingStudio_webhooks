@@ -8,4 +8,7 @@ module RecordingStudioWebhooks
   class InvalidEventPatternError < ConfigurationError; end
   class InvalidPolicyError < ConfigurationError; end
   class UnsafeMetadataError < Error; end
+  class RecordingStudioUnavailableError < Error; end
+  class RecordingStudioConfigurationError < Error; end
+  class TokenIdentityConflictError < Error; end
 end

@@ -32,5 +32,9 @@ module RecordingStudioWebhooks
     initializer "recording_studio_webhooks.discover_registrations" do
       config.to_prepare { RecordingStudioWebhooks.configuration.discover! }
     end
+
+    initializer "recording_studio_webhooks.configure_recording_studio_recordables" do
+      config.to_prepare { RecordingStudioWebhooks.configure_recordables! }
+    end
   end
 end

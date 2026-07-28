@@ -2,8 +2,9 @@
 
 # lib/recording_studio_webhooks/policy.rb
 module RecordingStudioWebhooks
-  # Policy values are snapshot-friendly and immutable. nil means "unspecified"
-  # in an override, so precedence remains endpoint > action > provider > global.
+  # Policy values are snapshot-friendly and immutable. nil means
+  # "unspecified" in an override. Precedence belongs to PolicyResolver, not to
+  # this value object.
   class Policy
     EXECUTION_MODES = %w[independent sequential].freeze
     KEYS = %i[
@@ -52,16 +53,6 @@ module RecordingStudioWebhooks
 
     def self.default
       new(DEFAULT_VALUES)
-    end
-
-    def self.resolve(default:, provider: nil, action: nil, endpoint: nil, required_redaction_keys: [])
-      merged = default.to_h
-      [provider, action, endpoint].compact.each { |override| merged = merged.merge(normalize_override(override)) }
-      merged["redaction_keys"] = (Array(required_redaction_keys) + Array(merged["redaction_keys"]))
-        .map { |key| key.to_s.downcase }
-        .uniq
-        .sort
-      new(merged)
     end
 
     def self.normalize_override(value)

@@ -4,7 +4,8 @@
 module RecordingStudioWebhooks
   # Event patterns are deliberately narrow. A wildcard may only appear as a
   # suffix after a dot, e.g. "invoice.*" matches "invoice.paid" and
-  # "invoice.payment.failed"; it is not a general glob language.
+  # "invoice.payment.failed". `*` is the only catch-all. It is not a
+  # general glob language.
   class EventPattern
     SEGMENT = "[A-Za-z0-9][A-Za-z0-9_:-]*"
     EVENT = /\A#{SEGMENT}(?:\.#{SEGMENT})*\z/
@@ -21,21 +22,25 @@ module RecordingStudioWebhooks
 
     def exact? = !wildcard?
 
-    def wildcard? = value.end_with?(".*")
+    def wildcard? = catch_all? || value.end_with?(".*")
+
+    def catch_all? = value == "*"
 
     def matches?(event_name)
       event = self.class.validate_event_name!(event_name)
+      return true if catch_all?
       return event == value if exact?
 
       prefix = value.delete_suffix(".*")
       event.start_with?("#{prefix}.")
     end
 
-    # Exact patterns always win. Wildcards are ordered by their literal prefix.
+    # Exact patterns are most specific, suffix wildcards next, and `*` last.
     def specificity
-      return [1, value.length] if exact?
+      return [2, value.length] if exact?
+      return [0, 0] if catch_all?
 
-      [0, value.delete_suffix(".*").length]
+      [1, value.delete_suffix(".*").length]
     end
 
     def self.validate_event_name!(value)
@@ -46,7 +51,7 @@ module RecordingStudioWebhooks
     end
 
     def self.valid_pattern?(value)
-      EVENT.match?(value) || WILDCARD.match?(value)
+      value == "*" || EVENT.match?(value) || WILDCARD.match?(value)
     end
   end
 end

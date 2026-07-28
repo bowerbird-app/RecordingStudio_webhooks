@@ -17,6 +17,13 @@ module RecordingStudioWebhooks
       SECRET_KEY.match?(key.to_s)
     end
 
+    # Metadata and provenance must never become an indirection to a provider
+    # secret. This intentionally errs on the side of rejecting secret-store
+    # locations rather than persisting configuration that could be dereferenced.
+    def secret_location?(value)
+      /\b(?:vault|secret|credential|credentials|keychain):\/\/|(?:aws|gcp|azure)[a-z0-9_-]*:\/\/|\/(?:secrets?|credentials?)\b/i.match?(value.to_s)
+    end
+
     def redact_value(value, keys)
       case value
       when Hash
@@ -27,7 +34,7 @@ module RecordingStudioWebhooks
       when Array
         value.map { |item| redact_value(item, keys) }
       when String
-        value.dup
+        secret_location?(value) ? FILTERED : value.dup
       when Numeric, TrueClass, FalseClass, NilClass
         value
       else
