@@ -5,8 +5,8 @@ module RecordingStudioWebhooks
   module Dispatcher
     module_function
 
-    def enqueue(attempt_id, wait_until: nil)
-      adapter.enqueue(attempt_id.to_s, wait_until: wait_until)
+    def enqueue(plan_id, wait_until: nil)
+      adapter.enqueue(plan_id.to_s, wait_until: wait_until)
     end
 
     def adapter
@@ -18,12 +18,12 @@ module RecordingStudioWebhooks
     end
 
     class DirectSidekiqDispatcher
-      def enqueue(attempt_id, wait_until: nil)
+      def enqueue(plan_id, wait_until: nil)
         require "sidekiq"
 
         payload = {
-          "class" => "RecordingStudioWebhooks::ExecuteWebhookActionAttemptJob",
-          "args" => [attempt_id],
+          "class" => "RecordingStudioWebhooks::ExecuteActionPlanJob",
+          "args" => [plan_id],
           "queue" => RecordingStudioWebhooks.configuration.queue_name,
           "retry" => false
         }
@@ -32,11 +32,11 @@ module RecordingStudioWebhooks
     end
 
     class ActiveJobDispatcher
-      def enqueue(attempt_id, wait_until: nil)
+      def enqueue(plan_id, wait_until: nil)
         options = { queue: RecordingStudioWebhooks.configuration.queue_name }
         options[:wait_until] = wait_until if wait_until
-        job = RecordingStudioWebhooks::ExecuteWebhookActionAttemptActiveJob.set(**options)
-        job.perform_later(attempt_id)
+        job = RecordingStudioWebhooks::ExecuteActionPlanActiveJob.set(**options)
+        job.perform_later(plan_id)
       end
     end
 
@@ -45,16 +45,16 @@ module RecordingStudioWebhooks
         @callable = callable
       end
 
-      def enqueue(attempt_id, wait_until: nil)
+      def enqueue(plan_id, wait_until: nil)
         parameters = @callable.respond_to?(:parameters) ? @callable.parameters : []
         keywords = parameters.select { |kind, _| %i[key keyreq keyrest].include?(kind) }
 
         if keywords.any?
-          @callable.call(attempt_id, wait_until: wait_until)
+          @callable.call(plan_id, wait_until: wait_until)
         elsif @callable.respond_to?(:arity) && @callable.arity == 1
-          @callable.call(attempt_id)
+          @callable.call(plan_id)
         else
-          @callable.call(attempt_id, wait_until)
+          @callable.call(plan_id, wait_until)
         end
       end
     end

@@ -64,8 +64,8 @@ module RecordingStudioWebhooks
       parent_types = ::RecordingStudio.root_recordable_types if parent_types.empty?
       return false if parent_types.empty?
 
-      endpoint_class = RecordingStudioWebhooks::WebhookEndpoint
-      token_class = RecordingStudioWebhooks::WebhookEndpointToken
+      endpoint_class = RecordingStudioWebhooks::Endpoint
+      token_class = RecordingStudioWebhooks::EndpointToken
 
       endpoint_class.recording_studio_recordable(
         label: "Webhook endpoint",

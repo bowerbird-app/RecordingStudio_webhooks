@@ -47,7 +47,7 @@ module RecordingStudioWebhooks
 
     def sort_key
       kind, length = event_pattern.specificity
-      [priority, -kind, -length, name]
+      [-kind, -length, priority, name]
     end
 
     def fingerprint = @fingerprint

@@ -75,6 +75,23 @@ module RecordingStudioWebhooks
       false
     end
 
+    # The public policy API keeps precedence explicit: endpoint overrides win,
+    # followed by action, provider, and the configured default. Redaction keys
+    # are additive so a narrower scope cannot make a required filter disappear.
+    def self.resolve(default:, provider: {}, action: {}, endpoint: {}, required_redaction_keys: [])
+      default_values = default.respond_to?(:to_h) ? default.to_h : default
+      values = DEFAULT_VALUES
+        .merge(normalize_override(default_values))
+        .merge(normalize_override(provider || {}))
+        .merge(normalize_override(action || {}))
+        .merge(normalize_override(endpoint || {}))
+      values["redaction_keys"] = (Array(required_redaction_keys) + Array(values["redaction_keys"]))
+        .map { |key| key.to_s.downcase }
+        .uniq
+        .sort
+      new(values)
+    end
+
     private
 
     def validate!(input)

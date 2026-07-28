@@ -2,7 +2,7 @@
 
 # lib/recording_studio_webhooks/policy_resolver.rb
 module RecordingStudioWebhooks
-  # Resolves webhook policy through eight named precedence slots. The slots are
+  # Resolves webhook policy through named precedence slots. The slots are
   # intentionally explicit so hosts can audit policy provenance:
   #
   # 1. framework_default    - engine baseline
@@ -10,12 +10,11 @@ module RecordingStudioWebhooks
   # 3. global               - host-wide operational override
   # 4. provider             - provider registration override
   # 5. provider_event       - matching provider event rule
-  # 6. endpoint             - immutable endpoint snapshot override
-  # 7. endpoint_event       - matching endpoint event rule
-  # 8. action               - matching action override
+  # 6. action               - matching action override
+  # 7. endpoint             - immutable endpoint snapshot override
   #
-  # `execution_mode` deliberately ignores slot 8: it is resolved once when an
-  # incoming log is accepted and copied to every action attempt for that log.
+  # The last three slots deliberately encode the documented precedence:
+  # endpoint > action > provider > default.
   class PolicyResolver
     SLOT_NAMES = %i[
       framework_default
@@ -23,9 +22,8 @@ module RecordingStudioWebhooks
       global
       provider
       provider_event
-      endpoint
-      endpoint_event
       action
+      endpoint
     ].freeze
 
     Slot = Data.define(:name, :override, :pattern)
@@ -43,8 +41,8 @@ module RecordingStudioWebhooks
         )
         @fingerprint = CanonicalJson.digest(
           policy: policy.to_h,
-          source: source,
-          pattern: pattern,
+          source: @source,
+          pattern: @pattern,
           slots: @slots
         ).freeze
         freeze
@@ -72,31 +70,29 @@ module RecordingStudioWebhooks
           Slot.new(:global, configuration.global_policy_overrides, "*"),
           Slot.new(:provider, provider.policy_overrides, "*"),
           event_slot(:provider_event, provider.event_policies, event_type),
-          Slot.new(:endpoint, endpoint.policy_overrides || {}, "*"),
-          event_slot(:endpoint_event, endpoint.event_policies || {}, event_type),
-          Slot.new(:action, {}, "*")
+          Slot.new(:action, {}, "*"),
+          Slot.new(:endpoint, endpoint.policy_overrides || {}, "*")
         ]
 
         build_resolution(slots, required_redaction_keys: configuration.secret_redaction_keys)
       end
 
-      # Applies action controls (enabled/retries/redaction) while retaining the
-      # event-level execution mode and its source/pattern. This prevents a
-      # single incoming log from running some actions independently and others
-      # sequentially.
+      # Action policy sits below endpoint policy. An action can select its own
+      # execution mode; sequential plans coordinate by persisted position.
       def resolve_action(event_resolution:, action:, required_redaction_keys:)
-        action_override = Policy.normalize_override(action.policy_overrides).except("execution_mode")
+        action_override = Policy.normalize_override(action.policy_overrides)
         slots = event_resolution.slots.map do |slot|
           Slot.new(slot.fetch("name").to_sym, slot.fetch("policy"), slot.fetch("pattern"))
         end
-        slots[-1] = Slot.new(:action, action_override, action.event_pattern.value)
+        action_index = slots.index { |slot| slot.name == :action }
+        slots[action_index] = Slot.new(:action, action_override, action.event_pattern.value)
 
         values = merge_slots(slots, required_redaction_keys: required_redaction_keys)
-        values["execution_mode"] = event_resolution.execution_mode
+        source_slot = slots.reverse.find { |slot| slot.override.key?("execution_mode") } || slots.first
         Resolution.new(
           policy: Policy.new(values),
-          source: event_resolution.source,
-          pattern: event_resolution.pattern,
+          source: source_slot.name,
+          pattern: source_slot.pattern,
           slots: slots
         )
       end

@@ -76,7 +76,7 @@ module RecordingStudioWebhooks
       @queue_name = queue.freeze
     end
 
-    # Accepts :sidekiq, :active_job, or a callable receiving an action-attempt UUID.
+    # Accepts :sidekiq, :active_job, or a callable receiving an action-plan UUID.
     def dispatcher=(value)
       unless %i[sidekiq active_job].include?(value) || value.respond_to?(:call)
         raise ConfigurationError, "dispatcher must be :sidekiq, :active_job, or callable"
@@ -224,9 +224,8 @@ module RecordingStudioWebhooks
           global: global_policy_overrides,
           provider: "provider registration policy",
           provider_event: "provider event policy",
-          endpoint: "endpoint snapshot policy",
-          endpoint_event: "endpoint event policy",
-          action: "action registration policy (execution_mode ignored)"
+          action: "action registration policy",
+          endpoint: "endpoint snapshot policy"
         },
         default_policy: default_policy.to_h,
         recording_studio_parent_types: recording_studio_parent_types,

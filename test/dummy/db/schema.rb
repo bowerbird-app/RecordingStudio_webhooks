@@ -91,6 +91,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_28_000000) do
     t.uuid "inbound_event_id", null: false
     t.string "last_error"
     t.datetime "next_attempt_at"
+    t.datetime "queued_at"
     t.jsonb "policy_snapshot", default: {}, null: false
     t.datetime "started_at"
     t.string "status", default: "pending", null: false

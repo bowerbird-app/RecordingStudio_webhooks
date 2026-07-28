@@ -15,7 +15,7 @@ module RecordingStudioWebhooks
 
     def initialize(value)
       @value = value.to_s
-      raise InvalidEventPatternError, "event pattern is invalid" unless valid_pattern?(@value)
+      raise InvalidEventPatternError, "event pattern is invalid" unless self.class.valid_pattern?(@value)
 
       freeze
     end

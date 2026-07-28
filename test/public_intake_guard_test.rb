@@ -40,4 +40,14 @@ class PublicIntakeGuardTest < Minitest::Test
       assert_equal({}, observed.fetch("action_dispatch.request.parameters"))
     end
   end
+
+  def test_guard_does_not_treat_a_provider_only_path_as_public_intake
+    called = false
+    guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true; [204, {}, []] })
+
+    status, = guard.call("PATH_INFO" => "/webhooks/inbound/demo", "CONTENT_LENGTH" => "9999999")
+
+    assert_equal 204, status
+    assert called
+  end
 end

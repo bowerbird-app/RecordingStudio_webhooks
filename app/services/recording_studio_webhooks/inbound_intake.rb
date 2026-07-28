@@ -2,8 +2,9 @@
 
 # app/services/recording_studio_webhooks/inbound_intake.rb
 module RecordingStudioWebhooks
-  # Controller-independent public intake. Authentication is only
-  # provider + URL token: endpoint identity is deliberately not accepted.
+  # Controller-independent public intake. The provider and endpoint identity in
+  # the route identify the stable endpoint before its current credential is
+  # checked.
   class InboundIntake
     SignatureContext = Struct.new(:raw_payload, :headers, :endpoint, :provider, keyword_init: true) do
       def inspect = "#<#{self.class.name} raw_payload=[FILTERED]>"
@@ -13,9 +14,10 @@ module RecordingStudioWebhooks
 
     def self.call(...) = new(...).call
 
-    def initialize(provider_name:, token:, raw_payload: nil, payload: nil, content_type: nil, headers: {},
+    def initialize(provider_name:, endpoint_identity:, token:, raw_payload: nil, payload: nil, content_type: nil, headers: {},
       request_metadata: {}, event_type: nil, provider_event_id: nil)
       @provider_name = provider_name.to_s.downcase
+      @endpoint_identity = endpoint_identity.to_s.downcase
       @token = token
       @raw_payload = raw_payload.nil? ? payload : raw_payload
       @content_type = content_type
@@ -31,20 +33,24 @@ module RecordingStudioWebhooks
       provider = configuration.providers.fetch(@provider_name)
       return failure(404, "provider_unavailable") unless provider
 
-      authentication = WebhookEndpointToken.authenticate(provider_name: provider.name, plaintext: @token)
-      return failure(401, "token_invalid") unless authentication
+      endpoint = Endpoint.find_by(provider_name: provider.name, identity_key: @endpoint_identity)
+      return failure(404, "endpoint_unavailable") unless endpoint
+      return failure(401, "endpoint_disabled") unless endpoint.enabled?
+
+      endpoint_token = EndpointToken.authenticate(endpoint: endpoint, plaintext: @token)
+      return failure(401, "token_invalid") unless endpoint_token
       return failure(415, "content_type_invalid") unless allowed_content_type?
 
       body = payload_string
       return failure(400, "payload_invalid") unless body
       return failure(413, "payload_too_large") if body.bytesize > configuration.max_payload_bytes
-      return failure(401, "signature_invalid") unless signature_valid?(provider, body, authentication.endpoint)
+      return failure(401, "signature_invalid") unless signature_valid?(provider, body, endpoint)
 
       parsed_payload = parse_json(body)
       provenance = safe_provenance
       extraction_context = HookContext.new(
-        endpoint: authentication.endpoint,
-        endpoint_token: authentication.endpoint_token_snapshot,
+        endpoint: endpoint,
+        endpoint_token: endpoint_token,
         provider: provider,
         payload: ImmutableSnapshot.build(Redactor.redact(parsed_payload, keys: configuration.secret_redaction_keys)),
         provenance: provenance
@@ -55,12 +61,12 @@ module RecordingStudioWebhooks
       resolution = PolicyResolver.resolve_event(
         configuration: configuration,
         provider: provider,
-        endpoint: authentication.endpoint,
+        endpoint: endpoint,
         event_type: type
       )
       context = HookContext.new(
-        endpoint: authentication.endpoint,
-        endpoint_token: authentication.endpoint_token_snapshot,
+        endpoint: endpoint,
+        endpoint_token: endpoint_token,
         provider: provider,
         payload: ImmutableSnapshot.build(Redactor.redact(parsed_payload, keys: resolution.policy.redaction_keys)),
         provenance: provenance
@@ -73,12 +79,13 @@ module RecordingStudioWebhooks
 
       persisted_payload = Redactor.redact(
         parsed_payload,
-        keys: persisted_redaction_keys(provider, authentication.endpoint, type, resolution)
+        keys: persisted_redaction_keys(provider, endpoint, type, resolution)
       )
 
       persist_and_dispatch!(
         provider: provider,
-        authentication: authentication,
+        endpoint: endpoint,
+        endpoint_token: endpoint_token,
         event_type: type,
         provider_event_id: provider_event_identity(event_id, parsed_payload, resolution),
         payload: persisted_payload,
@@ -263,58 +270,35 @@ module RecordingStudioWebhooks
       "generated:#{SecureRandom.uuid}"
     end
 
-    def persist_and_dispatch!(provider:, authentication:, event_type:, provider_event_id:, payload:, payload_digest:, provenance:, resolution:)
-      log = nil
-      attempts = []
-      endpoint_recording = authentication.endpoint_recording
-      root = endpoint_recording.root_recording_or_self
+    def persist_and_dispatch!(provider:, endpoint:, endpoint_token:, event_type:, provider_event_id:, payload:, payload_digest:, provenance:, resolution:)
+      event = nil
+      plans = []
 
-      IncomingWebhookLog.transaction do
-        log = IncomingWebhookLog.create!(
-          endpoint_recording: endpoint_recording,
-          endpoint_token_recording: authentication.endpoint_token_recording,
-          endpoint_snapshot: authentication.endpoint,
-          endpoint_token_snapshot: authentication.endpoint_token_snapshot,
+      InboundEvent.transaction do
+        event = InboundEvent.create!(
+          endpoint: endpoint,
+          endpoint_token: endpoint_token,
           provider_name: provider.name,
           event_type: event_type,
           provider_event_id: provider_event_id,
           payload_digest: payload_digest,
-          redacted_payload: payload,
+          deduplication_key: provider_event_id,
+          payload: payload,
           provenance: provenance,
-          policy_source: resolution.source,
-          policy_pattern: resolution.pattern,
-          execution_mode: resolution.execution_mode,
-          policy_fingerprint: resolution.fingerprint,
-          provider_definition_source: provider.source,
-          provider_definition_fingerprint: provider.fingerprint,
-          accepted_at: Time.current,
+          endpoint_snapshot: endpoint.snapshot,
+          token_snapshot: endpoint_token.snapshot,
+          policy_snapshot: resolution.to_h,
+          received_at: Time.current,
           status: "accepted"
         )
-        attempts = ActionPlanner.call(incoming_webhook_log: log, provider: provider, resolution: resolution)
-        log.update!(status: "planned") if attempts.any?
-
-        RecordingStudioGateway.log_event!(
-          root_recording: root,
-          recording: endpoint_recording,
-          action: "recording_studio_webhooks.incoming.accepted",
-          metadata: {
-            incoming_webhook_log_id: log.id,
-            provider: provider.name,
-            event_type: event_type,
-            provider_event_id: provider_event_id,
-            endpoint_token_snapshot_id: authentication.endpoint_token_snapshot.id
-          },
-          idempotency_key: "recording_studio_webhooks:incoming:#{log.id}"
-        )
+        plans = ActionPlanner.call(inbound_event: event, provider: provider, resolution: resolution)
+        event.update!(status: "planned") if plans.any?
       end
 
-      attempts.each { |attempt| DispatchWebhookActionAttempt.call(attempt.id) }
-      Result.new(status: 202, code: "accepted", record: log, details: { action_attempt_count: attempts.count })
+      plans.each { |plan| DispatchActionPlan.call(plan.id) }
+      Result.new(status: 202, code: "accepted", record: event, details: { action_plan_count: plans.count })
     rescue ActiveRecord::RecordNotUnique
-      existing = IncomingWebhookLog.find_by(
-        endpoint_recording_id: authentication.endpoint_recording.id,
-        provider_event_id: provider_event_id
-      )
+      existing = InboundEvent.find_by(endpoint_id: endpoint.id, deduplication_key: provider_event_id)
       return Result.new(status: 200, code: "duplicate", record: existing) if existing
 
       raise

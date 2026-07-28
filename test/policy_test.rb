@@ -40,4 +40,33 @@ class PolicyTest < Minitest::Test
       RecordingStudioWebhooks::Policy.new(max_retries: 21)
     end
   end
+
+  def test_policy_resolver_keeps_endpoint_overrides_above_action_and_provider
+    with_fresh_configuration do |configuration|
+      provider = configuration.provider "billing", policy: { max_retries: 2, enabled: false }
+      action = configuration.action "billing.invoice_paid", ->(_context) {},
+        provider: "billing",
+        event: "invoice.paid",
+        policy: { max_retries: 3, enabled: true }
+      endpoint = Struct.new(:policy_overrides, :event_policies).new(
+        { max_retries: 4, enabled: false },
+        {}
+      )
+
+      event_resolution = RecordingStudioWebhooks::PolicyResolver.resolve_event(
+        configuration: configuration,
+        provider: provider,
+        endpoint: endpoint,
+        event_type: "invoice.paid"
+      )
+      action_resolution = RecordingStudioWebhooks::PolicyResolver.resolve_action(
+        event_resolution: event_resolution,
+        action: action,
+        required_redaction_keys: []
+      )
+
+      assert_equal 4, action_resolution.policy.max_retries
+      refute_predicate action_resolution.policy, :enabled?
+    end
+  end
 end

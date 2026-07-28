@@ -78,6 +78,18 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "not-a-valid-token"
   end
 
+  test "public intake binds a credential to the endpoint identity in its route" do
+    token = @endpoint.issue_token!.plaintext_token
+
+    post "/webhooks/inbound/demo/missing-endpoint",
+      params: JSON.generate(id: "evt_wrong_endpoint", type: "demo.received"),
+      headers: intake_headers(token)
+
+    assert_response :not_found
+    assert_equal({ "status" => "not_found" }, JSON.parse(response.body))
+    assert_equal 0, @endpoint.inbound_events.count
+  end
+
   test "temporary dispatcher failures keep an accepted action plan recoverable" do
     configuration = RecordingStudioWebhooks.configuration
     original_dispatcher = configuration.dispatcher
@@ -89,7 +101,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     assert_response :accepted
     plan = @endpoint.inbound_events.find_by!(provider_event_id: "evt_queue").action_plans.first.reload
-    assert_predicate plan, :retry_scheduled?
+    assert_predicate plan, :retrying?
     refute_predicate plan, :terminal?
 
     configuration.dispatcher = ->(_plan_id, _wait_until = nil) { true }
