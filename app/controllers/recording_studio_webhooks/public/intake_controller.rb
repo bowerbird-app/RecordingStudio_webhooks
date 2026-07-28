@@ -2,8 +2,11 @@
 
 module RecordingStudioWebhooks
   module Public
-    class IntakeController < ApplicationController
-      skip_forgery_protection only: :create
+    # This controller intentionally uses the stateless API base instead of
+    # weakening CSRF protection on the cookie-backed administrative controller.
+    # Public intake authenticates with an endpoint credential header, never a
+    # browser session.
+    class IntakeController < ActionController::API
 
       def create
         raw_payload = bounded_raw_payload
@@ -25,6 +28,10 @@ module RecordingStudioWebhooks
       end
 
       private
+
+      def webhook_configuration
+        RecordingStudioWebhooks.configuration
+      end
 
       # Rack's bounded read also protects chunked requests, which have no
       # trustworthy Content-Length. Do not use `raw_post`: it buffers the

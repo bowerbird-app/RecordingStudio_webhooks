@@ -14,10 +14,11 @@ control, or logs.
 
 ## Intake
 
-Only the public intake action skips CSRF protection. It accepts JSON with a
-credential header, validates request size and content type, and emits generic
-responses. Administrative mutations retain standard Rails CSRF protection and
-require an explicit host authorizer.
+Public intake uses `ActionController::API`, so it is stateless and has no
+cookie-backed CSRF surface. It accepts JSON with a credential header, validates
+request size and content type, and emits generic responses. Administrative
+mutations retain standard Rails CSRF protection and require an explicit host
+authorizer.
 
 The public intake guard prevents Rails parameter parsing and request logging
 from buffering or recording the raw JSON body. It applies a declared-length

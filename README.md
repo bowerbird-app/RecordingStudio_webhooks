@@ -114,7 +114,8 @@ Content-Type: application/json
 
 `X-Recording-Studio-Webhook-Token` is also supported for providers that
 cannot send an Authorization header. Query-string tokens are intentionally unsupported.
-The public controller is the only CSRF-exempt endpoint and returns only a
+The public controller is stateless and does not use browser sessions; all
+administrative endpoints retain Rails CSRF protection. It returns only a
 generic JSON status: `accepted`, `duplicate`, `unauthorized`, `not_found`,
 `invalid`, or `unavailable`.
 
