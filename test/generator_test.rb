@@ -44,5 +44,7 @@ class GeneratorTest < Minitest::Test
     assert_equal 4, template.scan(/create_table :recording_studio_webhooks_/).size
     assert_equal 4, template.scan(/id: :uuid/).size
     assert_includes template, "recording_studio_recordings"
+    assert_includes template, "%i[provider_name identity_key]"
+    refute_includes template, "%i[recording_studio_recording_id provider_name identity_key]"
   end
 end

@@ -54,33 +54,12 @@ module RecordingStudioWebhooks
     # A serializable, intentionally non-secret description of the current setup.
     def report = configuration.report
 
-    # Registers the immutable webhook recordables with Recording Studio when it
-    # is available. Hosts may set `recording_studio_parent_types` explicitly;
-    # otherwise the currently configured Recording Studio root types are used.
+    # Endpoints are persisted in this engine's four tables and belong to a
+    # stable Recording Studio recording through their foreign key. They are not
+    # Recording Studio recordables, so registering them as recordables would
+    # create an incompatible second lifecycle.
     def configure_recordables!
-      return false unless RecordingStudioGateway.available?
-
-      parent_types = configuration.recording_studio_parent_types
-      parent_types = ::RecordingStudio.root_recordable_types if parent_types.empty?
-      return false if parent_types.empty?
-
-      endpoint_class = RecordingStudioWebhooks::Endpoint
-      token_class = RecordingStudioWebhooks::EndpointToken
-
-      endpoint_class.recording_studio_recordable(
-        label: "Webhook endpoint",
-        root: false,
-        allowed_parent_types: parent_types
-      )
-      token_class.recording_studio_recordable(
-        label: "Webhook endpoint token",
-        root: false,
-        allowed_parent_types: [endpoint_class.name]
-      )
-
-      ::RecordingStudio.register_recordable_type(endpoint_class)
-      ::RecordingStudio.register_recordable_type(token_class)
-      true
+      RecordingStudioGateway.available?
     end
   end
 end

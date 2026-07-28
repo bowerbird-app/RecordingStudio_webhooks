@@ -52,9 +52,18 @@ module RecordingStudioWebhooks
       revoked_at.nil? && active_at <= at && (expires_at.nil? || expires_at > at)
     end
 
-    def revoke!(at: Time.current)
+    def revoke!(at: Time.current, actor: nil)
       with_lock do
-        update!(revoked_at: at) if current?(at)
+        return false unless current?(at)
+
+        update!(revoked_at: at)
+        endpoint.audit!(
+          action: "recording_studio_webhooks.endpoint_token.revoked",
+          actor: actor,
+          metadata: { endpoint_token_id: id, endpoint_id: endpoint_id },
+          idempotency_key: "recording_studio_webhooks:endpoint-token-revocation:#{id}"
+        )
+        true
       end
     end
 

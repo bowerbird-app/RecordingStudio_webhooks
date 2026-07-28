@@ -80,12 +80,10 @@ module RecordingStudioWebhooks
     # are additive so a narrower scope cannot make a required filter disappear.
     def self.resolve(default:, provider: {}, action: {}, endpoint: {}, required_redaction_keys: [])
       default_values = default.respond_to?(:to_h) ? default.to_h : default
-      values = DEFAULT_VALUES
-        .merge(normalize_override(default_values))
-        .merge(normalize_override(provider || {}))
-        .merge(normalize_override(action || {}))
-        .merge(normalize_override(endpoint || {}))
-      values["redaction_keys"] = (Array(required_redaction_keys) + Array(values["redaction_keys"]))
+      overrides = [default_values, provider, action, endpoint].map { |value| normalize_override(value || {}) }
+      values = DEFAULT_VALUES.dup
+      overrides.each { |override| values.merge!(override) }
+      values["redaction_keys"] = (Array(required_redaction_keys) + overrides.flat_map { |override| Array(override["redaction_keys"]) })
         .map { |key| key.to_s.downcase }
         .uniq
         .sort

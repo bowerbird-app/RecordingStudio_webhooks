@@ -12,7 +12,8 @@ module RecordingStudioWebhooks
       def create
         issuance = @endpoint.issue_token!(
           expires_at: parsed_expiration,
-          metadata: parsed_metadata
+          metadata: parsed_metadata,
+          actor: current_admin_actor
         )
         @issued_token = issuance.plaintext_token
         response.headers["Cache-Control"] = "no-store, max-age=0"
@@ -25,7 +26,7 @@ module RecordingStudioWebhooks
       end
 
       def destroy
-        @endpoint.endpoint_tokens.find(params[:id]).revoke!
+        @endpoint.endpoint_tokens.find(params[:id]).revoke!(actor: current_admin_actor)
         redirect_to admin_endpoint_tokens_path(@endpoint), notice: "Token revoked."
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"

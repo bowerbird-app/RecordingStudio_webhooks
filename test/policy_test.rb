@@ -69,4 +69,36 @@ class PolicyTest < Minitest::Test
       refute_predicate action_resolution.policy, :enabled?
     end
   end
+
+  def test_policy_resolver_unions_redaction_keys_from_every_policy_slot
+    with_fresh_configuration do |configuration|
+      configuration.default_policy = { redaction_keys: ["default"] }
+      configuration.global_policy = { redaction_keys: ["global"] }
+      provider = configuration.provider "billing",
+        policy: { redaction_keys: ["provider"] },
+        event_policies: { "invoice.paid" => { redaction_keys: ["provider_event"] } }
+      action = configuration.action "billing.invoice_paid", ->(_context) {},
+        provider: "billing",
+        event: "invoice.paid",
+        policy: { redaction_keys: ["action"] }
+      endpoint = Struct.new(:policy_overrides).new({ redaction_keys: ["endpoint"] })
+
+      event_resolution = RecordingStudioWebhooks::PolicyResolver.resolve_event(
+        configuration: configuration,
+        provider: provider,
+        endpoint: endpoint,
+        event_type: "invoice.paid"
+      )
+      action_resolution = RecordingStudioWebhooks::PolicyResolver.resolve_action(
+        event_resolution: event_resolution,
+        action: action,
+        required_redaction_keys: ["required"]
+      )
+
+      assert_equal(
+        %w[action default endpoint global provider provider_event required],
+        action_resolution.policy.redaction_keys
+      )
+    end
+  end
 end

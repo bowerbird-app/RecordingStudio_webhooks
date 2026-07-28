@@ -130,7 +130,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_28_000000) do
     t.uuid "recording_studio_recording_id", null: false
     t.datetime "updated_at", null: false
     t.index ["provider_name"], name: "index_recording_studio_webhooks_endpoints_on_provider_name"
-    t.index ["recording_studio_recording_id", "provider_name", "identity_key"], name: "index_rsw_endpoints_on_recording_provider_identity", unique: true
+    t.index ["provider_name", "identity_key"], name: "index_rsw_endpoints_on_provider_and_identity", unique: true
     t.index ["recording_studio_recording_id"], name: "index_recording_studio_webhooks_endpoints_on_recording_studio_recording_id"
   end
 

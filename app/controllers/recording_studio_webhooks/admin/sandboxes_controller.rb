@@ -34,21 +34,29 @@ module RecordingStudioWebhooks
 
       def build_sandbox_result(provider, payload, event_type)
         actions = webhook_configuration.actions.matching(provider.name, event_type)
-        policies = actions.map do |action|
-          Policy.resolve(
-            default: webhook_configuration.default_policy,
-            provider: provider.policy_overrides,
-            action: action.policy_overrides,
-            endpoint: @endpoint.policy_overrides,
+        event_resolution = PolicyResolver.resolve_event(
+          configuration: webhook_configuration,
+          provider: provider,
+          endpoint: @endpoint,
+          event_type: event_type
+        )
+        resolutions = actions.map do |action|
+          PolicyResolver.resolve_action(
+            event_resolution: event_resolution,
+            action: action,
             required_redaction_keys: webhook_configuration.secret_redaction_keys
           )
         end
-        redaction_keys = policies.flat_map(&:redaction_keys) + webhook_configuration.secret_redaction_keys
+        redaction_keys = (
+          [event_resolution.policy.redaction_keys] +
+          resolutions.map { |resolution| resolution.policy.redaction_keys }
+        ).flatten
 
         ImmutableSnapshot.build(
           event_type: event_type,
           payload: Redactor.redact(payload, keys: redaction_keys),
-          actions: actions.zip(policies).map do |action, policy|
+          actions: actions.zip(resolutions).map do |action, resolution|
+            policy = resolution.policy
             {
               name: action.name,
               event_pattern: action.event_pattern.value,

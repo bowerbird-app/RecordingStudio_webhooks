@@ -18,6 +18,11 @@ module RecordingStudioWebhooks
         @endpoint.recording_studio_recording_id = selected_recording.id
 
         if @form_error.nil? && registered_provider? && @endpoint.save
+          @endpoint.audit!(
+            action: "recording_studio_webhooks.endpoint.created",
+            actor: current_admin_actor,
+            metadata: { endpoint_id: @endpoint.id }
+          )
           redirect_to admin_endpoint_path(@endpoint), notice: "Endpoint created."
         else
           @form_error ||= "Choose a registered provider." unless registered_provider?
@@ -37,6 +42,11 @@ module RecordingStudioWebhooks
 
       def update
         if @form_error.nil? && @endpoint.update(endpoint_update_attributes)
+          @endpoint.audit!(
+            action: "recording_studio_webhooks.endpoint.revised",
+            actor: current_admin_actor,
+            metadata: { endpoint_id: @endpoint.id }
+          )
           redirect_to admin_endpoint_path(@endpoint), notice: "Endpoint updated."
         else
           render :edit, status: :unprocessable_entity

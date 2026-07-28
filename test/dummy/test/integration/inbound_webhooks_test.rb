@@ -90,6 +90,62 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_equal 0, @endpoint.inbound_events.count
   end
 
+  test "deduplication can be disabled without discarding the provider event id" do
+    @endpoint.update!(policy_overrides: { deduplicate: false })
+    token = @endpoint.issue_token!.plaintext_token
+    payload = { id: "evt_repeated", type: "demo.received" }
+
+    2.times do
+      post inbound_path, params: JSON.generate(payload), headers: intake_headers(token)
+      assert_response :accepted
+      assert_equal "accepted", JSON.parse(response.body).fetch("status")
+    end
+
+    events = @endpoint.inbound_events.where(provider_event_id: "evt_repeated").order(:created_at)
+    assert_equal 2, events.count
+    assert_equal ["evt_repeated", "evt_repeated"], events.pluck(:provider_event_id)
+    refute_equal events.first.deduplication_key, events.second.deduplication_key
+  end
+
+  test "endpoint identities are global per provider and empty JSON objects are valid" do
+    other_workspace = Workspace.create!(name: "Other Webhook Workspace #{SecureRandom.hex(4)}")
+    other_recording = RecordingStudio.root_recording_for(other_workspace)
+    identity_key = "global-#{SecureRandom.hex(4)}"
+    endpoint = RecordingStudioWebhooks::Endpoint.create!(
+      recording_studio_recording: @recording,
+      provider_name: "demo",
+      identity_key: identity_key,
+      identity: {},
+      metadata: {},
+      policy_overrides: {}
+    )
+    duplicate = RecordingStudioWebhooks::Endpoint.new(
+      recording_studio_recording: other_recording,
+      provider_name: "demo",
+      identity_key: identity_key,
+      identity: {},
+      metadata: {},
+      policy_overrides: {}
+    )
+
+    assert_predicate endpoint, :persisted?
+    refute_predicate duplicate, :valid?
+    assert_includes duplicate.errors[:identity_key], "has already been taken"
+
+    invalid_json = RecordingStudioWebhooks::Endpoint.new(
+      recording_studio_recording: other_recording,
+      provider_name: "demo",
+      identity_key: "typed-#{SecureRandom.hex(4)}",
+      identity: [],
+      metadata: "not-an-object",
+      policy_overrides: {}
+    )
+
+    refute_predicate invalid_json, :valid?
+    assert_includes invalid_json.errors[:identity], "must be a JSON object"
+    assert_includes invalid_json.errors[:metadata], "must be a JSON object"
+  end
+
   test "temporary dispatcher failures keep an accepted action plan recoverable" do
     configuration = RecordingStudioWebhooks.configuration
     original_dispatcher = configuration.dispatcher

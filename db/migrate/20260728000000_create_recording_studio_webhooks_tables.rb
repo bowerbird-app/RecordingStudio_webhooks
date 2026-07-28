@@ -15,9 +15,9 @@ module RecordingStudioWebhooks
         t.timestamps
       end
       add_index :recording_studio_webhooks_endpoints,
-        %i[recording_studio_recording_id provider_name identity_key],
+        %i[provider_name identity_key],
         unique: true,
-        name: "index_rsw_endpoints_on_recording_provider_identity"
+        name: "index_rsw_endpoints_on_provider_and_identity"
       add_index :recording_studio_webhooks_endpoints, :provider_name
 
       create_table :recording_studio_webhooks_endpoint_tokens, id: :uuid do |t|

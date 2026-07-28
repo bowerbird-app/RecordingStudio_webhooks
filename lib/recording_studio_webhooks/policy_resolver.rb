@@ -169,8 +169,9 @@ module RecordingStudioWebhooks
 
       def merge_slots(slots, required_redaction_keys:)
         values = Policy::DEFAULT_VALUES.dup
-        slots.each { |slot| values.merge!(Policy.normalize_override(slot.override)) }
-        values["redaction_keys"] = (Array(required_redaction_keys) + Array(values["redaction_keys"]))
+        overrides = slots.map { |slot| Policy.normalize_override(slot.override) }
+        overrides.each { |override| values.merge!(override) }
+        values["redaction_keys"] = (Array(required_redaction_keys) + overrides.flat_map { |override| Array(override["redaction_keys"]) })
           .map { |key| key.to_s.downcase }
           .uniq
           .sort

@@ -87,7 +87,8 @@ module RecordingStudioWebhooks
         endpoint: endpoint,
         endpoint_token: endpoint_token,
         event_type: type,
-        provider_event_id: provider_event_identity(event_id, parsed_payload, resolution),
+        provider_event_id: event_id,
+        deduplication_key: deduplication_key(event_id, parsed_payload, resolution),
         payload: persisted_payload,
         payload_digest: CanonicalJson.digest(parsed_payload),
         provenance: provenance,
@@ -261,16 +262,15 @@ module RecordingStudioWebhooks
       value.nil? || (value.is_a?(String) && !value.empty? && value.bytesize <= 255)
     end
 
-    def provider_event_identity(event_id, parsed_payload, resolution)
-      return event_id if event_id.present?
+    def deduplication_key(event_id, parsed_payload, resolution)
+      return SecureRandom.uuid unless resolution.policy.deduplicate?
 
-      identity = CanonicalJson.digest(parsed_payload)
-      return "payload:#{identity}" if resolution.policy.deduplicate?
+      return "event:#{event_id}" if event_id.present?
 
-      "generated:#{SecureRandom.uuid}"
+      "payload:#{CanonicalJson.digest(parsed_payload)}"
     end
 
-    def persist_and_dispatch!(provider:, endpoint:, endpoint_token:, event_type:, provider_event_id:, payload:, payload_digest:, provenance:, resolution:)
+    def persist_and_dispatch!(provider:, endpoint:, endpoint_token:, event_type:, provider_event_id:, deduplication_key:, payload:, payload_digest:, provenance:, resolution:)
       event = nil
       plans = []
 
@@ -282,7 +282,7 @@ module RecordingStudioWebhooks
           event_type: event_type,
           provider_event_id: provider_event_id,
           payload_digest: payload_digest,
-          deduplication_key: provider_event_id,
+          deduplication_key: deduplication_key,
           payload: payload,
           provenance: provenance,
           endpoint_snapshot: endpoint.snapshot,
@@ -293,12 +293,22 @@ module RecordingStudioWebhooks
         )
         plans = ActionPlanner.call(inbound_event: event, provider: provider, resolution: resolution)
         event.update!(status: "planned") if plans.any?
+        endpoint.audit!(
+          action: "recording_studio_webhooks.incoming.accepted",
+          metadata: {
+            inbound_event_id: event.id,
+            provider: provider.name,
+            event_type: event_type,
+            provider_event_id: provider_event_id
+          },
+          idempotency_key: "recording_studio_webhooks:incoming:#{event.id}"
+        )
       end
 
       plans.each { |plan| DispatchActionPlan.call(plan.id) }
       Result.new(status: 202, code: "accepted", record: event, details: { action_plan_count: plans.count })
     rescue ActiveRecord::RecordNotUnique
-      existing = InboundEvent.find_by(endpoint_id: endpoint.id, deduplication_key: provider_event_id)
+      existing = InboundEvent.find_by(endpoint_id: endpoint.id, deduplication_key: deduplication_key)
       return Result.new(status: 200, code: "duplicate", record: existing) if existing
 
       raise
