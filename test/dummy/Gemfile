@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
-# Use the gem_template engine
-gem "gem_template", path: "../.."
+# Use the Recording Studio Webhooks engine
+gem "recording_studio_webhooks", path: "../.."
 
 # RecordingStudio engine
 gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "recording_studio/v3.0.0"

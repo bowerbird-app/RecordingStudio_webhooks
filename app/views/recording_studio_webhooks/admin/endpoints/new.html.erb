@@ -1,0 +1,11 @@
+<%= render FlatPack::PageTitle::Component.new(
+  title: "New webhook endpoint",
+  subtitle: "Create a public intake address linked to a stable Recording Studio recording.",
+  variant: :h1
+) %>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.body do %>
+    <%= render "form" %>
+  <% end %>
+<% end %>

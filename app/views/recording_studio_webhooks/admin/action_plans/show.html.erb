@@ -1,0 +1,18 @@
+<%= render FlatPack::PageTitle::Component.new(
+  title: @action_plan.action_name,
+  subtitle: "Persisted action plan and sanitized attempt history.",
+  variant: :h1
+) %>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.body do %>
+    <dl class="grid gap-3 text-sm sm:grid-cols-2">
+      <div><dt class="font-medium">Status</dt><dd><%= @action_plan.status %></dd></div>
+      <div><dt class="font-medium">Attempts</dt><dd><%= @action_plan.attempts %></dd></div>
+      <div><dt class="font-medium">Execution mode</dt><dd><%= @action_plan.policy.execution_mode %></dd></div>
+      <div><dt class="font-medium">Next attempt</dt><dd><%= @action_plan.next_attempt_at || "None" %></dd></div>
+    </dl>
+    <h2 class="mt-6 text-base font-semibold">Attempt history</h2>
+    <pre class="mt-2 overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@action_plan.attempt_history) %></pre>
+  <% end %>
+<% end %>

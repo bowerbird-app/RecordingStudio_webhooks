@@ -1,139 +1,216 @@
-# GemTemplate
+# RecordingStudio Webhooks
 
-Internal template for building Rails engine addons on top of RecordingStudio.
+`recording_studio_webhooks` is a mountable, **inbound-only** Rails engine for
+accepting provider events that belong to stable `RecordingStudio::Recording`
+records. It validates and redacts intake data, persists immutable planning
+snapshots, and executes registered local actions through Sidekiq, Active Job,
+or a host-supplied dispatcher.
 
-## What's Included
+It does not send outgoing webhooks, proxy requests, retain provider signing
+secrets, retain secret-store locations, or persist plaintext endpoint tokens.
 
-- **RecordingStudio** gem installed and configured
-- **Devise** authentication with a pre-seeded admin user
-- **Workspace**, **Folder**, and **Page** recordables seeded into the dummy host app
-- **FlatPack** UI component library for all views
-- **Dummy app** (`test/dummy/`) with a FlatPack-based sign-in screen, a simple home page, mounted RecordingStudio routes, and FlatPack's built-in rounded theme enabled by default
+## Install
 
-The dummy app ships with a starter sidebar documentation shell for authenticated pages. The menu entries in `test/dummy/app/views/layouts/flat_pack/_sidebar.html.erb` and the linked docs pages are intended to be rewritten to suit the addon you are building; the template provides the structure and styling, not final product copy. By default, that starter shell uses FlatPack's built-in rounded theme via the root layout attribute rather than custom Tailwind theme recreation.
+Add the engine and your Recording Studio dependency to the host application,
+then install the engine:
 
-## Quick Start
-
-### GitHub Codespaces (Recommended)
-
-1. Click **Code** → **Codespaces** → **Create codespace**
-2. Wait for setup to complete
-3. Run:
-   ```bash
-   cd test/dummy
-   bin/rails db:setup
-   bin/dev
-   ```
-4. Open port 3000 — you'll land on the dummy app home page and can sign in at `/users/sign_in`
-
-The dummy app is intended as a host-app validation surface for authentication, FlatPack rendering, Tailwind source scanning, and RecordingStudio route wiring.
-
-### Login Credentials
-
-| Field    | Value             |
-|----------|-------------------|
-| Email    | admin@admin.com   |
-| Password | Password          |
-
-The login form is prefilled with these credentials for fast access.
-
-### Useful Routes
-
-- `/` — dummy app home page
-- `/users/sign_in` — Devise sign-in page
-- `/recording_studio` — redirect to `/` while the mounted RecordingStudio engine remains data/API-focused
-- `/docs/install` — install guide rendered inside the dummy app
-- `/docs/config`, `/docs/recordable_types`, `/docs/recordings_tree`, `/docs/gem_views`, `/docs/methods` — starter sidebar pages to customize for your gem
-
-The home page in `test/dummy/app/views/home/index.html.erb` is also a deliberate starting point. Keep it focused on a minimal demo of the gem's primary behavior; use the sidebar pages for deeper explanations and supporting reference material.
-
-## Architecture
-
-### Root Recording Pattern
-
-This template follows RecordingStudio's root recording pattern:
-
-- **Workspace** is the top-level recordable
-- **Folder** and **Page** demonstrate nested recordables under the workspace root
-- Each configured recordable declares `recording_studio_recordable(...)`; strict declaration validation stays enabled
-- A root `RecordingStudio::Recording` wraps the Workspace
-- `Current.actor` is set from `current_user` (Devise) in `ApplicationController`
-
-### Extending RecordingStudio
-
-To add new recordable types:
-
-1. Create your model (e.g., `Page`, `Comment`)
-2. Register it in `config/initializers/recording_studio.rb`:
-   ```ruby
-   RecordingStudio.configure do |config|
-     config.recordable_types = ["Workspace", "YourNewType"]
-   end
-   ```
-3. Declare whether the model can be a root and which parents may contain it:
-   ```ruby
-   class YourNewType < ApplicationRecord
-     recording_studio_recordable label: "Your new type",
-                                 root: false,
-                                 allowed_parent_types: ["Workspace", "Folder"]
-   end
-   ```
-4. Validate declarations and create recordings under the root:
-   ```ruby
-   RecordingStudio.validate_recordable_declarations!
-   root_recording = RecordingStudio.root_recording_for(workspace)
-   root_recording.record(YourNewType) do |record|
-     record.title = "Example"
-   end
-   ```
-
-### RecordingStudio v3 Declarations
-
-RecordingStudio v3 expects every configured ActiveRecord recordable type to declare its hierarchy rules:
-
-- `Workspace` declares `root: true`
-- `Folder` and `Page` declare `root: false, allowed_parent_types: ["Workspace", "Folder"]`
-- `config.require_recordable_declarations = true` remains enabled in the dummy app initializer
-
-Useful console checks:
-
-```ruby
-RecordingStudio.validate_recordable_declarations!
-RecordingStudio.root_recordable_types
-RecordingStudio.allowed_parent_types_for("Page")
+```bash
+bundle add recording_studio_webhooks
+bin/rails generate recording_studio_webhooks:install
+bin/rails db:migrate
 ```
 
-### FlatPack UI Components
+The install generator creates an initializer, mounts the engine at
+`/recording_studio_webhooks`, and generates one migration containing the four
+engine tables. Use `--mount-path=/webhooks` to choose another safe lowercase
+path, or `--skip-migrations` when migrations are managed separately.
 
-All views use FlatPack ViewComponents. Available components include:
+Sidekiq is the default dispatcher. The engine requires Sidekiq `~> 8.1.6`;
+that version was checked against the GitHub advisory database when this engine
+was added. Hosts using another queue adapter can configure Active Job or a
+custom dispatcher instead. The engine's FlatPack admin views expect FlatPack
+to be supplied by the Recording Studio host UI bundle.
 
-- `FlatPack::Button::Component` — Buttons (`:primary`, `:secondary`, `:ghost`)
-- `FlatPack::Card::Component` — Cards (`:default`, `:elevated`, `:outlined`)
-- `FlatPack::Alert::Component` — Alerts (`:success`, `:error`, `:warning`, `:info`)
-- `FlatPack::Badge::Component` — Status badges
-- `FlatPack::Table::Component` — Data tables
-- `FlatPack::TextInput::Component`, `EmailInput`, `PasswordInput` — Form inputs
-- `FlatPack::Breadcrumb::Component` — Navigation breadcrumbs
-- `FlatPack::Navbar::Component` — Navigation sidebar
+## Minimal configuration
 
-Use the live FlatPack demo app at [flatpack-c6p8f.ondigitalocean.app](https://flatpack-c6p8f.ondigitalocean.app/) as the approved UI reference for current shared patterns. Its component table is the fastest way to discover available FlatPack components before introducing new custom UI, and user-provided FlatPack demo URLs should be treated as task context.
+Administration is intentionally denied until the host opts in:
 
-In GitHub Codespaces or other restricted environments, you may need to enable access to that URL before the agent can inspect the app. If access is unavailable, provide sanitized screenshots, copied markup, or component details so the agent can stay aligned with the shared UI.
+```ruby
+# config/initializers/recording_studio_webhooks.rb
+RecordingStudioWebhooks.configure do |config|
+  config.admin_authorizer = ->(context) { context.actor&.admin? }
+  config.admin_recording_scope = ->(_context) { RecordingStudio::Recording.all }
 
-See the [FlatPack README](https://github.com/bowerbird-app/flatpack) for full documentation.
+  # Recommended: source this from encrypted credentials. It is never reported
+  # or snapshotted. Random tokens remain safely hashed if this is unset.
+  config.token_digest_secret = Rails.application.credentials.dig(
+    :recording_studio_webhooks, :token_digest_secret
+  )
 
-## Tech Stack
+  config.provider "billing" do |provider|
+    provider.event_type ->(payload) { payload.fetch("type") }
+    provider.event_id ->(payload) { payload["id"] }
+  end
 
-| Component       | Version |
-|-----------------|---------|
-| Ruby            | 3.3+    |
-| Rails           | 8.1+    |
-| PostgreSQL      | 16      |
-| TailwindCSS     | 4       |
-| RecordingStudio | v3.0.0 (pinned to `recording_studio/v3.0.0` in `test/dummy/Gemfile`) |
-| FlatPack        | v0.1.129 (pinned in `test/dummy/Gemfile`) |
-| Devise          | latest  |
+  config.action "billing.invoice_paid",
+    ->(context) { InvoicePaidHandler.call(context) },
+    provider: "billing",
+    event: "invoice.paid",
+    policy: { max_retries: 2 }
+end
+```
 
-## Documentation
+`admin_authorizer` receives a context with `actor` and `controller`.
+`admin_recording_scope` receives the same context and must return only
+`RecordingStudio::Recording` records that the authorized actor may administer.
+An absent authorizer always returns a generic not-found response.
 
-The original gem template documentation is preserved in `docs/gem_template/` as architectural reference material. Use it as background on the engine conventions; the README and dummy app are the source of truth for the Recording Studio addon workflow.
+## Provider and action registration
+
+Provider and action names are normalized to lowercase and duplicate names are
+rejected. Registry iteration is lexical and matching ties are deterministic.
+Providers may register a signature verifier, event type extractor, event ID
+extractor, and provider policy.
+
+Action patterns are deliberately limited:
+
+| Pattern | Matches |
+| --- | --- |
+| `invoice.paid` | exactly `invoice.paid` |
+| `invoice.*` | `invoice.paid` and `invoice.payment.failed` |
+
+Only a final `.*` is supported. General globs and prefix wildcards are
+rejected. Exact patterns win, then longer wildcard prefixes, then action
+priority and lexical action name.
+
+For explicit file discovery, configure absolute provider/action roots and set
+`automatic_discovery = true`. Files are required in lexical order; the engine
+never infers constants from paths.
+
+## Policies
+
+Every intake and action plan receives an immutable policy snapshot. Precedence
+is, from highest to lowest:
+
+1. endpoint override;
+2. action policy;
+3. provider policy;
+4. global `default_policy`.
+
+Supported policy keys are `enabled`, `execution_mode` (`independent` or
+`sequential`), `max_retries`, `retry_backoff`, `max_retry_backoff`,
+`redaction_keys`, and `deduplicate`. Required redaction keys are always
+additive and cannot be removed by a lower-level policy.
+
+## Public intake
+
+With the default mount, providers POST JSON to:
+
+```text
+POST /recording_studio_webhooks/inbound/:provider/:endpoint_key
+Authorization header: endpoint credential
+Content-Type: application/json
+```
+
+`X-Recording-Studio-Webhook-Token` is also supported for providers that
+cannot send an Authorization header. Query-string tokens are intentionally unsupported.
+The public controller is the only CSRF-exempt endpoint and returns only a
+generic JSON status: `accepted`, `duplicate`, `unauthorized`, `not_found`,
+`invalid`, or `unavailable`.
+
+The intake service:
+
+- performs current-token lookup with a constant-time digest comparison;
+- enforces content type and payload-size limits;
+- invokes an optional provider signature verifier in memory;
+- invokes optional rate-limit and authorization hooks with redacted data;
+- canonicalizes payloads for race-safe deduplication;
+- persists only a redacted payload and an allowlisted provenance subset; and
+- creates immutable endpoint, token, policy, and action snapshots before
+  anything is dispatched.
+
+Configure `max_payload_bytes`, `content_types`, `secret_redaction_keys`, and
+`provenance_keys` to meet host requirements. Secret-looking keys such as
+`token`, `authorization`, `password`, and `signature` are filtered even if
+they are not listed explicitly.
+
+## Data model
+
+The engine owns exactly four UUID-primary-key tables:
+
+1. `recording_studio_webhooks_endpoints`;
+2. `recording_studio_webhooks_endpoint_tokens`;
+3. `recording_studio_webhooks_inbound_events`; and
+4. `recording_studio_webhooks_action_plans`.
+
+Endpoints reference `recording_studio_recordings`, not a mutable host
+recordable. Endpoint identity and recording linkage are immutable after
+creation. Token records contain only a digest, short prefix, lifecycle times,
+and safe metadata. Inbound events and action plans hold immutable JSON
+snapshots. Attempt state is append-only JSON history on the plan so the engine
+keeps the four-table boundary.
+
+Issuing or rotating a token revokes every previous unrevoked token under a row
+lock. The resulting plaintext is available from the issuance object exactly
+once and is never serialized, logged, or stored.
+
+## Execution and retries
+
+Action plans store action name, execution position, policy, sanitized errors,
+and attempts. Independent plans can run independently. Sequential plans wait
+for preceding sequential plans to reach a terminal state. Failed handlers use
+bounded exponential backoff and are retried only up to their policy limit.
+
+The default dispatcher pushes only an action-plan UUID to Sidekiq. To use a
+different dispatcher:
+
+```ruby
+RecordingStudioWebhooks.configure do |config|
+  config.dispatcher = :active_job
+
+  # Or receive only a plan ID and optional schedule:
+  # config.dispatcher = ->(plan_id, wait_until = nil) { MyQueue.push(plan_id, wait_until) }
+end
+```
+
+Actions receive an immutable context containing the action plan, inbound event,
+endpoint, redacted payload, and safe provenance. They never receive an
+endpoint token or a provider secret.
+
+## Admin hierarchy and sandbox
+
+The admin interface is under `/admin` inside the engine mount. It provides:
+
+- Recording-scoped endpoints;
+- current/rotated/revoked token history;
+- redacted events and their action plans/attempt history; and
+- a sandbox that matches and redacts a manually supplied sample without
+  persisting the sample or executing an action.
+
+The UI uses FlatPack components. Token issuance renders a no-store,
+one-response page instead of a flash or redirect.
+
+## Operations
+
+```bash
+bin/rails recording_studio_webhooks:status
+bin/rails recording_studio_webhooks:doctor
+bin/rails recording_studio_webhooks:dispatch_due
+```
+
+`status` emits a non-secret configuration/table report. `doctor` checks
+Recording Studio availability, explicit admin authorization, registry setup,
+all four tables, and Sidekiq availability when it is the selected dispatcher.
+Schedule `dispatch_due` to reconcile temporary queue failures and process
+crashes after a plan is persisted but before it is enqueued.
+
+See [configuration](docs/CONFIGURATION.md),
+[architecture](docs/ARCHITECTURE.md), [operations](docs/OPERATIONS.md), and
+[security](docs/SECURITY.md) for detail.
+
+## Dummy application
+
+`test/dummy` mounts the engine at `/webhooks`, seeds a stable Recording Studio
+recording plus a demo endpoint, and configures a no-op dispatcher. Sign in as
+`admin@admin.com` with password `Password`, then use **Webhook endpoints** in
+the sidebar. The demo never sends outbound requests or executes queued work.

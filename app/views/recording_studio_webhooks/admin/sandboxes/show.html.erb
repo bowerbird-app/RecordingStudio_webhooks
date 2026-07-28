@@ -1,0 +1,55 @@
+<%= render FlatPack::PageTitle::Component.new(
+  title: "Action sandbox",
+  subtitle: "Validate provider matching and redaction without persisting or executing an action.",
+  variant: :h1
+) %>
+
+<% if @form_error.present? %>
+  <%= render FlatPack::Alert::Component.new(description: @form_error, style: :danger) %>
+<% end %>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.body do %>
+    <%= form_with url: admin_endpoint_sandbox_path(@endpoint), scope: :sandbox, class: "space-y-4" do |form| %>
+      <%= render FlatPack::TextInput::Component.new(
+        name: "sandbox[event_type]",
+        label: "Event type",
+        value: params.dig(:sandbox, :event_type).to_s,
+        required: true,
+        placeholder: "invoice.paid"
+      ) %>
+      <label class="block text-sm font-medium" for="sandbox_payload">Sample JSON payload</label>
+      <%= form.text_area :payload, value: "", rows: 10, class: "block w-full rounded border p-2 font-mono text-sm", required: true %>
+      <%= render FlatPack::Button::Component.new(text: "Validate plan", style: :primary, size: :md, type: "submit") %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<% if @sandbox_result %>
+  <div class="grid gap-6 lg:grid-cols-2">
+    <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+      <% card.header do %>
+        <%= render FlatPack::PageTitle::Component.new(title: "Redacted sample", variant: :h3, class: "mb-0 pb-0") %>
+      <% end %>
+      <% card.body do %>
+        <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@sandbox_result.fetch("payload")) %></pre>
+      <% end %>
+    <% end %>
+    <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+      <% card.header do %>
+        <%= render FlatPack::PageTitle::Component.new(title: "Matched actions", variant: :h3, class: "mb-0 pb-0") %>
+      <% end %>
+      <% card.body do %>
+        <% if @sandbox_result.fetch("actions").any? %>
+          <ul class="space-y-3 text-sm">
+            <% @sandbox_result.fetch("actions").each do |action| %>
+              <li><strong><%= action.fetch("name") %></strong> · <%= action.fetch("execution_mode") %> · retries: <%= action.fetch("max_retries") %></li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="text-sm">No registered action matches this event type.</p>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

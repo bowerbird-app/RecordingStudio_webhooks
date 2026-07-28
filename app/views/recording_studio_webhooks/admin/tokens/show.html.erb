@@ -1,0 +1,26 @@
+<meta name="robots" content="noindex,nofollow">
+
+<%= render FlatPack::PageTitle::Component.new(
+  title: "Copy this token now",
+  subtitle: "It will not be shown again after you leave this response.",
+  variant: :h1
+) %>
+
+<%= render FlatPack::Alert::Component.new(
+  description: "Treat this value as a credential. Store it in your provider and do not put it in source control.",
+  style: :warning
+) %>
+
+<%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+  <% card.body do %>
+    <code class="block break-all rounded bg-black/5 p-4 text-sm"><%= @issued_token %></code>
+  <% end %>
+  <% card.footer do %>
+    <%= render FlatPack::Button::Component.new(
+      text: "I copied the token",
+      style: :primary,
+      size: :md,
+      url: admin_endpoint_path(@endpoint)
+    ) %>
+  <% end %>
+<% end %>

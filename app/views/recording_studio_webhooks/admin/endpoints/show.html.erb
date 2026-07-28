@@ -1,0 +1,76 @@
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: @endpoint.identity_key,
+    subtitle: "#{@endpoint.provider_name} · Recording #{@endpoint.recording_studio_recording_id}",
+    variant: :h1
+  ) %>
+  <div class="flex gap-2">
+    <%= render FlatPack::Button::Component.new(
+      text: "Edit",
+      style: :secondary,
+      size: :sm,
+      url: edit_admin_endpoint_path(@endpoint)
+    ) %>
+    <%= render FlatPack::Button::Component.new(
+      text: "Sandbox",
+      style: :secondary,
+      size: :sm,
+      url: admin_endpoint_sandbox_path(@endpoint)
+    ) %>
+  </div>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-2">
+  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Token lifecycle", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <p class="mb-4 text-sm">Issuing a token revokes the previous token. A plaintext token is displayed only in the immediate response.</p>
+      <%= form_with url: admin_endpoint_tokens_path(@endpoint), scope: :endpoint_token, class: "space-y-3" do |form| %>
+        <label class="block text-sm font-medium" for="endpoint_token_expires_at">Expiration (optional)</label>
+        <%= form.datetime_local_field :expires_at, class: "block w-full rounded border p-2" %>
+        <%= render FlatPack::Button::Component.new(text: "Issue new token", style: :primary, size: :sm, type: "submit") %>
+      <% end %>
+      <p class="mt-4 text-sm"><%= link_to "View token history", admin_endpoint_tokens_path(@endpoint) %></p>
+    <% end %>
+  <% end %>
+
+  <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Endpoint status", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <p class="text-sm">Public address:</p>
+      <code class="mt-2 block break-all rounded bg-black/5 p-2 text-xs"><%= inbound_path(provider: @endpoint.provider_name, endpoint_identity: @endpoint.identity_key) %></code>
+      <p class="mt-4 text-sm">Status:
+        <%= render FlatPack::Badge::Component.new(
+          text: @endpoint.enabled? ? "enabled" : "disabled",
+          style: @endpoint.enabled? ? :success : :warning,
+          size: :sm
+        ) %>
+      </p>
+    <% end %>
+  <% end %>
+</div>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.header do %>
+    <%= render FlatPack::PageTitle::Component.new(title: "Recent inbound events", variant: :h3, class: "mb-0 pb-0") %>
+  <% end %>
+  <% card.body do %>
+    <% if @events.any? %>
+      <ul class="space-y-3 text-sm">
+        <% @events.each do |event| %>
+          <li class="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+            <span><strong><%= event.event_type %></strong> · <%= event.received_at %></span>
+            <span><%= event.action_plans.size %> action plan(s) · <%= link_to "View", admin_endpoint_event_path(@endpoint, event) %></span>
+          </li>
+        <% end %>
+      </ul>
+      <p class="mt-4 text-sm"><%= link_to "All inbound events", admin_endpoint_events_path(@endpoint) %></p>
+    <% else %>
+      <p class="text-sm">No inbound events have been accepted.</p>
+    <% end %>
+  <% end %>
+<% end %>

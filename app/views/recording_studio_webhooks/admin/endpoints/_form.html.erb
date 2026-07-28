@@ -1,0 +1,64 @@
+<%= form_with model: @endpoint, url: @endpoint.persisted? ? admin_endpoint_path(@endpoint) : admin_endpoints_path, class: "space-y-5" do |form| %>
+  <% if @form_error.present? || @endpoint.errors.any? %>
+    <%= render FlatPack::Alert::Component.new(
+      description: @form_error.presence || @endpoint.errors.full_messages.to_sentence,
+      style: :danger
+    ) %>
+  <% end %>
+
+  <% unless @endpoint.persisted? %>
+    <label class="block text-sm font-medium" for="endpoint_recording_studio_recording_id">Recording</label>
+    <%= form.select :recording_studio_recording_id,
+      available_recordings.order(:created_at).map { |recording| ["Recording #{recording.id}", recording.id] },
+      { include_blank: "Select a Recording Studio recording" },
+      class: "mt-1 block w-full rounded border p-2" %>
+
+    <label class="block text-sm font-medium" for="endpoint_provider_name">Provider</label>
+    <%= form.select :provider_name,
+      webhook_configuration.providers.all.map { |provider| [provider.name, provider.name] },
+      { include_blank: "Select a registered provider" },
+      class: "mt-1 block w-full rounded border p-2" %>
+
+    <%= render FlatPack::TextInput::Component.new(
+      name: "endpoint[identity_key]",
+      label: "Public endpoint key",
+      value: @endpoint.identity_key,
+      required: true,
+      placeholder: "billing-prod"
+    ) %>
+
+    <%= render FlatPack::TextInput::Component.new(
+      name: "endpoint[identity_json]",
+      label: "Safe identity JSON (optional)",
+      value: @endpoint.identity.presence && pretty_webhook_json(@endpoint.identity),
+      placeholder: "{\"environment\":\"production\"}"
+    ) %>
+  <% end %>
+
+  <%= render FlatPack::Checkbox::Component.new(
+    name: "endpoint[enabled]",
+    label: "Accept inbound events",
+    checked: @endpoint.enabled?
+  ) %>
+
+  <label class="block text-sm font-medium" for="endpoint_metadata_json">Safe metadata JSON (optional)</label>
+  <%= form.text_area :metadata_json,
+    value: @endpoint.metadata.presence && pretty_webhook_json(@endpoint.metadata),
+    rows: 4,
+    class: "mt-1 block w-full rounded border p-2 font-mono text-sm",
+    placeholder: "{\"owner\":\"operations\"}" %>
+
+  <label class="block text-sm font-medium" for="endpoint_policy_json">Policy overrides JSON (optional)</label>
+  <%= form.text_area :policy_json,
+    value: @endpoint.policy_overrides.presence && pretty_webhook_json(@endpoint.policy_overrides),
+    rows: 4,
+    class: "mt-1 block w-full rounded border p-2 font-mono text-sm",
+    placeholder: "{\"execution_mode\":\"sequential\",\"max_retries\":2}" %>
+
+  <%= render FlatPack::Button::Component.new(
+    text: @endpoint.persisted? ? "Save endpoint" : "Create endpoint",
+    style: :primary,
+    size: :md,
+    type: "submit"
+  ) %>
+<% end %>

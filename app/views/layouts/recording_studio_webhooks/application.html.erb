@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html data-theme="rounded">
+  <head>
+    <title>Recording Studio Webhooks</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "flat_pack/variables", "data-turbo-track": "reload" %>
+  </head>
+  <body class="bg-[var(--surface-page-background-color)] text-[var(--surface-content-color)]">
+    <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
+      <nav class="flex items-center justify-between gap-3" aria-label="Webhook administration">
+        <%= render FlatPack::Button::Component.new(
+          text: "Webhook endpoints",
+          style: :secondary,
+          size: :sm,
+          url: admin_endpoints_path
+        ) %>
+      </nav>
+
+      <% flash.each do |type, message| %>
+        <%= render FlatPack::Alert::Component.new(
+          description: message,
+          style: type.to_s == "alert" ? :danger : :info
+        ) %>
+      <% end %>
+
+      <%= yield %>
+    </main>
+  </body>
+</html>

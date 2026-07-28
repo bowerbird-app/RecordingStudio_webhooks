@@ -1,0 +1,11 @@
+<%= render FlatPack::PageTitle::Component.new(
+  title: "Edit #{@endpoint.identity_key}",
+  subtitle: "Provider, Recording Studio recording, and public endpoint key are immutable after creation.",
+  variant: :h1
+) %>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.body do %>
+    <%= render "form" %>
+  <% end %>
+<% end %>

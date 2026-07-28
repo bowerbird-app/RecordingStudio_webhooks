@@ -1,0 +1,24 @@
+# frozen_string_literal: true
+
+# This engine fails closed for administration. Configure host authorization
+# deliberately; do not rely on an implicit current-user convention.
+RecordingStudioWebhooks.configure do |config|
+  # config.admin_authorizer = ->(context) { context.actor&.admin? }
+  # config.admin_recording_scope = ->(_context) { RecordingStudio::Recording.all }
+
+  # Keep an optional HMAC key in encrypted credentials or another secret store.
+  # Never put a token, provider secret, or a secret-store location in this file.
+  # config.token_digest_secret = Rails.application.credentials.dig(
+  #   :recording_studio_webhooks, :token_digest_secret
+  # )
+
+  # Register providers and actions in deterministic names. A provider verifier
+  # may inspect request bytes and headers in memory, but must not log them.
+  #
+  # config.provider "example", policy: { max_retries: 2 } do |provider|
+  #   provider.event_type ->(payload) { payload.fetch("type") }
+  # end
+  #
+  # config.action "example.received", ->(context) { MyHandler.call(context) },
+  #   provider: "example", event: "example.received"
+end

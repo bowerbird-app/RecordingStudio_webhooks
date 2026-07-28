@@ -43,5 +43,9 @@ module Dummy
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # The dummy app exercises the engine migration directly. Host applications
+    # normally use `recording_studio_webhooks:migrations` during installation.
+    config.paths["db/migrate"] << RecordingStudioWebhooks::Engine.root.join("db/migrate").to_s
   end
 end

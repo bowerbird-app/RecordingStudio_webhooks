@@ -1,0 +1,42 @@
+<%= render FlatPack::PageTitle::Component.new(
+  title: "Token history",
+  subtitle: "Only prefixes and lifecycle metadata are retained. Plaintext values are never recoverable.",
+  variant: :h1
+) %>
+
+<% if @form_error.present? %>
+  <%= render FlatPack::Alert::Component.new(description: @form_error, style: :danger) %>
+<% end %>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.body do %>
+    <%= form_with url: admin_endpoint_tokens_path(@endpoint), scope: :endpoint_token, class: "mb-6 flex flex-wrap items-end gap-3" do |form| %>
+      <div>
+        <label class="block text-sm font-medium" for="endpoint_token_expires_at">Expiration (optional)</label>
+        <%= form.datetime_local_field :expires_at, class: "mt-1 rounded border p-2" %>
+      </div>
+      <%= render FlatPack::Button::Component.new(text: "Issue new token", style: :primary, size: :sm, type: "submit") %>
+    <% end %>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead><tr><th class="p-2">Prefix</th><th class="p-2">Issued</th><th class="p-2">Expires</th><th class="p-2">State</th><th></th></tr></thead>
+        <tbody>
+          <% @tokens.each do |token| %>
+            <tr class="border-t">
+              <td class="p-2 font-mono"><%= token.prefix %>…</td>
+              <td class="p-2"><%= token.created_at %></td>
+              <td class="p-2"><%= token.expires_at || "Never" %></td>
+              <td class="p-2"><%= token.current? ? "current" : token.revoked_at? ? "revoked" : "expired" %></td>
+              <td class="p-2 text-right">
+                <% if token.current? %>
+                  <%= button_to "Revoke", admin_endpoint_token_path(@endpoint, token), method: :delete, class: "text-sm underline" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+<% end %>

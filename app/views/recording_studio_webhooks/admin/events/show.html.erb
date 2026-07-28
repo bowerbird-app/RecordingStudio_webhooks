@@ -1,0 +1,43 @@
+<%= render FlatPack::PageTitle::Component.new(
+  title: @event.event_type,
+  subtitle: "Accepted #{@event.received_at}",
+  variant: :h1
+) %>
+
+<div class="grid gap-6 lg:grid-cols-2">
+  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Redacted payload", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@event.payload) %></pre>
+    <% end %>
+  <% end %>
+  <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Provenance", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@event.provenance) %></pre>
+    <% end %>
+  <% end %>
+</div>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.header do %>
+    <%= render FlatPack::PageTitle::Component.new(title: "Action plans", variant: :h3, class: "mb-0 pb-0") %>
+  <% end %>
+  <% card.body do %>
+    <ul class="space-y-3">
+      <% @event.action_plans.order(:execution_position).each do |plan| %>
+        <li class="flex items-center justify-between gap-3 border-b pb-3">
+          <span><strong><%= plan.action_name %></strong> · <%= plan.attempts %> attempt(s)</span>
+          <span>
+            <%= render FlatPack::Badge::Component.new(text: plan.status, style: webhook_status_style(plan.status), size: :sm) %>
+            <%= link_to "View", admin_endpoint_event_action_plan_path(@endpoint, @event, plan) %>
+          </span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+<% end %>

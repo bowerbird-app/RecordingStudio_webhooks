@@ -1,0 +1,52 @@
+<div class="flex items-center justify-between gap-4">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: "Webhook endpoints",
+    subtitle: "Inbound-only endpoints scoped to Recording Studio recordings.",
+    variant: :h1
+  ) %>
+  <%= render FlatPack::Button::Component.new(
+    text: "New endpoint",
+    style: :primary,
+    size: :md,
+    url: new_admin_endpoint_path
+  ) %>
+</div>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.body do %>
+    <% if @endpoints.any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr>
+              <th class="p-2">Provider</th>
+              <th class="p-2">Endpoint key</th>
+              <th class="p-2">Recording</th>
+              <th class="p-2">Status</th>
+              <th class="p-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @endpoints.each do |endpoint| %>
+              <tr class="border-t">
+                <td class="p-2"><%= endpoint.provider_name %></td>
+                <td class="p-2 font-mono"><%= endpoint.identity_key %></td>
+                <td class="p-2 font-mono text-xs"><%= endpoint.recording_studio_recording_id %></td>
+                <td class="p-2">
+                  <%= render FlatPack::Badge::Component.new(
+                    text: endpoint.enabled? ? "enabled" : "disabled",
+                    style: endpoint.enabled? ? :success : :warning,
+                    size: :sm
+                  ) %>
+                </td>
+                <td class="p-2 text-right"><%= link_to "Open", admin_endpoint_path(endpoint) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-sm">No endpoints are available for your Recording Studio recordings.</p>
+    <% end %>
+  <% end %>
+<% end %>

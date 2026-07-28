@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_12_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_28_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -79,6 +79,83 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_12_000000) do
     t.index ["root_recording_id"], name: "idx_rs_root_switchable_root_recording"
   end
 
+  create_table "recording_studio_webhooks_action_plans", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.jsonb "action_snapshot", default: {}, null: false
+    t.string "action_name", null: false
+    t.jsonb "attempt_history", default: [], null: false
+    t.integer "attempts", default: 0, null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.jsonb "endpoint_snapshot", default: {}, null: false
+    t.integer "execution_position", null: false
+    t.uuid "inbound_event_id", null: false
+    t.string "last_error"
+    t.datetime "next_attempt_at"
+    t.jsonb "policy_snapshot", default: {}, null: false
+    t.datetime "started_at"
+    t.string "status", default: "pending", null: false
+    t.jsonb "token_snapshot", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.index ["inbound_event_id", "action_name"], name: "index_rsw_plans_on_event_and_action", unique: true
+    t.index ["inbound_event_id", "execution_position"], name: "index_rsw_plans_on_event_and_position", unique: true
+    t.index ["inbound_event_id"], name: "index_recording_studio_webhooks_action_plans_on_inbound_event_id"
+    t.index ["status", "next_attempt_at"], name: "index_rsw_plans_on_status_and_next_attempt"
+  end
+
+  create_table "recording_studio_webhooks_endpoint_tokens", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "active_at", null: false
+    t.datetime "created_at", null: false
+    t.string "digest", null: false
+    t.uuid "endpoint_id", null: false
+    t.datetime "expires_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.string "prefix", null: false
+    t.datetime "revoked_at"
+    t.datetime "updated_at", null: false
+    t.index ["digest"], name: "index_recording_studio_webhooks_endpoint_tokens_on_digest", unique: true
+    t.index ["endpoint_id", "active_at"], name: "index_rsw_tokens_on_endpoint_and_active_at"
+    t.index ["endpoint_id"], name: "index_recording_studio_webhooks_endpoint_tokens_on_endpoint_id"
+    t.index ["endpoint_id"], name: "index_rsw_tokens_one_unrevoked_per_endpoint", unique: true, where: "(revoked_at IS NULL)"
+  end
+
+  create_table "recording_studio_webhooks_endpoints", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.jsonb "identity", default: {}, null: false
+    t.string "identity_key", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.jsonb "policy_overrides", default: {}, null: false
+    t.string "provider_name", null: false
+    t.uuid "recording_studio_recording_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider_name"], name: "index_recording_studio_webhooks_endpoints_on_provider_name"
+    t.index ["recording_studio_recording_id", "provider_name", "identity_key"], name: "index_rsw_endpoints_on_recording_provider_identity", unique: true
+    t.index ["recording_studio_recording_id"], name: "index_recording_studio_webhooks_endpoints_on_recording_studio_recording_id"
+  end
+
+  create_table "recording_studio_webhooks_inbound_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "deduplication_key", null: false
+    t.uuid "endpoint_id", null: false
+    t.jsonb "endpoint_snapshot", default: {}, null: false
+    t.uuid "endpoint_token_id", null: false
+    t.string "event_type", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.string "payload_digest", null: false
+    t.jsonb "policy_snapshot", default: {}, null: false
+    t.string "provider_event_id"
+    t.string "provider_name", null: false
+    t.jsonb "provenance", default: {}, null: false
+    t.datetime "received_at", null: false
+    t.string "status", default: "accepted", null: false
+    t.jsonb "token_snapshot", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.index ["endpoint_id", "deduplication_key"], name: "index_rsw_events_on_endpoint_and_deduplication", unique: true
+    t.index ["endpoint_id"], name: "index_recording_studio_webhooks_inbound_events_on_endpoint_id"
+    t.index ["endpoint_token_id"], name: "index_recording_studio_webhooks_inbound_events_on_endpoint_token_id"
+    t.index ["provider_name", "event_type", "received_at"], name: "index_rsw_events_on_provider_event_received"
+  end
+
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false
@@ -100,4 +177,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_12_000000) do
   add_foreign_key "recording_studio_events", "recording_studio_recordings", column: "recording_id"
   add_foreign_key "recording_studio_recordings", "recording_studio_recordings", column: "parent_recording_id"
   add_foreign_key "recording_studio_recordings", "recording_studio_recordings", column: "root_recording_id"
+  add_foreign_key "recording_studio_webhooks_action_plans", "recording_studio_webhooks_inbound_events", column: "inbound_event_id"
+  add_foreign_key "recording_studio_webhooks_endpoint_tokens", "recording_studio_webhooks_endpoints", column: "endpoint_id"
+  add_foreign_key "recording_studio_webhooks_endpoints", "recording_studio_recordings", column: "recording_studio_recording_id"
+  add_foreign_key "recording_studio_webhooks_inbound_events", "recording_studio_webhooks_endpoint_tokens", column: "endpoint_token_id"
+  add_foreign_key "recording_studio_webhooks_inbound_events", "recording_studio_webhooks_endpoints", column: "endpoint_id"
 end

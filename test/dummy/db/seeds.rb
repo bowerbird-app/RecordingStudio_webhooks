@@ -41,6 +41,18 @@ begin
   folder_recording = find_or_record_child.call(folder, root_recording, root_recording)
 
   find_or_record_child.call(page, root_recording, folder_recording)
+
+  if RecordingStudioWebhooks::Endpoint.table_exists?
+    RecordingStudioWebhooks::Endpoint.find_or_create_by!(
+      recording_studio_recording_id: root_recording.id,
+      provider_name: "demo",
+      identity_key: "demo"
+    ) do |endpoint|
+      endpoint.identity = { "environment" => "dummy" }
+      endpoint.metadata = { "owner" => "demo" }
+      endpoint.enabled = true
+    end
+  end
 ensure
   Current.actor = previous_actor
 end
@@ -50,3 +62,4 @@ puts "Seeded: Workspace '#{workspace.name}' with root recording ##{root_recordin
 puts "Seeded: Workspace '#{accessible_workspace.name}' with root recording ##{accessible_root_recording.id}"
 puts "Seeded: Workspace '#{private_workspace.name}' with root recording ##{private_root_recording.id}"
 puts "Seeded: Folder '#{folder.name}' and page '#{page.title}'"
+puts "Seeded: demo webhook endpoint (issue its token from the admin UI)"
