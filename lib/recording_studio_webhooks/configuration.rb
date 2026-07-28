@@ -15,7 +15,7 @@ module RecordingStudioWebhooks
       :max_payload_bytes, :content_types, :secret_redaction_keys, :provenance_keys,
       :authorization_hook, :rate_limiter, :admin_authorizer, :admin_recording_scope,
       :provider_roots, :action_roots, :framework_policy_overrides,
-      :default_policy_overrides, :global_policy_overrides, :recording_studio_parent_types
+      :default_policy_overrides, :global_policy_overrides
     attr_reader :automatic_discovery
 
     def initialize
@@ -39,7 +39,6 @@ module RecordingStudioWebhooks
       @provider_roots = [].freeze
       @action_roots = [].freeze
       @automatic_discovery = false
-      @recording_studio_parent_types = [].freeze
     end
 
     def default_policy=(value)
@@ -163,18 +162,6 @@ module RecordingStudioWebhooks
       @automatic_discovery = value
     end
 
-    # Endpoint snapshots are child recordables beneath one of these root
-    # recordable types. Leave this empty to use Recording Studio's configured
-    # root types automatically; set it to make the allowed hierarchy explicit.
-    def recording_studio_parent_types=(value)
-      @recording_studio_parent_types = Array(value).map do |type|
-        name = type.is_a?(Class) ? type.name : type.to_s
-        raise ConfigurationError, "Recording Studio parent type is invalid" if name.empty?
-
-        name.freeze
-      end.uniq.sort.freeze
-    end
-
     def provider(name, implementation = nil, **options, &)
       providers.register(name, implementation, **options, &)
     end
@@ -228,7 +215,6 @@ module RecordingStudioWebhooks
           endpoint: "endpoint snapshot policy"
         },
         default_policy: default_policy.to_h,
-        recording_studio_parent_types: recording_studio_parent_types,
         providers: providers.all.map(&:snapshot),
         actions: actions.all.map(&:snapshot),
         automatic_discovery: automatic_discovery

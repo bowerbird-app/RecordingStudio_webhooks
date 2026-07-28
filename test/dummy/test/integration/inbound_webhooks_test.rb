@@ -146,6 +146,41 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes invalid_json.errors[:metadata], "must be a JSON object"
   end
 
+  test "endpoint lifecycle rolls back creates and updates when audit logging fails" do
+    attributes = {
+      recording_studio_recording: @recording,
+      provider_name: "demo",
+      identity_key: "audit-#{SecureRandom.hex(4)}",
+      identity: {},
+      metadata: {},
+      policy_overrides: {}
+    }
+    failing_audit = ->(**_arguments) { raise RecordingStudioWebhooks::Error, "audit unavailable" }
+
+    assert_no_difference -> { RecordingStudioWebhooks::Endpoint.count } do
+      assert_raises(RecordingStudioWebhooks::Error) do
+        RecordingStudioWebhooks::RecordingStudioGateway.stub(:log_event!, failing_audit) do
+          RecordingStudioWebhooks::EndpointLifecycle.create!(
+            endpoint: RecordingStudioWebhooks::Endpoint.new(attributes),
+            actor: @user
+          )
+        end
+      end
+    end
+
+    original_enabled = @endpoint.enabled?
+    assert_raises(RecordingStudioWebhooks::Error) do
+      RecordingStudioWebhooks::RecordingStudioGateway.stub(:log_event!, failing_audit) do
+        RecordingStudioWebhooks::EndpointLifecycle.update!(
+          endpoint: @endpoint,
+          attributes: { enabled: !original_enabled },
+          actor: @user
+        )
+      end
+    end
+    assert_equal original_enabled, @endpoint.reload.enabled?
+  end
+
   test "temporary dispatcher failures keep an accepted action plan recoverable" do
     configuration = RecordingStudioWebhooks.configuration
     original_dispatcher = configuration.dispatcher
@@ -184,6 +219,15 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "[FILTERED]"
     refute_includes response.body, "never-render-this"
     assert_equal 0, @endpoint.inbound_events.count
+  end
+
+  test "authorized administrators can list endpoints with stable recording ownership" do
+    sign_in @user
+
+    get "/webhooks/admin/endpoints"
+
+    assert_response :success
+    assert_includes response.body, @endpoint.identity_key
   end
 
   test "administration fails closed when its authorizer is absent" do

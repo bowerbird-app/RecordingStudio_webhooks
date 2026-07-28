@@ -6,7 +6,7 @@ module RecordingStudioWebhooks
       before_action :load_endpoint, only: %i[show edit update]
 
       def index
-        @endpoints = endpoint_scope.includes(:recording, :endpoint_tokens).order(created_at: :desc)
+        @endpoints = endpoint_scope.includes(:recording_studio_recording, :endpoint_tokens).order(created_at: :desc)
       end
 
       def new
@@ -17,17 +17,15 @@ module RecordingStudioWebhooks
         @endpoint = Endpoint.new(endpoint_attributes)
         @endpoint.recording_studio_recording_id = selected_recording.id
 
-        if @form_error.nil? && registered_provider? && @endpoint.save
-          @endpoint.audit!(
-            action: "recording_studio_webhooks.endpoint.created",
-            actor: current_admin_actor,
-            metadata: { endpoint_id: @endpoint.id }
-          )
+        if @form_error.nil? && registered_provider?
+          EndpointLifecycle.create!(endpoint: @endpoint, actor: current_admin_actor)
           redirect_to admin_endpoint_path(@endpoint), notice: "Endpoint created."
         else
           @form_error ||= "Choose a registered provider." unless registered_provider?
           render :new, status: :unprocessable_entity
         end
+      rescue ActiveRecord::RecordInvalid
+        render :new, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"
       end
@@ -41,16 +39,19 @@ module RecordingStudioWebhooks
       end
 
       def update
-        if @form_error.nil? && @endpoint.update(endpoint_update_attributes)
-          @endpoint.audit!(
-            action: "recording_studio_webhooks.endpoint.revised",
-            actor: current_admin_actor,
-            metadata: { endpoint_id: @endpoint.id }
+        attributes = endpoint_update_attributes
+        if @form_error.nil?
+          EndpointLifecycle.update!(
+            endpoint: @endpoint,
+            attributes: attributes,
+            actor: current_admin_actor
           )
           redirect_to admin_endpoint_path(@endpoint), notice: "Endpoint updated."
         else
           render :edit, status: :unprocessable_entity
         end
+      rescue ActiveRecord::RecordInvalid
+        render :edit, status: :unprocessable_entity
       end
 
       private
