@@ -1,0 +1,6 @@
+Admin root
+└── Admin Webhooks (apply accesses here via RS_accessible)
+    ├── Provider
+    │   └── Endpoint
+    │       └── Token
+    └── Webhook Sandbox
