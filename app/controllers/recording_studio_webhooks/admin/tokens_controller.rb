@@ -4,9 +4,11 @@ module RecordingStudioWebhooks
   module Admin
     class TokensController < BaseController
       before_action :load_endpoint
+      before_action :authorize_admin_webhooks_write!, only: %i[create destroy]
 
       def index
         @tokens = @endpoint.endpoint_tokens.order(created_at: :desc)
+        @events_by_token_id = @endpoint.inbound_events.group(:endpoint_token_id).count
       end
 
       def create
@@ -16,11 +18,13 @@ module RecordingStudioWebhooks
           actor: current_admin_actor
         )
         @issued_token = issuance.plaintext_token
+        @endpoint_url = "#{request.base_url}#{inbound_path(provider: @endpoint.provider_name, endpoint_identity: @endpoint.identity_key)}"
         response.headers["Cache-Control"] = "no-store, max-age=0"
         response.headers["Pragma"] = "no-cache"
         render :show, status: :created
       rescue ArgumentError, ActiveRecord::RecordInvalid
         @tokens = @endpoint.endpoint_tokens.order(created_at: :desc)
+        @events_by_token_id = @endpoint.inbound_events.group(:endpoint_token_id).count
         @form_error = "The token could not be issued."
         render :index, status: :unprocessable_entity
       end

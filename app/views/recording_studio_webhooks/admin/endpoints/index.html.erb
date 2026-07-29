@@ -1,16 +1,35 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: admin_root_path,
+  anchor_tooltip: "Close"
+) %>
+
 <div class="flex items-center justify-between gap-4">
   <%= render FlatPack::PageTitle::Component.new(
-    title: "Webhook endpoints",
-    subtitle: "Inbound-only endpoints scoped to Recording Studio recordings.",
+    title: "Endpoints",
+    subtitle: "Managed endpoint identities under Admin Webhooks providers.",
     variant: :h1
   ) %>
-  <%= render FlatPack::Button::Component.new(
-    text: "New endpoint",
-    style: :primary,
-    size: :md,
-    url: new_admin_endpoint_path
-  ) %>
+  <div class="flex gap-2">
+    <%= render FlatPack::Button::Component.new(text: "New endpoint", style: :primary, size: :md, url: new_admin_endpoint_path) %>
+  </div>
 </div>
+
+<%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+  <% card.body do %>
+    <%= form_with url: admin_endpoints_path, method: :get, class: "flex flex-wrap items-end gap-3" do |form| %>
+      <div>
+        <label class="block text-sm font-medium" for="provider">Provider</label>
+        <select id="provider" name="provider" class="mt-1 rounded border p-2 text-sm">
+          <option value="">All providers</option>
+          <% @providers.each do |provider| %>
+            <option value="<%= provider.name %>" <%= "selected" if @selected_provider == provider.name %>><%= provider.name %></option>
+          <% end %>
+        </select>
+      </div>
+      <%= render FlatPack::Button::Component.new(text: "Apply", style: :secondary, size: :sm, type: "submit") %>
+    <% end %>
+  <% end %>
+<% end %>
 
 <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
   <% card.body do %>
@@ -39,7 +58,11 @@
                     size: :sm
                   ) %>
                 </td>
-                <td class="p-2 text-right"><%= link_to "Open", admin_endpoint_path(endpoint) %></td>
+                <td class="p-2 text-right">
+                  <%= link_to "Provider", admin_provider_path(endpoint.provider_name) %>
+                  ·
+                  <%= link_to "Open", admin_endpoint_path(endpoint) %>
+                </td>
               </tr>
             <% end %>
           </tbody>

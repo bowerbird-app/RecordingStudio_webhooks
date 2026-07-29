@@ -1,6 +1,11 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: admin_root_path,
+  anchor_tooltip: "Close"
+) %>
+
 <%= render FlatPack::PageTitle::Component.new(
-  title: "Action sandbox",
-  subtitle: "Validate provider matching and redaction without persisting or executing an action.",
+  title: "Webhook Sandbox",
+  subtitle: "Dry-run endpoint/provider resolution, signatures, parsing, and action planning without persistence or execution.",
   variant: :h1
 ) %>
 
@@ -10,23 +15,66 @@
 
 <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
   <% card.body do %>
-    <%= form_with url: admin_endpoint_sandbox_path(@endpoint), scope: :sandbox, class: "space-y-4" do |form| %>
+    <%= form_with url: admin_webhook_sandbox_path, scope: :sandbox, class: "space-y-4" do |form| %>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="block text-sm font-medium" for="sandbox_provider_name">Provider</label>
+          <select id="sandbox_provider_name" name="sandbox[provider_name]" class="mt-1 block w-full rounded border p-2 text-sm">
+            <option value="">Select provider</option>
+            <% @providers.each do |provider| %>
+              <% selected_provider = @selected_provider_name || params.dig(:sandbox, :provider_name).to_s %>
+              <option value="<%= provider.name %>" <%= "selected" if selected_provider == provider.name %>><%= provider.name %></option>
+            <% end %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium" for="sandbox_endpoint_id">Endpoint (optional)</label>
+          <select id="sandbox_endpoint_id" name="sandbox[endpoint_id]" class="mt-1 block w-full rounded border p-2 text-sm">
+            <option value="">Auto-select first matching endpoint</option>
+            <% @endpoints.each do |endpoint| %>
+              <% selected_endpoint = (@endpoint&.id || params.dig(:sandbox, :endpoint_id)).to_s %>
+              <option value="<%= endpoint.id %>" <%= "selected" if selected_endpoint == endpoint.id %>><%= endpoint.provider_name %> / <%= endpoint.identity_key %></option>
+            <% end %>
+          </select>
+        </div>
+      </div>
       <%= render FlatPack::TextInput::Component.new(
         name: "sandbox[event_type]",
-        label: "Event type",
+        label: "Event type (optional when extractor exists)",
         value: params.dig(:sandbox, :event_type).to_s,
-        required: true,
+        required: false,
         placeholder: "invoice.paid"
       ) %>
+      <label class="block text-sm font-medium" for="sandbox_headers_json">Test headers JSON</label>
+      <%= form.text_area :headers_json, value: params.dig(:sandbox, :headers_json).to_s, rows: 6, class: "block w-full rounded border p-2 font-mono text-sm", placeholder: '{"authorization":"Bearer rswh_...","x-webhook-timestamp":"2026-07-29T00:00:00Z"}' %>
       <label class="block text-sm font-medium" for="sandbox_payload">Sample JSON payload</label>
-      <%= form.text_area :payload, value: "", rows: 10, class: "block w-full rounded border p-2 font-mono text-sm", required: true %>
-      <%= render FlatPack::Button::Component.new(text: "Validate plan", style: :primary, size: :md, type: "submit") %>
+      <%= form.text_area :payload, value: params.dig(:sandbox, :payload).to_s, rows: 10, class: "block w-full rounded border p-2 font-mono text-sm", required: true %>
+      <%= render FlatPack::Button::Component.new(text: "Run dry-run validation", style: :primary, size: :md, type: "submit") %>
     <% end %>
   <% end %>
 <% end %>
 
 <% if @sandbox_result %>
   <div class="grid gap-6 lg:grid-cols-2">
+    <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+      <% card.header do %>
+        <%= render FlatPack::PageTitle::Component.new(title: "Resolution checks", variant: :h3, class: "mb-0 pb-0") %>
+      <% end %>
+      <% card.body do %>
+        <% checks = @sandbox_result.fetch("checks") %>
+        <ul class="space-y-2 text-sm">
+          <li>Endpoint resolved: <strong><%= checks.fetch("endpoint_resolved") ? "yes" : "no" %></strong></li>
+          <li>Token resolved: <strong><%= checks.fetch("token_resolved") ? "yes" : "no" %></strong></li>
+          <li>Token snapshot: <strong><%= checks.fetch("token_snapshot_id") || "none" %></strong></li>
+          <li>Timestamp: <strong><%= checks.fetch("timestamp_valid") ? "valid" : "invalid" %></strong> · <%= checks.fetch("timestamp_message") %></li>
+          <li>Signature: <strong><%= checks.fetch("signature_verified") ? "verified" : "not verified" %></strong> · <%= checks.fetch("signature_message") %></li>
+          <li>Event extraction: <strong><%= checks.fetch("event_type") %></strong></li>
+          <li>Dispatcher: <strong><%= @sandbox_result.fetch("dispatcher") %></strong></li>
+          <li>Persistence: <strong>disabled (dry-run only)</strong></li>
+        </ul>
+      <% end %>
+    <% end %>
+
     <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(title: "Redacted sample", variant: :h3, class: "mb-0 pb-0") %>
@@ -43,7 +91,12 @@
         <% if @sandbox_result.fetch("actions").any? %>
           <ul class="space-y-3 text-sm">
             <% @sandbox_result.fetch("actions").each do |action| %>
-              <li><strong><%= action.fetch("name") %></strong> · <%= action.fetch("execution_mode") %> · retries: <%= action.fetch("max_retries") %></li>
+              <li>
+                <strong><%= action.fetch("name") %></strong>
+                · <%= action.fetch("execution_mode") %>
+                · retries: <%= action.fetch("max_retries") %>
+                · source: <%= action.fetch("source") %>
+              </li>
             <% end %>
           </ul>
         <% else %>

@@ -2,7 +2,7 @@
 
 <%= render FlatPack::PageTitle::Component.new(
   title: "Copy this token now",
-  subtitle: "It will not be shown again after you leave this response.",
+  subtitle: "This token and complete URL are shown once after issuance/rotation.",
   variant: :h1
 ) %>
 
@@ -13,7 +13,11 @@
 
 <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
   <% card.body do %>
+    <p class="mb-2 text-sm font-medium">Webhook URL</p>
+    <code class="mb-4 block break-all rounded bg-black/5 p-4 text-sm"><%= @endpoint_url %></code>
+    <p class="mb-2 text-sm font-medium">Bearer token</p>
     <code class="block break-all rounded bg-black/5 p-4 text-sm"><%= @issued_token %></code>
+    <p class="mt-3 text-xs text-gray-600">Stored token digests and previous plaintext values are never displayed.</p>
   <% end %>
   <% card.footer do %>
     <%= render FlatPack::Button::Component.new(

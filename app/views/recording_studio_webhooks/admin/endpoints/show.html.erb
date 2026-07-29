@@ -1,10 +1,16 @@
 <div class="flex flex-wrap items-center justify-between gap-4">
   <%= render FlatPack::PageTitle::Component.new(
     title: @endpoint.identity_key,
-    subtitle: "#{@endpoint.provider_name} · Recording #{@endpoint.recording_studio_recording_id}",
+    subtitle: "Provider #{@endpoint.provider_name} · Recording #{@endpoint.recording_studio_recording_id}",
     variant: :h1
   ) %>
   <div class="flex gap-2">
+    <%= render FlatPack::Button::Component.new(
+      text: "Provider",
+      style: :secondary,
+      size: :sm,
+      url: admin_provider_path(@endpoint.provider_name)
+    ) %>
     <%= render FlatPack::Button::Component.new(
       text: "Edit",
       style: :secondary,
@@ -12,10 +18,10 @@
       url: edit_admin_endpoint_path(@endpoint)
     ) %>
     <%= render FlatPack::Button::Component.new(
-      text: "Sandbox",
+      text: "Webhook Sandbox",
       style: :secondary,
       size: :sm,
-      url: admin_endpoint_sandbox_path(@endpoint)
+      url: admin_webhook_sandbox_path(endpoint_id: @endpoint.id, provider_name: @endpoint.provider_name)
     ) %>
   </div>
 </div>
@@ -43,6 +49,7 @@
     <% card.body do %>
       <p class="text-sm">Public address:</p>
       <code class="mt-2 block break-all rounded bg-black/5 p-2 text-xs"><%= inbound_path(provider: @endpoint.provider_name, endpoint_identity: @endpoint.identity_key) %></code>
+      <p class="mt-4 text-sm">Payload limit: <strong><%= webhook_configuration.max_payload_bytes %></strong> bytes</p>
       <p class="mt-4 text-sm">Status:
         <%= render FlatPack::Badge::Component.new(
           text: @endpoint.enabled? ? "enabled" : "disabled",
@@ -50,6 +57,35 @@
           size: :sm
         ) %>
       </p>
+    <% end %>
+  <% end %>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-2">
+  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Settings and policies", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json({
+        provider_fingerprint: @provider&.fingerprint,
+        identity: @endpoint.identity,
+        metadata: @endpoint.metadata,
+        policy_overrides: @endpoint.policy_overrides
+      }) %></pre>
+    <% end %>
+  <% end %>
+
+  <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Revision history", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <dl class="grid gap-2 text-sm">
+        <div><dt class="font-medium">Created</dt><dd><%= @endpoint.created_at %></dd></div>
+        <div><dt class="font-medium">Last changed</dt><dd><%= @endpoint.updated_at %></dd></div>
+        <div><dt class="font-medium">Token revisions</dt><dd><%= @tokens.size %></dd></div>
+      </dl>
     <% end %>
   <% end %>
 </div>

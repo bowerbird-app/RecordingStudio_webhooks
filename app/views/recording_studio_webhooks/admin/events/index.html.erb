@@ -1,18 +1,83 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: admin_root_path,
+  anchor_tooltip: "Close"
+) %>
+
 <%= render FlatPack::PageTitle::Component.new(
   title: "Inbound events",
-  subtitle: "Persisted payloads are redacted before storage.",
+  subtitle: "Redacted intake logs with provider, endpoint, token, status, date, and mode filters.",
   variant: :h1
 ) %>
 
+<%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+  <% card.body do %>
+    <%= form_with url: params[:endpoint_id].present? ? admin_endpoint_events_path(@endpoint) : admin_events_path, method: :get, class: "grid gap-3 md:grid-cols-4" do |form| %>
+      <div>
+        <label class="block text-sm font-medium" for="provider_name">Provider</label>
+        <select id="provider_name" name="provider_name" class="mt-1 w-full rounded border p-2 text-sm">
+          <option value="">All</option>
+          <% @providers.each do |provider| %>
+            <option value="<%= provider.name %>" <%= "selected" if @filter[:provider_name] == provider.name %>><%= provider.name %></option>
+          <% end %>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium" for="endpoint_id">Endpoint</label>
+        <select id="endpoint_id" name="endpoint_id" class="mt-1 w-full rounded border p-2 text-sm">
+          <option value="">All</option>
+          <% @endpoints.each do |endpoint| %>
+            <option value="<%= endpoint.id %>" <%= "selected" if @filter[:endpoint_id] == endpoint.id %>><%= endpoint.provider_name %> / <%= endpoint.identity_key %></option>
+          <% end %>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium" for="endpoint_token_id">Token snapshot</label>
+        <%= form.text_field :endpoint_token_id, value: @filter[:endpoint_token_id], class: "mt-1 w-full rounded border p-2 text-sm", placeholder: "token UUID" %>
+      </div>
+      <div>
+        <label class="block text-sm font-medium" for="event_type">Event type</label>
+        <%= form.text_field :event_type, value: @filter[:event_type], class: "mt-1 w-full rounded border p-2 text-sm", placeholder: "invoice.paid" %>
+      </div>
+      <div>
+        <label class="block text-sm font-medium" for="status">Status</label>
+        <%= form.select :status, options_for_select([["All", ""], ["accepted", "accepted"], ["planned", "planned"]], @filter[:status]), {}, class: "mt-1 w-full rounded border p-2 text-sm" %>
+      </div>
+      <div>
+        <label class="block text-sm font-medium" for="execution_mode">Mode</label>
+        <%= form.select :execution_mode, options_for_select([["All", ""], ["parallel", "parallel"], ["sequential", "sequential"]], @filter[:execution_mode]), {}, class: "mt-1 w-full rounded border p-2 text-sm" %>
+      </div>
+      <div>
+        <label class="block text-sm font-medium" for="from">From</label>
+        <%= form.datetime_local_field :from, value: @filter[:from], class: "mt-1 w-full rounded border p-2 text-sm" %>
+      </div>
+      <div>
+        <label class="block text-sm font-medium" for="to">To</label>
+        <%= form.datetime_local_field :to, value: @filter[:to], class: "mt-1 w-full rounded border p-2 text-sm" %>
+      </div>
+      <div class="md:col-span-4">
+        <%= render FlatPack::Button::Component.new(text: "Apply filters", style: :primary, size: :sm, type: "submit") %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
+
 <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
   <% card.body do %>
-    <ul class="space-y-3">
-      <% @events.each do |event| %>
-        <li class="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
-          <div><strong><%= event.event_type %></strong><br><span class="text-sm"><%= event.received_at %> · <%= event.status %></span></div>
-          <%= link_to "View", admin_endpoint_event_path(@endpoint, event) %>
-        </li>
-      <% end %>
-    </ul>
+    <% if @events.any? %>
+      <ul class="space-y-3">
+        <% @events.each do |event| %>
+          <li class="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+            <div>
+              <strong><%= event.provider_name %> · <%= event.event_type %></strong><br>
+              <span class="text-sm"><%= event.received_at %> · <%= event.status %> · endpoint <%= event.endpoint.identity_key %></span><br>
+              <span class="text-xs text-gray-600">token snapshot: <%= event.endpoint_token_id %> · attempts: <%= event.action_plans.sum(&:attempts) %></span>
+            </div>
+            <%= link_to "View", admin_endpoint_event_path(event.endpoint_id, event) %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm">No events match the current filters.</p>
+    <% end %>
   <% end %>
 <% end %>

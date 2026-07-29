@@ -3,26 +3,38 @@
 module RecordingStudioWebhooks
   module Admin
     class BaseController < ApplicationController
-      AdminContext = Struct.new(:controller, :actor, keyword_init: true)
+      ADMIN_WEBHOOKS_SECTION_KEY = "admin_webhooks"
 
-      before_action :require_admin!
+      AdminContext = Struct.new(:controller, :actor, :section_key, :permission, keyword_init: true)
+
+      layout :admin_layout
+
+      before_action :authorize_admin_webhooks_read!
       before_action :require_flat_pack!
 
       helper_method :available_recordings, :webhook_configuration
 
       private
 
-      def require_admin!
-        return if admin_authorized?
+      def authorize_admin_webhooks_read!
+        require_admin!(permission: :view)
+      end
+
+      def authorize_admin_webhooks_write!
+        require_admin!(permission: :admin)
+      end
+
+      def require_admin!(permission: :view)
+        return if admin_authorized?(permission: permission)
 
         raise ActionController::RoutingError, "Not Found"
       end
 
-      def admin_authorized?
+      def admin_authorized?(permission: :view)
         authorizer = webhook_configuration.admin_authorizer
         return false unless authorizer
 
-        invoke_callable(authorizer, admin_context) == true
+        invoke_callable(authorizer, admin_context(permission: permission)) == true
       rescue StandardError
         false
       end
@@ -36,8 +48,13 @@ module RecordingStudioWebhooks
         render plain: "Recording Studio Webhooks administration requires FlatPack.", status: :service_unavailable
       end
 
-      def admin_context
-        @admin_context ||= AdminContext.new(controller: self, actor: current_admin_actor)
+      def admin_context(permission: :view)
+        AdminContext.new(
+          controller: self,
+          actor: current_admin_actor,
+          section_key: ADMIN_WEBHOOKS_SECTION_KEY,
+          permission: permission
+        )
       end
 
       def current_admin_actor
@@ -97,6 +114,14 @@ module RecordingStudioWebhooks
         return ::RecordingStudio::Recording.none if defined?(::RecordingStudio::Recording)
 
         Endpoint.none
+      end
+
+      def admin_layout
+        if lookup_context.exists?("flat_pack_sidebar", ["layouts"], true)
+          "flat_pack_sidebar"
+        else
+          "recording_studio_webhooks/application"
+        end
       end
     end
   end

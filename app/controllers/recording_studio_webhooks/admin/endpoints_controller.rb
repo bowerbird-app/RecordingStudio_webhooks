@@ -4,9 +4,15 @@ module RecordingStudioWebhooks
   module Admin
     class EndpointsController < BaseController
       before_action :load_endpoint, only: %i[show edit update]
+      before_action :authorize_admin_webhooks_write!, only: %i[create update]
 
       def index
-        @endpoints = endpoint_scope.includes(:recording_studio_recording, :endpoint_tokens).order(created_at: :desc)
+        @providers = webhook_configuration.providers.all.sort_by(&:name)
+        @selected_provider = params[:provider].to_s.presence
+
+        scope = endpoint_scope.includes(:recording_studio_recording, :endpoint_tokens).order(created_at: :desc)
+        scope = scope.where(provider_name: @selected_provider) if @selected_provider.present?
+        @endpoints = scope
       end
 
       def new
@@ -18,8 +24,17 @@ module RecordingStudioWebhooks
         @endpoint.recording_studio_recording_id = selected_recording.id
 
         if @form_error.nil? && registered_provider?
-          EndpointLifecycle.create!(endpoint: @endpoint, actor: current_admin_actor)
-          redirect_to admin_endpoint_path(@endpoint), notice: "Endpoint created."
+          issuance = nil
+          Endpoint.transaction do
+            EndpointLifecycle.create!(endpoint: @endpoint, actor: current_admin_actor)
+            issuance = @endpoint.issue_token!(actor: current_admin_actor)
+          end
+
+          @issued_token = issuance.plaintext_token
+          @endpoint_url = "#{request.base_url}#{inbound_path(provider: @endpoint.provider_name, endpoint_identity: @endpoint.identity_key)}"
+          response.headers["Cache-Control"] = "no-store, max-age=0"
+          response.headers["Pragma"] = "no-cache"
+          render "recording_studio_webhooks/admin/tokens/show", status: :created
         else
           @form_error ||= "Choose a registered provider." unless registered_provider?
           render :new, status: :unprocessable_entity
@@ -31,6 +46,7 @@ module RecordingStudioWebhooks
       end
 
       def show
+        @provider = webhook_configuration.providers.fetch(@endpoint.provider_name)
         @tokens = @endpoint.endpoint_tokens.order(created_at: :desc)
         @events = @endpoint.inbound_events.includes(:action_plans).order(received_at: :desc).limit(20)
       end
@@ -57,7 +73,21 @@ module RecordingStudioWebhooks
       private
 
       def selected_recording
-        available_recordings.find(params.require(:endpoint).fetch(:recording_studio_recording_id))
+        current_root = current_root_recording_for_assignment
+        raise ActiveRecord::RecordNotFound unless current_root
+
+        available_recordings.find(current_root.id)
+      end
+
+      def current_root_recording_for_assignment
+        return unless respond_to?(:current_root_recording, true)
+
+        root = send(:current_root_recording)
+        return unless root.present?
+
+        available_recordings.find_by(id: root.id)
+      rescue StandardError
+        nil
       end
 
       def endpoint_attributes

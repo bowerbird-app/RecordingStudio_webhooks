@@ -1,6 +1,6 @@
 <%= render FlatPack::PageTitle::Component.new(
   title: "Token history",
-  subtitle: "Only prefixes and lifecycle metadata are retained. Plaintext values are never recoverable.",
+  subtitle: "Issue, rotate, revoke, and inspect token snapshots without exposing secrets.",
   variant: :h1
 ) %>
 
@@ -20,14 +20,17 @@
 
     <div class="overflow-x-auto">
       <table class="w-full text-left text-sm">
-        <thead><tr><th class="p-2">Prefix</th><th class="p-2">Issued</th><th class="p-2">Expires</th><th class="p-2">State</th><th></th></tr></thead>
+        <thead><tr><th class="p-2">Prefix</th><th class="p-2">Issued</th><th class="p-2">Active</th><th class="p-2">Expires</th><th class="p-2">Revoked</th><th class="p-2">State</th><th class="p-2">Logs</th><th></th></tr></thead>
         <tbody>
           <% @tokens.each do |token| %>
             <tr class="border-t">
               <td class="p-2 font-mono"><%= token.prefix %>…</td>
               <td class="p-2"><%= token.created_at %></td>
+              <td class="p-2"><%= token.active_at %></td>
               <td class="p-2"><%= token.expires_at || "Never" %></td>
+              <td class="p-2"><%= token.revoked_at || "-" %></td>
               <td class="p-2"><%= token.current? ? "current" : token.revoked_at? ? "revoked" : "expired" %></td>
+              <td class="p-2"><%= @events_by_token_id.fetch(token.id, 0) %> event(s)</td>
               <td class="p-2 text-right">
                 <% if token.current? %>
                   <%= button_to "Revoke", admin_endpoint_token_path(@endpoint, token), method: :delete, class: "text-sm underline" %>
@@ -38,5 +41,7 @@
         </tbody>
       </table>
     </div>
+
+    <p class="mt-4 text-xs text-gray-600">Token snapshot logs are grouped by issued token ID. Digests and prior plaintext values are never displayed.</p>
   <% end %>
 <% end %>

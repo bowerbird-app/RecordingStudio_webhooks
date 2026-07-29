@@ -7,11 +7,14 @@
   <% end %>
 
   <% unless @endpoint.persisted? %>
-    <label class="block text-sm font-medium" for="endpoint_recording_studio_recording_id">Recording</label>
-    <%= form.select :recording_studio_recording_id,
-      available_recordings.order(:created_at).map { |recording| ["Recording #{recording.id}", recording.id] },
-      { include_blank: "Select a Recording Studio recording" },
-      class: "mt-1 block w-full rounded border p-2" %>
+    <% if respond_to?(:current_root_recording, true) && current_root_recording.present? %>
+      <%= form.hidden_field :recording_studio_recording_id, value: current_root_recording.id %>
+    <% else %>
+      <%= render FlatPack::Alert::Component.new(
+        description: "Select a root recording in the host app before creating endpoints.",
+        style: :warning
+      ) %>
+    <% end %>
 
     <label class="block text-sm font-medium" for="endpoint_provider_name">Provider</label>
     <%= form.select :provider_name,
@@ -59,6 +62,7 @@
     text: @endpoint.persisted? ? "Save endpoint" : "Create endpoint",
     style: :primary,
     size: :md,
-    type: "submit"
+    type: "submit",
+    disabled: !@endpoint.persisted? && (!respond_to?(:current_root_recording, true) || current_root_recording.blank?)
   ) %>
 <% end %>
