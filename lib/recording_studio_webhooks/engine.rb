@@ -26,11 +26,15 @@ module RecordingStudioWebhooks
       next unless app.config.respond_to?(:x) && app.config.x.respond_to?(:recording_studio_webhooks)
 
       configured = app.config.x.recording_studio_webhooks
-      configuration.merge!(configured.to_h) if configured.respond_to?(:to_h)
+      RecordingStudioWebhooks.configuration.merge!(configured.to_h) if configured.respond_to?(:to_h)
     end
 
     initializer "recording_studio_webhooks.discover_registrations" do
       config.to_prepare { RecordingStudioWebhooks.configuration.discover! }
+    end
+
+    initializer "recording_studio_webhooks.register_admin_section" do
+      config.to_prepare { RecordingStudioWebhooks::Admin::Registration.register! }
     end
 
     initializer "recording_studio_webhooks.configure_recording_studio_recordables" do
