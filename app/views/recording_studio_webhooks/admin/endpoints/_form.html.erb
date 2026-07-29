@@ -23,8 +23,17 @@
       class: "mt-1 block w-full rounded border p-2" %>
 
     <%= render FlatPack::TextInput::Component.new(
+      name: "endpoint[label]",
+      label: "Label",
+      value: @endpoint.label,
+      required: true,
+      placeholder: "Billing Production",
+      help_text: "Human-readable name used in the admin UI."
+    ) %>
+
+    <%= render FlatPack::TextInput::Component.new(
       name: "endpoint[identity_key]",
-      label: "Public endpoint key",
+      label: "Identity key",
       value: @endpoint.identity_key,
       required: true,
       placeholder: "billing-prod"
@@ -38,31 +47,27 @@
     ) %>
   <% end %>
 
-  <%= render FlatPack::Checkbox::Component.new(
-    name: "endpoint[enabled]",
-    label: "Accept inbound events",
-    checked: @endpoint.enabled?
-  ) %>
+  <% if @endpoint.persisted? %>
+    <%= hidden_field_tag :auto_save, "1" %>
+    <%= render FlatPack::Switch::Component.new(
+      name: "endpoint[enabled]",
+      label: "Accept inbound events",
+      checked: @endpoint.enabled?,
+      onchange: "this.form.requestSubmit()"
+    ) %>
+  <% else %>
+    <%= render FlatPack::Switch::Component.new(
+      name: "endpoint[enabled]",
+      label: "Accept inbound events",
+      checked: @endpoint.enabled?
+    ) %>
 
-  <label class="block text-sm font-medium" for="endpoint_metadata_json">Safe metadata JSON (optional)</label>
-  <%= form.text_area :metadata_json,
-    value: @endpoint.metadata.presence && pretty_webhook_json(@endpoint.metadata),
-    rows: 4,
-    class: "mt-1 block w-full rounded border p-2 font-mono text-sm",
-    placeholder: "{\"owner\":\"operations\"}" %>
-
-  <label class="block text-sm font-medium" for="endpoint_policy_json">Policy overrides JSON (optional)</label>
-  <%= form.text_area :policy_json,
-    value: @endpoint.policy_overrides.presence && pretty_webhook_json(@endpoint.policy_overrides),
-    rows: 4,
-    class: "mt-1 block w-full rounded border p-2 font-mono text-sm",
-    placeholder: "{\"execution_mode\":\"sequential\",\"max_retries\":2}" %>
-
-  <%= render FlatPack::Button::Component.new(
-    text: @endpoint.persisted? ? "Save endpoint" : "Create endpoint",
-    style: :primary,
-    size: :md,
-    type: "submit",
-    disabled: !@endpoint.persisted? && (!respond_to?(:current_root_recording, true) || current_root_recording.blank?)
-  ) %>
+    <%= render FlatPack::Button::Component.new(
+      text: "Create endpoint",
+      style: :primary,
+      size: :md,
+      type: "submit",
+      disabled: !respond_to?(:current_root_recording, true) || current_root_recording.blank?
+    ) %>
+  <% end %>
 <% end %>

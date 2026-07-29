@@ -7,6 +7,7 @@ module RecordingStudioWebhooks
     has_many :inbound_events, dependent: :restrict_with_exception
 
     validates :provider_name, presence: true, format: { with: ProviderDefinition::NAME }
+    validates :label, presence: true, length: { maximum: 255 }
     validates :identity_key, presence: true, format: { with: /\A[a-z0-9][a-z0-9_-]{2,127}\z/ }
     validates :enabled, inclusion: { in: [true, false] }
     validates :identity_key, uniqueness: { scope: :provider_name }
@@ -55,6 +56,7 @@ module RecordingStudioWebhooks
       ImmutableSnapshot.build(
         id: id,
         recording_studio_recording_id: recording_studio_recording_id,
+        label: label,
         provider_name: provider_name,
         identity_key: identity_key,
         identity: identity,
@@ -70,6 +72,8 @@ module RecordingStudioWebhooks
     def normalize_attributes
       self.provider_name = provider_name.to_s.downcase
       self.identity_key = identity_key.to_s.downcase
+      self.label = label.to_s.strip
+      self.label = identity_key if label.blank?
       self.identity ||= {}
       self.metadata ||= {}
       self.policy_overrides = Policy.normalize_override(policy_overrides || {})
@@ -78,7 +82,7 @@ module RecordingStudioWebhooks
     end
 
     def prevent_identity_mutation
-      immutable = %w[recording_studio_recording_id provider_name identity_key identity]
+      immutable = %w[recording_studio_recording_id provider_name identity]
       return unless immutable.any? { |attribute| will_save_change_to_attribute?(attribute) }
 
       raise ActiveRecord::ReadOnlyRecord, "endpoint identity and recording linkage are immutable"

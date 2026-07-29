@@ -1,6 +1,6 @@
 <div class="flex flex-wrap items-center justify-between gap-4">
   <%= render FlatPack::PageTitle::Component.new(
-    title: @endpoint.identity_key,
+    title: @endpoint.label.presence || @endpoint.identity_key,
     subtitle: "Provider #{@endpoint.provider_name} · Recording #{@endpoint.recording_studio_recording_id}",
     variant: :h1
   ) %>

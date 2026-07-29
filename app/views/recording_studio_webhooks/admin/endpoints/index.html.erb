@@ -10,25 +10,19 @@
     variant: :h1
   ) %>
   <div class="flex gap-2">
-    <%= render FlatPack::Button::Component.new(text: "New endpoint", style: :primary, size: :md, url: new_admin_endpoint_path) %>
+    <%= render FlatPack::Button::Component.new(text: "New", style: :primary, size: :md, url: new_admin_endpoint_path) %>
   </div>
 </div>
 
-<%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
-  <% card.body do %>
-    <%= form_with url: admin_endpoints_path, method: :get, class: "flex flex-wrap items-end gap-3" do |form| %>
-      <div>
-        <label class="block text-sm font-medium" for="provider">Provider</label>
-        <select id="provider" name="provider" class="mt-1 rounded border p-2 text-sm">
-          <option value="">All providers</option>
-          <% @providers.each do |provider| %>
-            <option value="<%= provider.name %>" <%= "selected" if @selected_provider == provider.name %>><%= provider.name %></option>
-          <% end %>
-        </select>
-      </div>
-      <%= render FlatPack::Button::Component.new(text: "Apply", style: :secondary, size: :sm, type: "submit") %>
-    <% end %>
-  <% end %>
+<%= form_with url: admin_endpoints_path, method: :get, class: "flex flex-wrap items-end gap-3" do |form| %>
+  <%= render FlatPack::Select::Component.new(
+    name: "provider",
+    label: "Provider",
+    options: [["All providers", ""]] + @providers.map { |provider| [provider.name, provider.name] },
+    value: @selected_provider.to_s,
+    class: "w-56"
+  ) %>
+  <%= render FlatPack::Button::Component.new(text: "Apply", style: :secondary, size: :md, type: "submit") %>
 <% end %>
 
 <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
@@ -38,9 +32,9 @@
         <table class="w-full text-left text-sm">
           <thead>
             <tr>
+              <th class="p-2">URL</th>
+              <th class="p-2">Label</th>
               <th class="p-2">Provider</th>
-              <th class="p-2">Endpoint key</th>
-              <th class="p-2">Recording</th>
               <th class="p-2">Status</th>
               <th class="p-2"></th>
             </tr>
@@ -48,9 +42,27 @@
           <tbody>
             <% @endpoints.each do |endpoint| %>
               <tr class="border-t">
+                <td class="p-2">
+                  <% endpoint_path = "/#{endpoint.provider_name}/#{endpoint.identity_key}" %>
+                  <% endpoint_url = "#{request.base_url}#{inbound_path(provider: endpoint.provider_name, endpoint_identity: endpoint.identity_key)}" %>
+                  <div class="flex min-w-56 items-center gap-2" data-controller="flat-pack--text-input" data-flat-pack--text-input-quick-copy-enabled-value="true">
+                    <span class="font-mono text-xs"><%= endpoint_path %></span>
+                    <input type="hidden" value="<%= endpoint_url %>" data-flat-pack--text-input-target="input">
+                    <%= render FlatPack::Button::Component.new(
+                      icon: "clipboard-document",
+                      icon_only: true,
+                      style: :ghost,
+                      size: :sm,
+                      aria: { label: "Copy full URL for #{endpoint.label.presence || endpoint.identity_key}" },
+                      data: {
+                        action: "click->flat-pack--text-input#copyFromButton",
+                        flat_pack__text_input_target: "copyButton"
+                      }
+                    ) %>
+                  </div>
+                </td>
+                <td class="p-2"><%= endpoint.label.presence || endpoint.identity_key %></td>
                 <td class="p-2"><%= endpoint.provider_name %></td>
-                <td class="p-2 font-mono"><%= endpoint.identity_key %></td>
-                <td class="p-2 font-mono text-xs"><%= endpoint.recording_studio_recording_id %></td>
                 <td class="p-2">
                   <%= render FlatPack::Badge::Component.new(
                     text: endpoint.enabled? ? "enabled" : "disabled",
@@ -59,9 +71,23 @@
                   ) %>
                 </td>
                 <td class="p-2 text-right">
-                  <%= link_to "Provider", admin_provider_path(endpoint.provider_name) %>
-                  ·
-                  <%= link_to "Open", admin_endpoint_path(endpoint) %>
+                  <% trigger_id = "endpoint-actions-#{endpoint.id}" %>
+                  <%= render FlatPack::Button::Component.new(
+                    id: trigger_id,
+                    icon: "ellipsis-vertical",
+                    icon_only: true,
+                    style: :ghost,
+                    size: :sm,
+                    aria: { label: "Endpoint actions for #{endpoint.provider_name}" }
+                  ) %>
+                  <%= render FlatPack::Popover::Component.new(trigger_id: trigger_id, placement: :bottom, class: "p-0") do |popover| %>
+                    <% popover.content do %>
+                      <div class="w-36 text-left">
+                        <%= link_to "Provider", admin_provider_path(endpoint.provider_name), class: "block rounded px-3 py-2 text-sm hover:bg-gray-50" %>
+                        <%= link_to "Edit", edit_admin_endpoint_path(endpoint), class: "block rounded px-3 py-2 text-sm hover:bg-gray-50" %>
+                      </div>
+                    <% end %>
+                  <% end %>
                 </td>
               </tr>
             <% end %>

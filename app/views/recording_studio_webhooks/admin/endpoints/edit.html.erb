@@ -1,11 +1,48 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: admin_endpoints_path,
+  anchor_tooltip: "Close"
+) do |component| %>
+  <% component.right_slot do %>
+    <%= render FlatPack::Button::Component.new(
+      text: "Tokens",
+      style: :secondary,
+      size: :sm,
+      url: admin_endpoint_tokens_path(@endpoint),
+      aria: { label: "Tokens" }
+    ) %>
+  <% end %>
+<% end %>
+
 <%= render FlatPack::PageTitle::Component.new(
-  title: "Edit #{@endpoint.identity_key}",
-  subtitle: "Provider, Recording Studio recording, and public endpoint key are immutable after creation.",
+  title: "Edit #{@endpoint.label.presence || @endpoint.identity_key}",
   variant: :h1
 ) %>
 
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-  <% card.body do %>
-    <%= render "form" %>
-  <% end %>
+<%= render "form" %>
+
+<% webhook_path = "/webhooks/inbound/#{ERB::Util.url_encode(@endpoint.provider_name.to_s)}/#{ERB::Util.url_encode(@endpoint.identity_key.to_s)}" %>
+<% webhook_url = "#{request.base_url}#{webhook_path}" %>
+
+<%= render FlatPack::TextInput::Component.new(
+  name: "endpoint_url",
+  label: "Webhook URL",
+  value: webhook_url,
+  quick_copy: true,
+  help_text: "Use this URL in your provider webhook settings."
+) %>
+
+<%= form_with model: @endpoint, url: admin_endpoint_path(@endpoint), class: "space-y-3" do |form| %>
+  <%= hidden_field_tag :auto_save, "1" %>
+  <%= render FlatPack::TextInput::Component.new(
+    name: "endpoint[label]",
+    label: "Label",
+    value: @endpoint.label.presence || @endpoint.identity_key,
+    required: true
+  ) %>
+  <%= render FlatPack::Button::Component.new(
+    text: "Save",
+    style: :primary,
+    size: :sm,
+    type: "submit"
+  ) %>
 <% end %>

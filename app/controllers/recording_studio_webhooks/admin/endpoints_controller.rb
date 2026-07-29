@@ -62,7 +62,11 @@ module RecordingStudioWebhooks
             attributes: attributes,
             actor: current_admin_actor
           )
-          redirect_to admin_endpoint_path(@endpoint), notice: "Endpoint updated."
+          if params[:auto_save].to_s == "1"
+            redirect_to edit_admin_endpoint_path(@endpoint), notice: "Endpoint updated."
+          else
+            redirect_to admin_endpoint_path(@endpoint), notice: "Endpoint updated."
+          end
         else
           render :edit, status: :unprocessable_entity
         end
@@ -93,6 +97,7 @@ module RecordingStudioWebhooks
       def endpoint_attributes
         fields = endpoint_fields
         {
+          label: fields[:label],
           provider_name: fields[:provider_name],
           identity_key: fields[:identity_key],
           enabled: cast_boolean(fields[:enabled]),
@@ -104,16 +109,17 @@ module RecordingStudioWebhooks
 
       def endpoint_update_attributes
         fields = endpoint_fields
-        {
-          enabled: cast_boolean(fields[:enabled]),
-          metadata: parsed_json_object(fields[:metadata_json], "metadata"),
-          policy_overrides: parsed_json_object(fields[:policy_json], "policy")
-        }
+        attributes = {}
+        attributes[:label] = fields[:label] if fields.key?(:label)
+        attributes[:identity_key] = fields[:identity_key] if fields.key?(:identity_key)
+        attributes[:enabled] = cast_boolean(fields[:enabled]) if fields.key?(:enabled)
+        attributes
       end
 
       def endpoint_fields
         params.require(:endpoint).permit(
           :recording_studio_recording_id,
+          :label,
           :provider_name,
           :identity_key,
           :enabled,
