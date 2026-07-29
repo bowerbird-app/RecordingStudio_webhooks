@@ -1,0 +1,21 @@
+<li>
+  <div class="rounded border bg-black/5 p-3" style="margin-left: <%= depth * 1.25 %>rem;">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="text-sm">
+        <strong><%= recording_label(recording) %></strong>
+      </div>
+      <div class="text-xs text-gray-600">
+        <span>id: <%= recording.id %></span>
+      </div>
+    </div>
+  </div>
+
+  <% children = children_by_parent[recording.id] || [] %>
+  <% if children.any? %>
+    <ul class="mt-2 space-y-2">
+      <% children.each do |child| %>
+        <%= render partial: "node", locals: { recording: child, children_by_parent: children_by_parent, depth: depth + 1 } %>
+      <% end %>
+    </ul>
+  <% end %>
+</li>

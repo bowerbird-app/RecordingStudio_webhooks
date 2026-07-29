@@ -1,0 +1,21 @@
+<%= render FlatPack::PageTitle::Component.new(
+  title: "Recording Tree",
+  subtitle: "Current Recording Studio hierarchy for visible, non-trashed recordings.",
+  variant: :h1
+) %>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.body do %>
+    <% if @roots.any? %>
+      <p class="mb-4 text-sm text-gray-600">Root recordings: <strong><%= @roots.size %></strong></p>
+
+      <ul class="space-y-3">
+        <% @roots.each do |root| %>
+          <%= render partial: "node", locals: { recording: root, children_by_parent: @children_by_parent, depth: 0 } %>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm">No recordings were found.</p>
+    <% end %>
+  <% end %>
+<% end %>

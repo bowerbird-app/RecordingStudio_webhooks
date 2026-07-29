@@ -30,7 +30,10 @@ RecordingStudioRootSwitchable.configure do |config|
     scope.access_check = ->(**) { true }
 
     scope.default_root = lambda do |roots:, **|
-      roots.first
+      roots.find do |root|
+        recordable = root.respond_to?(:recordable) ? root.recordable : nil
+        recordable.respond_to?(:name) && recordable.name == "Studio Workspace"
+      end || roots.first
     end
   end
 end

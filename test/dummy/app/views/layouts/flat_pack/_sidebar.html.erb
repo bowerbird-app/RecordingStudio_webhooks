@@ -17,8 +17,14 @@
 
       <%= render FlatPack::Sidebar::Item::Component.new(
         label: "Webhook endpoints",
-        href: main_app.recording_studio_webhooks.admin_endpoints_path,
+        href: recording_studio_webhooks.admin_root_path,
         icon: :bolt
+      ) %>
+
+      <%= render FlatPack::Sidebar::Item::Component.new(
+        label: "Recording tree",
+        href: main_app.recording_tree_path,
+        icon: :folder
       ) %>
 
     </nav>

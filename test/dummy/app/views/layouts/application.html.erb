@@ -22,7 +22,12 @@
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "flat_pack/variables", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "flat_pack/rich_text", "data-turbo-track": "reload" %>
-    <% if Rails.application.assets&.find_asset("tailwind.css") %>
+    <% tailwind_asset = if Rails.application.assets&.respond_to?(:find_asset)
+                          Rails.application.assets.find_asset("tailwind.css")
+                        else
+                          Rails.application.assets&.load_path&.find("tailwind.css")
+                        end %>
+    <% if tailwind_asset %>
       <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <% end %>
     <%= javascript_importmap_tags %>
