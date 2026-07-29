@@ -2,6 +2,8 @@
 
 class AddLabelToRecordingStudioWebhooksEndpoints < ActiveRecord::Migration[8.1]
   def up
+    return if column_exists?(:recording_studio_webhooks_endpoints, :label)
+
     add_column :recording_studio_webhooks_endpoints, :label, :string
 
     execute <<~SQL.squish
@@ -14,6 +16,6 @@ class AddLabelToRecordingStudioWebhooksEndpoints < ActiveRecord::Migration[8.1]
   end
 
   def down
-    remove_column :recording_studio_webhooks_endpoints, :label
+    remove_column :recording_studio_webhooks_endpoints, :label if column_exists?(:recording_studio_webhooks_endpoints, :label)
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_29_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_29_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -123,14 +123,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_29_120000) do
     t.datetime "created_at", null: false
     t.boolean "enabled", default: true, null: false
     t.jsonb "identity", default: {}, null: false
-    t.string "identity_key", null: false
     t.string "label", null: false
     t.jsonb "metadata", default: {}, null: false
     t.jsonb "policy_overrides", default: {}, null: false
     t.string "provider_name", null: false
     t.uuid "recording_studio_recording_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["provider_name", "identity_key"], name: "index_rsw_endpoints_on_provider_and_identity", unique: true
+    t.index ["provider_name", "recording_studio_recording_id"], name: "index_rsw_endpoints_on_provider_and_recording"
     t.index ["provider_name"], name: "index_recording_studio_webhooks_endpoints_on_provider_name"
     t.index ["recording_studio_recording_id"], name: "index_rsw_endpoints_on_recording_id"
   end

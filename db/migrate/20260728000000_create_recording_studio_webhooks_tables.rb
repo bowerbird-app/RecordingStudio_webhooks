@@ -7,7 +7,7 @@ module RecordingStudioWebhooks
         t.references :recording_studio_recording, type: :uuid, null: false,
           foreign_key: { to_table: :recording_studio_recordings }, index: false
         t.string :provider_name, null: false
-        t.string :identity_key, null: false
+        t.string :label, null: false
         t.jsonb :identity, null: false, default: {}
         t.boolean :enabled, null: false, default: true
         t.jsonb :policy_overrides, null: false, default: {}
@@ -15,9 +15,8 @@ module RecordingStudioWebhooks
         t.timestamps
       end
       add_index :recording_studio_webhooks_endpoints,
-        %i[provider_name identity_key],
-        unique: true,
-        name: "index_rsw_endpoints_on_provider_and_identity"
+        %i[provider_name recording_studio_recording_id],
+        name: "index_rsw_endpoints_on_provider_and_recording"
       add_index :recording_studio_webhooks_endpoints, :provider_name
       add_index :recording_studio_webhooks_endpoints, :recording_studio_recording_id,
         name: "index_rsw_endpoints_on_recording_id"
