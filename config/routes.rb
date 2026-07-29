@@ -10,14 +10,20 @@ RecordingStudioWebhooks::Engine.routes.draw do
     }
 
   namespace :admin do
-    root to: "endpoints#index"
+    root to: "webhooks#show"
+
+    resource :webhooks, only: :show, controller: :webhooks
+    resources :providers, only: %i[index show], param: :name
+    resources :events, only: :index
+    get "webhook_sandbox", to: "sandboxes#show", as: :webhook_sandbox
+    post "webhook_sandbox", to: "sandboxes#create"
 
     resources :endpoints, only: %i[index new create show edit update] do
       resources :tokens, only: %i[index create destroy]
       resources :events, only: %i[index show] do
         resources :action_plans, only: :show
       end
-      resource :sandbox, only: %i[show create]
+      resource :sandbox, only: :show
     end
   end
 end

@@ -1,0 +1,89 @@
+<div class="flex flex-wrap items-start justify-between gap-4">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: @provider.name,
+    subtitle: "Provider definition and endpoint inventory (read-only).",
+    variant: :h1
+  ) %>
+  <div class="flex gap-2">
+    <%= render FlatPack::Button::Component.new(text: "Back to providers", style: :secondary, size: :sm, url: admin_providers_path) %>
+    <%= render FlatPack::Button::Component.new(text: "Webhook Sandbox", style: :primary, size: :sm, url: admin_webhook_sandbox_path(provider_name: @provider.name)) %>
+  </div>
+</div>
+
+<%= render FlatPack::Alert::Component.new(description: "Providers are code-defined and read-only from this UI.", style: :info) %>
+
+<div class="grid gap-6 lg:grid-cols-2">
+  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Effective definition", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <dl class="grid gap-2 text-sm sm:grid-cols-2">
+        <div><dt class="font-medium">Source</dt><dd><%= @provider_snapshot.fetch("source") %></dd></div>
+        <div><dt class="font-medium">Fingerprint</dt><dd class="font-mono text-xs"><%= @provider_snapshot.fetch("fingerprint") %></dd></div>
+        <div><dt class="font-medium">Verifier</dt><dd><%= @provider.signature_verifier ? "configured" : "none" %></dd></div>
+        <div><dt class="font-medium">Event extractor</dt><dd><%= @provider.event_type_extractor ? "configured" : "payload[type] fallback" %></dd></div>
+      </dl>
+    <% end %>
+  <% end %>
+
+  <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Defaults, policies, and warnings", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <p class="mb-2 text-sm">Effective defaults (provider-level):</p>
+      <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@provider_defaults.to_h) %></pre>
+      <p class="mt-3 mb-2 text-sm">Provider overrides:</p>
+      <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@provider_snapshot.fetch("policy")) %></pre>
+      <p class="mt-3 mb-2 text-sm">Provider event policies:</p>
+      <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@provider_snapshot.fetch("event_policies")) %></pre>
+      <% unless @provider.signature_verifier %>
+        <%= render FlatPack::Alert::Component.new(description: "No signature verifier is configured for this provider.", style: :warning) %>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-2">
+  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Actions and policy overrides", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <% if @matching_actions.any? %>
+        <ul class="space-y-3 text-sm">
+          <% @matching_actions.each do |action| %>
+            <li class="border-b pb-3">
+              <strong><%= action.name %></strong>
+              <div class="text-xs text-gray-600">pattern: <%= action.event_pattern.value %> · source: <%= action.source %></div>
+              <pre class="mt-2 overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(action.policy_overrides) %></pre>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-sm">No actions are bound to this provider.</p>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Endpoints", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <% if @endpoints.any? %>
+        <ul class="space-y-3 text-sm">
+          <% @endpoints.each do |endpoint| %>
+            <li class="flex items-center justify-between gap-3 border-b pb-3">
+              <span><strong><%= endpoint.identity_key %></strong> · recording <%= endpoint.recording_studio_recording_id %></span>
+              <%= link_to "Open", admin_endpoint_path(endpoint) %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-sm">No endpoints exist for this provider.</p>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

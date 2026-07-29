@@ -1,0 +1,45 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: admin_root_path,
+  anchor_tooltip: "Close"
+) %>
+
+<div class="flex items-center justify-between gap-4">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: "Providers",
+    subtitle: "Code-defined provider definitions and their endpoint footprint.",
+    variant: :h1
+  ) %>
+</div>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.body do %>
+    <% if @providers.any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr>
+              <th class="p-2">Provider</th>
+              <th class="p-2">Source</th>
+              <th class="p-2">Fingerprint</th>
+              <th class="p-2">Endpoints</th>
+              <th class="p-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @providers.each do |provider| %>
+              <tr class="border-t">
+                <td class="p-2"><%= provider.name %></td>
+                <td class="p-2"><%= provider.source %></td>
+                <td class="p-2 font-mono text-xs"><%= provider.fingerprint.first(16) %>…</td>
+                <td class="p-2"><%= @provider_endpoint_counts.fetch(provider.name, 0) %></td>
+                <td class="p-2 text-right"><%= link_to "Open", admin_provider_path(provider.name) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-sm">No providers are registered.</p>
+    <% end %>
+  <% end %>
+<% end %>
