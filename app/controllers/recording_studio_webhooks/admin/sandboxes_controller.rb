@@ -42,7 +42,8 @@ module RecordingStudioWebhooks
 
       def build_sandbox_result(provider, payload, event_type, headers)
         endpoint = @endpoint || endpoint_scope.where(provider_name: provider.name).order(created_at: :desc).first
-        event_endpoint = endpoint || OpenStruct.new(policy_overrides: {}, provider_name: provider.name, identity_key: "n/a")
+        event_endpoint = endpoint || OpenStruct.new(policy_overrides: {}, provider_name: provider.name,
+                                                    identity_key: "n/a")
         actions = webhook_configuration.actions.matching(provider.name, event_type)
         event_resolution = PolicyResolver.resolve_event(
           configuration: webhook_configuration,
@@ -80,7 +81,8 @@ module RecordingStudioWebhooks
         ).merge(
           "provider" => provider.snapshot,
           "dispatcher" => dispatcher_name,
-          "checks" => build_checks(provider: provider, endpoint: endpoint, headers: headers, payload: payload, event_type: event_type)
+          "checks" => build_checks(provider: provider, endpoint: endpoint, headers: headers, payload: payload,
+                                   event_type: event_type)
         )
       end
 
@@ -167,7 +169,9 @@ module RecordingStudioWebhooks
       end
 
       def validate_signature(provider, endpoint, headers, payload)
-        verifier = provider.signature_verifier
+        verifier = provider.respond_to?(:signature_verifier_callable) ?
+          provider.signature_verifier_callable :
+          provider.instance_variable_get(:@signature_verifier)
         return { verified: true, message: "No signature verifier configured." } unless verifier
 
         result = invoke_provider_callable(
@@ -178,7 +182,8 @@ module RecordingStudioWebhooks
           controller: self,
           now: Time.current
         )
-        { verified: result == true, message: (result == true ? "Signature verifier accepted payload." : "Signature verifier rejected payload.") }
+        { verified: result == true,
+          message: (result == true ? "Signature verifier accepted payload." : "Signature verifier rejected payload.") }
       rescue StandardError
         { verified: false, message: "Signature verifier raised an error." }
       end

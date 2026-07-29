@@ -5,7 +5,7 @@ module RecordingStudioWebhooks
   class ProviderDefinition
     NAME = /\A[a-z][a-z0-9_-]*\z/
 
-    attr_reader :name, :implementation, :policy_overrides, :event_policies, :signature_verifier,
+    attr_reader :name, :implementation, :policy_overrides, :event_policies,
       :event_type_extractor, :event_id_extractor, :source
 
     def initialize(name, implementation = nil, policy: {}, signature_verifier: nil,
@@ -39,16 +39,37 @@ module RecordingStudioWebhooks
       @event_policies = PolicyResolver.normalize_event_policies(rules)
     end
 
-    def signature_verifier(callable = nil, &block)
-      @signature_verifier = callable || block
+    def signature_verifier_callable = @signature_verifier
+
+    def event_type_extractor_callable = @event_type_extractor
+
+    def event_id_extractor_callable = @event_id_extractor
+
+    def signature_verifier_configured? = !@signature_verifier.nil?
+
+    def event_type_extractor_configured? = !@event_type_extractor.nil?
+
+    def event_id_extractor_configured? = !@event_id_extractor.nil?
+
+    def signature_verifier(callable = :__rsw_no_value__, &block)
+      return @signature_verifier if callable == :__rsw_no_value__ && !block_given?
+      return @signature_verifier if frozen? && callable.nil? && !block_given?
+
+      @signature_verifier = callable == :__rsw_no_value__ ? block : callable
     end
 
-    def event_type(callable = nil, &block)
-      @event_type_extractor = callable || block
+    def event_type(callable = :__rsw_no_value__, &block)
+      return @event_type_extractor if callable == :__rsw_no_value__ && !block_given?
+      return @event_type_extractor if frozen? && callable.nil? && !block_given?
+
+      @event_type_extractor = callable == :__rsw_no_value__ ? block : callable
     end
 
-    def event_id(callable = nil, &block)
-      @event_id_extractor = callable || block
+    def event_id(callable = :__rsw_no_value__, &block)
+      return @event_id_extractor if callable == :__rsw_no_value__ && !block_given?
+      return @event_id_extractor if frozen? && callable.nil? && !block_given?
+
+      @event_id_extractor = callable == :__rsw_no_value__ ? block : callable
     end
 
     def snapshot

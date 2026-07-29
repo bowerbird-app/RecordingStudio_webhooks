@@ -125,7 +125,9 @@ module RecordingStudioWebhooks
     end
 
     def signature_valid?(provider, body, endpoint)
-      verifier = provider.signature_verifier
+      verifier = provider.respond_to?(:signature_verifier_callable) ?
+        provider.signature_verifier_callable :
+        provider.instance_variable_get(:@signature_verifier)
       return true unless verifier
 
       context = SignatureContext.new(
@@ -229,7 +231,8 @@ module RecordingStudioWebhooks
 
     def resolved_event_type(provider, payload, context)
       return @event_type.to_s unless @event_type.nil? || @event_type.to_s.empty?
-      return invoke_extractor(provider.event_type_extractor, payload, context).to_s if provider.event_type_extractor
+      extractor = provider.event_type_extractor
+      return invoke_extractor(extractor, payload, context).to_s if extractor
 
       payload["event_type"] || payload["type"] if payload.is_a?(Hash)
     end
@@ -237,10 +240,13 @@ module RecordingStudioWebhooks
     def resolved_event_id(provider, payload, context)
       value = if !@provider_event_id.nil? && !@provider_event_id.to_s.empty?
         @provider_event_id
-      elsif provider.event_id_extractor
-        invoke_extractor(provider.event_id_extractor, payload, context)
-      elsif payload.is_a?(Hash)
-        payload["event_id"] || payload["id"]
+      else
+        extractor = provider.event_id_extractor
+        if extractor
+          invoke_extractor(extractor, payload, context)
+        elsif payload.is_a?(Hash)
+          payload["event_id"] || payload["id"]
+        end
       end
       value&.to_s
     end
