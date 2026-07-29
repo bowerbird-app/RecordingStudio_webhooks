@@ -6,19 +6,21 @@
     <meta name="robots" content="noindex,nofollow">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "flat_pack/variables", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "flat_pack/rich_text", "data-turbo-track": "reload" %>
+    <% tailwind_asset = if Rails.application.assets&.respond_to?(:find_asset)
+                          Rails.application.assets.find_asset("tailwind.css")
+                        else
+                          Rails.application.assets&.load_path&.find("tailwind.css")
+                        end %>
+    <% if tailwind_asset %>
+      <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <% end %>
+    <%= javascript_importmap_tags %>
   </head>
-  <body class="bg-[var(--surface-page-background-color)] text-[var(--surface-content-color)]">
+  <body class="bg-(--surface-page-background-color) text-(--surface-content-color)">
     <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
-      <nav class="flex items-center justify-between gap-3" aria-label="Webhook administration">
-        <%= render FlatPack::Button::Component.new(
-          text: "Webhook endpoints",
-          style: :secondary,
-          size: :sm,
-          url: admin_endpoints_path
-        ) %>
-      </nav>
-
       <% flash.each do |type, message| %>
         <%= render FlatPack::Alert::Component.new(
           description: message,
