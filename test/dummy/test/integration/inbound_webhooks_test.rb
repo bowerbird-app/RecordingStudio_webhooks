@@ -146,6 +146,28 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes invalid_json.errors[:metadata], "must be a JSON object"
   end
 
+  test "endpoint identity key is editable but provider and recording linkage remain immutable" do
+    original_key = @endpoint.identity_key
+    updated_key = "renamed-#{SecureRandom.hex(4)}"
+
+    RecordingStudioWebhooks::EndpointLifecycle.update!(
+      endpoint: @endpoint,
+      attributes: { identity_key: updated_key },
+      actor: @user
+    )
+
+    assert_equal updated_key, @endpoint.reload.identity_key
+    refute_equal original_key, @endpoint.identity_key
+
+    assert_raises(ActiveRecord::ReadOnlyRecord) do
+      RecordingStudioWebhooks::EndpointLifecycle.update!(
+        endpoint: @endpoint,
+        attributes: { provider_name: "other" },
+        actor: @user
+      )
+    end
+  end
+
   test "endpoint lifecycle rolls back creates and updates when audit logging fails" do
     attributes = {
       recording_studio_recording: @recording,
