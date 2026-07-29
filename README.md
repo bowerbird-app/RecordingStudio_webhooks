@@ -107,7 +107,7 @@ additive and cannot be removed by a lower-level policy.
 With the default mount, providers POST JSON to:
 
 ```text
-POST /recording_studio_webhooks/inbound/:provider/:endpoint_key
+POST /recording_studio_webhooks/inbound/:provider/:endpoint_recording_id
 Authorization header: endpoint credential
 Content-Type: application/json
 ```

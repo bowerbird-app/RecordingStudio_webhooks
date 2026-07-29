@@ -45,9 +45,9 @@ begin
   if RecordingStudioWebhooks::Endpoint.table_exists?
     RecordingStudioWebhooks::Endpoint.find_or_create_by!(
       recording_studio_recording_id: root_recording.id,
-      provider_name: "demo",
-      identity_key: "demo"
+      provider_name: "demo"
     ) do |endpoint|
+      endpoint.label = "Demo endpoint"
       endpoint.identity = { "environment" => "dummy" }
       endpoint.metadata = { "owner" => "demo" }
       endpoint.enabled = true
