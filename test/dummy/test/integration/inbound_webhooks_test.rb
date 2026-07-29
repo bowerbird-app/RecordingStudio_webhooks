@@ -209,7 +209,10 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     post sandbox_path, params: {
       sandbox: {
+        endpoint_id: @endpoint.id,
+        provider_name: @endpoint.provider_name,
         event_type: "demo.received",
+        headers_json: JSON.generate({ authorization: "Bearer invalid-token", "x-webhook-timestamp": Time.current.iso8601 }),
         payload: JSON.generate(token: "never-render-this", id: "sample")
       }
     }
@@ -221,6 +224,18 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_equal 0, @endpoint.inbound_events.count
   end
 
+  test "authorized administrators can open admin webhooks root and provider pages" do
+    sign_in @user
+
+    get "/webhooks/admin"
+    assert_response :success
+    assert_includes response.body, "Admin Webhooks"
+
+    get "/webhooks/admin/providers/demo"
+    assert_response :success
+    assert_includes response.body, "Provider definition"
+  end
+
   test "authorized administrators can list endpoints with stable recording ownership" do
     sign_in @user
 
@@ -228,6 +243,32 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, @endpoint.identity_key
+  end
+
+  test "creating an endpoint auto-issues a token and shows one-time disclosure" do
+    sign_in @user
+    identity_key = "auto-token-#{SecureRandom.hex(4)}"
+
+    post "/webhooks/admin/endpoints", params: {
+      endpoint: {
+        recording_studio_recording_id: @recording.id,
+        provider_name: "demo",
+        identity_key: identity_key,
+        enabled: "1",
+        identity_json: JSON.generate({ "origin" => "test" }),
+        metadata_json: JSON.generate({}),
+        policy_json: JSON.generate({})
+      }
+    }
+
+    assert_response :created
+    assert_includes response.body, "Copy this token now"
+    assert_includes response.body, "rswh_"
+    assert_includes response.body, "/webhooks/inbound/demo/#{identity_key}"
+
+    endpoint = RecordingStudioWebhooks::Endpoint.find_by!(provider_name: "demo", identity_key: identity_key)
+    assert_equal 1, endpoint.endpoint_tokens.count
+    assert_predicate endpoint.endpoint_tokens.first, :current?
   end
 
   test "administration fails closed when its authorizer is absent" do
@@ -249,7 +290,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
   end
 
   def sandbox_path
-    "/webhooks/admin/endpoints/#{@endpoint.id}/sandbox"
+    "/webhooks/admin/webhook_sandbox"
   end
 
   def intake_headers(token)
