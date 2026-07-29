@@ -32,14 +32,6 @@
     ) %>
 
     <%= render FlatPack::TextInput::Component.new(
-      name: "endpoint[identity_key]",
-      label: "Identity key",
-      value: @endpoint.identity_key,
-      required: true,
-      placeholder: "billing-prod"
-    ) %>
-
-    <%= render FlatPack::TextInput::Component.new(
       name: "endpoint[identity_json]",
       label: "Safe identity JSON (optional)",
       value: @endpoint.identity.presence && pretty_webhook_json(@endpoint.identity),

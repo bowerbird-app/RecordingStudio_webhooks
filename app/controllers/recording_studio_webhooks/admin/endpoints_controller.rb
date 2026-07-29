@@ -10,7 +10,7 @@ module RecordingStudioWebhooks
         @providers = webhook_configuration.providers.all.sort_by(&:name)
         @selected_provider = params[:provider].to_s.presence
 
-        scope = endpoint_scope.includes(:recording_studio_recording, :endpoint_tokens).order(created_at: :desc)
+        scope = endpoint_scope.current.includes(:recording_studio_recording, :endpoint_tokens).order(created_at: :desc)
         scope = scope.where(provider_name: @selected_provider) if @selected_provider.present?
         @endpoints = scope
       end
@@ -26,12 +26,12 @@ module RecordingStudioWebhooks
         if @form_error.nil? && registered_provider?
           issuance = nil
           Endpoint.transaction do
-            EndpointLifecycle.create!(endpoint: @endpoint, actor: current_admin_actor)
+            @endpoint = EndpointLifecycle.create!(endpoint: @endpoint, actor: current_admin_actor)
             issuance = @endpoint.issue_token!(actor: current_admin_actor)
           end
 
           @issued_token = issuance.plaintext_token
-          @endpoint_url = "#{request.base_url}#{inbound_path(provider: @endpoint.provider_name, endpoint_identity: @endpoint.identity_key)}"
+          @endpoint_url = "#{request.base_url}#{inbound_path(provider: @endpoint.provider_name, endpoint_recording_id: @endpoint.recording_studio_recording_id)}"
           response.headers["Cache-Control"] = "no-store, max-age=0"
           response.headers["Pragma"] = "no-cache"
           render "recording_studio_webhooks/admin/tokens/show", status: :created
@@ -57,7 +57,7 @@ module RecordingStudioWebhooks
       def update
         attributes = endpoint_update_attributes
         if @form_error.nil?
-          EndpointLifecycle.update!(
+          @endpoint = EndpointLifecycle.update!(
             endpoint: @endpoint,
             attributes: attributes,
             actor: current_admin_actor
@@ -77,6 +77,9 @@ module RecordingStudioWebhooks
       private
 
       def selected_recording
+        requested_recording_id = endpoint_fields[:recording_studio_recording_id].to_s.strip
+        return available_recordings.find(requested_recording_id) if requested_recording_id.present?
+
         current_root = current_root_recording_for_assignment
         raise ActiveRecord::RecordNotFound unless current_root
 
@@ -99,7 +102,6 @@ module RecordingStudioWebhooks
         {
           label: fields[:label],
           provider_name: fields[:provider_name],
-          identity_key: fields[:identity_key],
           enabled: cast_boolean(fields[:enabled]),
           identity: parsed_json_object(fields[:identity_json], "identity"),
           metadata: parsed_json_object(fields[:metadata_json], "metadata"),
@@ -111,7 +113,6 @@ module RecordingStudioWebhooks
         fields = endpoint_fields
         attributes = {}
         attributes[:label] = fields[:label] if fields.key?(:label)
-        attributes[:identity_key] = fields[:identity_key] if fields.key?(:identity_key)
         attributes[:enabled] = cast_boolean(fields[:enabled]) if fields.key?(:enabled)
         attributes
       end
@@ -121,7 +122,6 @@ module RecordingStudioWebhooks
           :recording_studio_recording_id,
           :label,
           :provider_name,
-          :identity_key,
           :enabled,
           :identity_json,
           :metadata_json,

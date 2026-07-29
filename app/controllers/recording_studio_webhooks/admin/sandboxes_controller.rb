@@ -43,7 +43,7 @@ module RecordingStudioWebhooks
       def build_sandbox_result(provider, payload, event_type, headers)
         endpoint = @endpoint || endpoint_scope.where(provider_name: provider.name).order(created_at: :desc).first
         event_endpoint = endpoint || OpenStruct.new(policy_overrides: {}, provider_name: provider.name,
-                                                    identity_key: "n/a")
+                                                    recording_studio_recording_id: "n/a", label: "n/a")
         actions = webhook_configuration.actions.matching(provider.name, event_type)
         event_resolution = PolicyResolver.resolve_event(
           configuration: webhook_configuration,
@@ -103,7 +103,7 @@ module RecordingStudioWebhooks
           secret_redaction_keys: webhook_configuration.secret_redaction_keys,
           dry_run: true,
           persisted: false
-        }
+        }.transform_keys(&:to_s)
       end
 
       def parsed_headers
@@ -152,7 +152,7 @@ module RecordingStudioWebhooks
 
       def load_provider_options
         @providers = webhook_configuration.providers.all.sort_by(&:name)
-        @endpoints = endpoint_scope.order(:provider_name, :identity_key)
+        @endpoints = endpoint_scope.current.order(:provider_name, :label)
       end
 
       def validate_token(endpoint, headers)

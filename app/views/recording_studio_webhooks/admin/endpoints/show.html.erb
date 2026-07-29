@@ -1,6 +1,6 @@
 <div class="flex flex-wrap items-center justify-between gap-4">
   <%= render FlatPack::PageTitle::Component.new(
-    title: @endpoint.label.presence || @endpoint.identity_key,
+    title: @endpoint.label,
     subtitle: "Provider #{@endpoint.provider_name} · Recording #{@endpoint.recording_studio_recording_id}",
     variant: :h1
   ) %>
@@ -48,7 +48,7 @@
     <% end %>
     <% card.body do %>
       <p class="text-sm">Public address:</p>
-      <code class="mt-2 block break-all rounded bg-black/5 p-2 text-xs"><%= inbound_path(provider: @endpoint.provider_name, endpoint_identity: @endpoint.identity_key) %></code>
+      <code class="mt-2 block break-all rounded bg-black/5 p-2 text-xs"><%= inbound_path(provider: @endpoint.provider_name, endpoint_recording_id: @endpoint.recording_studio_recording_id) %></code>
       <p class="mt-4 text-sm">Payload limit: <strong><%= webhook_configuration.max_payload_bytes %></strong> bytes</p>
       <p class="mt-4 text-sm">Status:
         <%= render FlatPack::Badge::Component.new(

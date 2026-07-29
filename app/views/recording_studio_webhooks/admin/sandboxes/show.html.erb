@@ -33,7 +33,7 @@
             <option value="">Auto-select first matching endpoint</option>
             <% @endpoints.each do |endpoint| %>
               <% selected_endpoint = (@endpoint&.id || params.dig(:sandbox, :endpoint_id)).to_s %>
-              <option value="<%= endpoint.id %>" <%= "selected" if selected_endpoint == endpoint.id %>><%= endpoint.provider_name %> / <%= endpoint.identity_key %></option>
+              <option value="<%= endpoint.id %>" <%= "selected" if selected_endpoint == endpoint.id %>><%= endpoint.provider_name %> / <%= endpoint.label %></option>
             <% end %>
           </select>
         </div>

@@ -26,7 +26,7 @@
         <select id="endpoint_id" name="endpoint_id" class="mt-1 w-full rounded border p-2 text-sm">
           <option value="">All</option>
           <% @endpoints.each do |endpoint| %>
-            <option value="<%= endpoint.id %>" <%= "selected" if @filter[:endpoint_id] == endpoint.id %>><%= endpoint.provider_name %> / <%= endpoint.identity_key %></option>
+            <option value="<%= endpoint.id %>" <%= "selected" if @filter[:endpoint_id] == endpoint.id %>><%= endpoint.provider_name %> / <%= endpoint.label %></option>
           <% end %>
         </select>
       </div>
@@ -69,7 +69,7 @@
           <li class="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
             <div>
               <strong><%= event.provider_name %> · <%= event.event_type %></strong><br>
-              <span class="text-sm"><%= event.received_at %> · <%= event.status %> · endpoint <%= event.endpoint.identity_key %></span><br>
+              <span class="text-sm"><%= event.received_at %> · <%= event.status %> · endpoint <%= event.endpoint.label %> (<%= event.endpoint.recording_studio_recording_id %>)</span><br>
               <span class="text-xs text-gray-600">token snapshot: <%= event.endpoint_token_id %> · attempts: <%= event.action_plans.sum(&:attempts) %></span>
             </div>
             <%= link_to "View", admin_endpoint_event_path(event.endpoint_id, event) %>

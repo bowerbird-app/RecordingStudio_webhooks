@@ -14,13 +14,13 @@
 <% end %>
 
 <%= render FlatPack::PageTitle::Component.new(
-  title: "Edit #{@endpoint.label.presence || @endpoint.identity_key}",
+  title: "Edit #{@endpoint.label}",
   variant: :h1
 ) %>
 
 <%= render "form" %>
 
-<% webhook_path = "/webhooks/inbound/#{ERB::Util.url_encode(@endpoint.provider_name.to_s)}/#{ERB::Util.url_encode(@endpoint.identity_key.to_s)}" %>
+<% webhook_path = "/webhooks/inbound/#{ERB::Util.url_encode(@endpoint.provider_name.to_s)}/#{ERB::Util.url_encode(@endpoint.recording_studio_recording_id.to_s)}" %>
 <% webhook_url = "#{request.base_url}#{webhook_path}" %>
 
 <%= render FlatPack::TextInput::Component.new(
@@ -36,7 +36,7 @@
   <%= render FlatPack::TextInput::Component.new(
     name: "endpoint[label]",
     label: "Label",
-    value: @endpoint.label.presence || @endpoint.identity_key,
+    value: @endpoint.label,
     required: true
   ) %>
   <%= render FlatPack::Button::Component.new(

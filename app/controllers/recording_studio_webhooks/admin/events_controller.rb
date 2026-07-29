@@ -8,7 +8,7 @@ module RecordingStudioWebhooks
 
       def index
         @providers = webhook_configuration.providers.all.sort_by(&:name)
-        @endpoints = endpoint_scope.order(:provider_name, :identity_key)
+        @endpoints = endpoint_scope.current.order(:provider_name, :label)
         @filter = event_filter_params.to_h.symbolize_keys
 
         scope = InboundEvent.includes(:action_plans, :endpoint).where(endpoint_id: endpoint_scope.select(:id))

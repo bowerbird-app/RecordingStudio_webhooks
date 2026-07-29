@@ -43,8 +43,8 @@
             <% @endpoints.each do |endpoint| %>
               <tr class="border-t">
                 <td class="p-2">
-                  <% endpoint_path = "/#{endpoint.provider_name}/#{endpoint.identity_key}" %>
-                  <% endpoint_url = "#{request.base_url}#{inbound_path(provider: endpoint.provider_name, endpoint_identity: endpoint.identity_key)}" %>
+                  <% endpoint_path = "/#{endpoint.provider_name}/#{endpoint.recording_studio_recording_id}" %>
+                  <% endpoint_url = "#{request.base_url}#{inbound_path(provider: endpoint.provider_name, endpoint_recording_id: endpoint.recording_studio_recording_id)}" %>
                   <div class="flex min-w-56 items-center gap-2" data-controller="flat-pack--text-input" data-flat-pack--text-input-quick-copy-enabled-value="true">
                     <span class="font-mono text-xs"><%= endpoint_path %></span>
                     <input type="hidden" value="<%= endpoint_url %>" data-flat-pack--text-input-target="input">
@@ -53,7 +53,7 @@
                       icon_only: true,
                       style: :ghost,
                       size: :sm,
-                      aria: { label: "Copy full URL for #{endpoint.label.presence || endpoint.identity_key}" },
+                      aria: { label: "Copy full URL for #{endpoint.label}" },
                       data: {
                         action: "click->flat-pack--text-input#copyFromButton",
                         flat_pack__text_input_target: "copyButton"
@@ -61,7 +61,7 @@
                     ) %>
                   </div>
                 </td>
-                <td class="p-2"><%= endpoint.label.presence || endpoint.identity_key %></td>
+                <td class="p-2"><%= endpoint.label %></td>
                 <td class="p-2"><%= endpoint.provider_name %></td>
                 <td class="p-2">
                   <%= render FlatPack::Badge::Component.new(

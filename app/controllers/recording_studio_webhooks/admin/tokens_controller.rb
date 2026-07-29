@@ -18,7 +18,7 @@ module RecordingStudioWebhooks
           actor: current_admin_actor
         )
         @issued_token = issuance.plaintext_token
-        @endpoint_url = "#{request.base_url}#{inbound_path(provider: @endpoint.provider_name, endpoint_identity: @endpoint.identity_key)}"
+        @endpoint_url = "#{request.base_url}#{inbound_path(provider: @endpoint.provider_name, endpoint_recording_id: @endpoint.recording_studio_recording_id)}"
         response.headers["Cache-Control"] = "no-store, max-age=0"
         response.headers["Pragma"] = "no-cache"
         render :show, status: :created

@@ -79,7 +79,7 @@
         <ul class="space-y-3 text-sm">
           <% @endpoints.each do |endpoint| %>
             <li class="flex items-center justify-between gap-3 border-b pb-3">
-              <span><strong><%= endpoint.label.presence || endpoint.identity_key %></strong> · recording <%= endpoint.recording_studio_recording_id %></span>
+              <span><strong><%= endpoint.label %></strong> · recording <%= endpoint.recording_studio_recording_id %></span>
               <%= link_to "Open", admin_endpoint_path(endpoint) %>
             </li>
           <% end %>
