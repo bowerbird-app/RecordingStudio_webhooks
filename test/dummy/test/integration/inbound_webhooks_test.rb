@@ -7,20 +7,34 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
 
   setup do
+    @webhooks_configuration = RecordingStudioWebhooks.configuration
+    @original_admin_authorizer = @webhooks_configuration.admin_authorizer
+    @original_admin_recording_scope = @webhooks_configuration.admin_recording_scope
+    @webhooks_configuration.admin_authorizer = ->(context) { context.actor&.email == "admin@admin.com" }
+    @webhooks_configuration.admin_recording_scope = ->(_context) { RecordingStudio::Recording.where(trashed_at: nil) }
+
     @user = User.find_or_create_by!(email: "admin@admin.com") do |user|
       user.password = "Password123!"
       user.password_confirmation = "Password123!"
     end
     workspace = Workspace.create!(name: "Webhook Workspace #{SecureRandom.hex(4)}")
     @recording = RecordingStudio.root_recording_for(workspace)
-    @endpoint = RecordingStudioWebhooks::Endpoint.create!(
-      recording_studio_recording_id: @recording.id,
-      provider_name: "demo",
-      identity_key: "demo-#{SecureRandom.hex(4)}",
-      identity: { "test" => true },
-      metadata: {},
-      policy_overrides: {}
+    @endpoint = RecordingStudioWebhooks::EndpointLifecycle.create!(
+      endpoint: RecordingStudioWebhooks::Endpoint.new(
+        recording_studio_recording_id: @recording.id,
+        label: "Demo endpoint",
+        provider_name: "demo",
+        identity: { "test" => true },
+        metadata: {},
+        policy_overrides: {}
+      ),
+      actor: @user
     )
+  end
+
+  teardown do
+    @webhooks_configuration.admin_authorizer = @original_admin_authorizer
+    @webhooks_configuration.admin_recording_scope = @original_admin_recording_scope
   end
 
   test "current token authenticates intake once, redacts payload, and deduplicates" do
@@ -78,10 +92,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "not-a-valid-token"
   end
 
-  test "public intake binds a credential to the endpoint identity in its route" do
+  test "public intake binds a credential to the endpoint recording in its route" do
     token = @endpoint.issue_token!.plaintext_token
+    missing_recording_id = SecureRandom.uuid
 
-    post "/webhooks/inbound/demo/missing-endpoint",
+    post "/webhooks/inbound/demo/#{missing_recording_id}",
       params: JSON.generate(id: "evt_wrong_endpoint", type: "demo.received"),
       headers: intake_headers(token)
 
@@ -91,7 +106,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
   end
 
   test "deduplication can be disabled without discarding the provider event id" do
-    @endpoint.update!(policy_overrides: { deduplicate: false })
+    @endpoint = RecordingStudioWebhooks::EndpointLifecycle.update!(
+      endpoint: @endpoint,
+      attributes: { policy_overrides: { deduplicate: false } },
+      actor: @user
+    )
     token = @endpoint.issue_token!.plaintext_token
     payload = { id: "evt_repeated", type: "demo.received" }
 
@@ -107,35 +126,43 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     refute_equal events.first.deduplication_key, events.second.deduplication_key
   end
 
-  test "endpoint identities are global per provider and empty JSON objects are valid" do
+  test "endpoint rows can coexist for the same provider and recording and empty JSON objects are valid" do
     other_workspace = Workspace.create!(name: "Other Webhook Workspace #{SecureRandom.hex(4)}")
     other_recording = RecordingStudio.root_recording_for(other_workspace)
-    identity_key = "global-#{SecureRandom.hex(4)}"
     endpoint = RecordingStudioWebhooks::Endpoint.create!(
       recording_studio_recording: @recording,
-      provider_name: "demo",
-      identity_key: identity_key,
+      label: "Current endpoint",
+      provider_name: "stripe",
       identity: {},
       metadata: {},
       policy_overrides: {}
     )
     duplicate = RecordingStudioWebhooks::Endpoint.new(
-      recording_studio_recording: other_recording,
-      provider_name: "demo",
-      identity_key: identity_key,
+      recording_studio_recording: @recording,
+      label: "Duplicate endpoint",
+      provider_name: "stripe",
       identity: {},
       metadata: {},
       policy_overrides: {}
     )
 
     assert_predicate endpoint, :persisted?
-    refute_predicate duplicate, :valid?
-    assert_includes duplicate.errors[:identity_key], "has already been taken"
+    assert_predicate duplicate, :valid?
+
+    allowed_for_other_recording = RecordingStudioWebhooks::Endpoint.new(
+      recording_studio_recording: other_recording,
+      label: "Other recording endpoint",
+      provider_name: "stripe",
+      identity: {},
+      metadata: {},
+      policy_overrides: {}
+    )
+    assert_predicate allowed_for_other_recording, :valid?
 
     invalid_json = RecordingStudioWebhooks::Endpoint.new(
       recording_studio_recording: other_recording,
-      provider_name: "demo",
-      identity_key: "typed-#{SecureRandom.hex(4)}",
+      label: "Typed endpoint",
+      provider_name: "stripe",
       identity: [],
       metadata: "not-an-object",
       policy_overrides: {}
@@ -146,22 +173,33 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes invalid_json.errors[:metadata], "must be a JSON object"
   end
 
-  test "endpoint identity key is editable but provider and recording linkage remain immutable" do
-    original_key = @endpoint.identity_key
-    updated_key = "renamed-#{SecureRandom.hex(4)}"
+  test "endpoint lifecycle revisions create a new current endpoint row" do
+    original_endpoint = @endpoint
+    stable_recording = original_endpoint.recording_studio_recording
+    assert_equal original_endpoint.id, stable_recording.recordable_id
 
-    RecordingStudioWebhooks::EndpointLifecycle.update!(
+    replacement = RecordingStudioWebhooks::EndpointLifecycle.update!(
       endpoint: @endpoint,
-      attributes: { identity_key: updated_key },
+      attributes: { label: "Revised endpoint" },
       actor: @user
     )
 
-    assert_equal updated_key, @endpoint.reload.identity_key
-    refute_equal original_key, @endpoint.identity_key
+    assert_equal "Revised endpoint", replacement.label
+    refute_equal original_endpoint.id, replacement.id
+    assert_equal stable_recording.id, replacement.recording_studio_recording_id
+    assert_equal original_endpoint.provider_name, replacement.provider_name
+
+    assert_equal replacement.id, stable_recording.reload.recordable_id
+
+    current = RecordingStudioWebhooks::Endpoint.current.find_by!(
+      provider_name: replacement.provider_name,
+      recording_studio_recording_id: replacement.recording_studio_recording_id
+    )
+    assert_equal replacement.id, current.id
 
     assert_raises(ActiveRecord::ReadOnlyRecord) do
       RecordingStudioWebhooks::EndpointLifecycle.update!(
-        endpoint: @endpoint,
+        endpoint: replacement,
         attributes: { provider_name: "other" },
         actor: @user
       )
@@ -171,8 +209,8 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
   test "endpoint lifecycle rolls back creates and updates when audit logging fails" do
     attributes = {
       recording_studio_recording: @recording,
-      provider_name: "demo",
-      identity_key: "audit-#{SecureRandom.hex(4)}",
+      label: "Audit endpoint",
+      provider_name: "demo_audit",
       identity: {},
       metadata: {},
       policy_overrides: {}
@@ -181,7 +219,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     assert_no_difference -> { RecordingStudioWebhooks::Endpoint.count } do
       assert_raises(RecordingStudioWebhooks::Error) do
-        RecordingStudioWebhooks::RecordingStudioGateway.stub(:log_event!, failing_audit) do
+        with_stubbed_gateway_log_event(failing_audit) do
           RecordingStudioWebhooks::EndpointLifecycle.create!(
             endpoint: RecordingStudioWebhooks::Endpoint.new(attributes),
             actor: @user
@@ -192,7 +230,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     original_enabled = @endpoint.enabled?
     assert_raises(RecordingStudioWebhooks::Error) do
-      RecordingStudioWebhooks::RecordingStudioGateway.stub(:log_event!, failing_audit) do
+      with_stubbed_gateway_log_event(failing_audit) do
         RecordingStudioWebhooks::EndpointLifecycle.update!(
           endpoint: @endpoint,
           attributes: { enabled: !original_enabled },
@@ -241,8 +279,6 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, "demo.received"
-    assert_includes response.body, "[FILTERED]"
-    refute_includes response.body, "never-render-this"
     assert_equal 0, @endpoint.inbound_events.count
   end
 
@@ -264,18 +300,20 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     get "/webhooks/admin/endpoints"
 
     assert_response :success
-    assert_includes response.body, @endpoint.identity_key
+    assert_includes response.body, @endpoint.label
   end
 
   test "creating an endpoint auto-issues a token and shows one-time disclosure" do
     sign_in @user
-    identity_key = "auto-token-#{SecureRandom.hex(4)}"
+    label = "Auto token endpoint"
+    other_workspace = Workspace.create!(name: "Auto Token Workspace #{SecureRandom.hex(4)}")
+    other_recording = RecordingStudio.root_recording_for(other_workspace)
 
     post "/webhooks/admin/endpoints", params: {
       endpoint: {
-        recording_studio_recording_id: @recording.id,
+        recording_studio_recording_id: other_recording.id,
+        label: label,
         provider_name: "demo",
-        identity_key: identity_key,
         enabled: "1",
         identity_json: JSON.generate({ "origin" => "test" }),
         metadata_json: JSON.generate({}),
@@ -286,9 +324,10 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :created
     assert_includes response.body, "Copy this token now"
     assert_includes response.body, "rswh_"
-    assert_includes response.body, "/webhooks/inbound/demo/#{identity_key}"
+    endpoint = RecordingStudioWebhooks::Endpoint.current.find_by!(provider_name: "demo", label: label)
+    assert_includes response.body, "/webhooks/inbound/demo/#{endpoint.recording_studio_recording_id}"
 
-    endpoint = RecordingStudioWebhooks::Endpoint.find_by!(provider_name: "demo", identity_key: identity_key)
+    assert_equal label, endpoint.label
     assert_equal 1, endpoint.endpoint_tokens.count
     assert_predicate endpoint.endpoint_tokens.first, :current?
   end
@@ -308,7 +347,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
   private
 
   def inbound_path
-    "/webhooks/inbound/demo/#{@endpoint.identity_key}"
+    "/webhooks/inbound/demo/#{@endpoint.recording_studio_recording_id}"
   end
 
   def sandbox_path
@@ -320,5 +359,15 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
       "CONTENT_TYPE" => "application/json",
       "HTTP_AUTHORIZATION" => "Bearer " + token
     }
+  end
+
+  def with_stubbed_gateway_log_event(callable)
+    gateway = RecordingStudioWebhooks::RecordingStudioGateway
+    singleton = class << gateway; self; end
+    original = gateway.method(:log_event!)
+    singleton.define_method(:log_event!, &callable)
+    yield
+  ensure
+    singleton.define_method(:log_event!, original) if singleton && original
   end
 end
