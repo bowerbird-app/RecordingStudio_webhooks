@@ -5,7 +5,7 @@ module RecordingStudioWebhooks
   # inbound JSON body before the intake service can redact it. The controller
   # reads Rack input with a bounded read instead.
   class PublicIntakeGuard
-    INBOUND_PATH = %r{(?:\A|/)inbound/[a-z][a-z0-9_-]*/[a-z0-9][a-z0-9_-]{2,127}\z}.freeze
+    INBOUND_PATH = %r{(?:\A|/)inbound/[a-z][a-z0-9_-]*/[0-9a-fA-F-]{36}\z}.freeze
     INVALID_BODY = '{"status":"invalid"}'
 
     def initialize(app)

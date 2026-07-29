@@ -56,10 +56,8 @@ module RecordingStudioWebhooks
     # A serializable, intentionally non-secret description of the current setup.
     def report = configuration.report
 
-    # Endpoints are persisted in this engine's four tables and belong to a
-    # stable Recording Studio recording through their foreign key. They are not
-    # Recording Studio recordables, so registering them as recordables would
-    # create an incompatible second lifecycle.
+    # Endpoint snapshots now follow Recording Studio's standard record/revise
+    # lifecycle and are declared recordables in the endpoint model.
     def configure_recordables!
       RecordingStudioGateway.available?
     end

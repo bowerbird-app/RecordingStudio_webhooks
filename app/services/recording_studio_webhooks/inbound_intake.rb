@@ -2,7 +2,7 @@
 
 # app/services/recording_studio_webhooks/inbound_intake.rb
 module RecordingStudioWebhooks
-  # Controller-independent public intake. The provider and endpoint identity in
+  # Controller-independent public intake. The provider and endpoint recording id in
   # the route identify the stable endpoint before its current credential is
   # checked.
   class InboundIntake
@@ -14,10 +14,10 @@ module RecordingStudioWebhooks
 
     def self.call(...) = new(...).call
 
-    def initialize(provider_name:, endpoint_identity:, token:, raw_payload: nil, payload: nil, content_type: nil, headers: {},
+    def initialize(provider_name:, endpoint_recording_id:, token:, raw_payload: nil, payload: nil, content_type: nil, headers: {},
       request_metadata: {}, event_type: nil, provider_event_id: nil)
       @provider_name = provider_name.to_s.downcase
-      @endpoint_identity = endpoint_identity.to_s.downcase
+      @endpoint_recording_id = endpoint_recording_id.to_s
       @token = token
       @raw_payload = raw_payload.nil? ? payload : raw_payload
       @content_type = content_type
@@ -33,7 +33,10 @@ module RecordingStudioWebhooks
       provider = configuration.providers.fetch(@provider_name)
       return failure(404, "provider_unavailable") unless provider
 
-      endpoint = Endpoint.find_by(provider_name: provider.name, identity_key: @endpoint_identity)
+      endpoint = Endpoint.current.find_by(
+        provider_name: provider.name,
+        recording_studio_recording_id: @endpoint_recording_id
+      )
       return failure(404, "endpoint_unavailable") unless endpoint
       return failure(401, "endpoint_disabled") unless endpoint.enabled?
 
@@ -166,7 +169,7 @@ module RecordingStudioWebhooks
 
     def parse_json(body) = JSON.parse(body)
 
-    def persisted_redaction_keys(provider, endpoint, event_type, resolution)
+    def persisted_redaction_keys(provider, _endpoint, event_type, resolution)
       action_policies = configuration.actions.matching(provider.name, event_type).map do |action|
         PolicyResolver.resolve_action(
           event_resolution: resolution,
@@ -207,7 +210,8 @@ module RecordingStudioWebhooks
     def hook_allows?(hook, context)
       return true unless hook
 
-      result = if keyword_callable?(hook)
+      result =
+        if keyword_callable?(hook)
         invoke_keywords(
           hook,
           context: context,
@@ -217,13 +221,13 @@ module RecordingStudioWebhooks
           payload: context.payload,
           provenance: context.provenance
         )
-      elsif hook.respond_to?(:arity) && hook.arity == 2
+        elsif hook.respond_to?(:arity) && hook.arity == 2
         hook.call(context.endpoint, context)
-      elsif hook.respond_to?(:arity) && hook.arity >= 3
+        elsif hook.respond_to?(:arity) && hook.arity >= 3
         hook.call(context.endpoint, context.endpoint_token, context)
-      else
+        else
         hook.call(context)
-      end
+        end
       result.respond_to?(:success?) ? result.success? : result == true
     rescue StandardError
       false
@@ -238,16 +242,17 @@ module RecordingStudioWebhooks
     end
 
     def resolved_event_id(provider, payload, context)
-      value = if !@provider_event_id.nil? && !@provider_event_id.to_s.empty?
-        @provider_event_id
-      else
-        extractor = provider.event_id_extractor
-        if extractor
-          invoke_extractor(extractor, payload, context)
-        elsif payload.is_a?(Hash)
-          payload["event_id"] || payload["id"]
+      value =
+        if !@provider_event_id.nil? && !@provider_event_id.to_s.empty?
+          @provider_event_id
+        else
+          extractor = provider.event_id_extractor
+          if extractor
+            invoke_extractor(extractor, payload, context)
+          elsif payload.is_a?(Hash)
+            payload["event_id"] || payload["id"]
+          end
         end
-      end
       value&.to_s
     end
 
@@ -316,6 +321,15 @@ module RecordingStudioWebhooks
     rescue ActiveRecord::RecordNotUnique
       existing = InboundEvent.find_by(endpoint_id: endpoint.id, deduplication_key: deduplication_key)
       return Result.new(status: 200, code: "duplicate", record: existing) if existing
+
+      raise
+    rescue ActiveRecord::RecordInvalid => error
+      duplicate_error = error.record.is_a?(InboundEvent) &&
+        error.record.errors.details.fetch(:deduplication_key, []).any? { |detail| detail[:error] == :taken }
+      if duplicate_error
+        existing = InboundEvent.find_by(endpoint_id: endpoint.id, deduplication_key: deduplication_key)
+        return Result.new(status: 200, code: "duplicate", record: existing) if existing
+      end
 
       raise
     end

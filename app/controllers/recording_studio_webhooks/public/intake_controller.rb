@@ -14,7 +14,7 @@ module RecordingStudioWebhooks
 
         result = InboundIntake.call(
           provider_name: route_value(:provider),
-          endpoint_identity: route_value(:endpoint_identity),
+          endpoint_recording_id: route_value(:endpoint_recording_id),
           token: bearer_token,
           raw_payload: raw_payload,
           content_type: request.content_type,

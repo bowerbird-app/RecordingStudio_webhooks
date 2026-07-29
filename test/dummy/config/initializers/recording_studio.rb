@@ -2,7 +2,7 @@
 
 RecordingStudio.configure do |config|
   # Registered delegated_type recordables (strings or classes)
-  config.recordable_types = [ "Workspace", "Folder", "Page" ]
+  config.recordable_types = [ "Workspace", "Folder", "Page", "RecordingStudioWebhooks::Endpoint" ]
 
   # Require each configured ActiveRecord type to call recording_studio_recordable.
   config.require_recordable_declarations = true

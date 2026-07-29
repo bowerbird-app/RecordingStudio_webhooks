@@ -2,15 +2,21 @@
 
 module RecordingStudioWebhooks
   class Endpoint < ApplicationRecord
+    recording_studio_recordable label: "Webhook Endpoint", root: false, allowed_parent_types: ["Workspace"] if respond_to?(:recording_studio_recordable)
+
     belongs_to :recording_studio_recording, class_name: "RecordingStudio::Recording"
     has_many :endpoint_tokens, dependent: :restrict_with_exception
     has_many :inbound_events, dependent: :restrict_with_exception
 
+    scope :current, lambda {
+      joins("INNER JOIN recording_studio_recordings rs_recordings ON rs_recordings.id = recording_studio_webhooks_endpoints.recording_studio_recording_id")
+        .where("rs_recordings.recordable_type = ?", name)
+        .where("rs_recordings.recordable_id = recording_studio_webhooks_endpoints.id")
+    }
+
     validates :provider_name, presence: true, format: { with: ProviderDefinition::NAME }
     validates :label, presence: true, length: { maximum: 255 }
-    validates :identity_key, presence: true, format: { with: /\A[a-z0-9][a-z0-9_-]{2,127}\z/ }
     validates :enabled, inclusion: { in: [true, false] }
-    validates :identity_key, uniqueness: { scope: :provider_name }
     validate :safe_json_attributes
     validate :json_object_attributes
     validate :valid_policy_overrides
@@ -58,7 +64,6 @@ module RecordingStudioWebhooks
         recording_studio_recording_id: recording_studio_recording_id,
         label: label,
         provider_name: provider_name,
-        identity_key: identity_key,
         identity: identity,
         enabled: enabled?,
         policy_overrides: policy_overrides,
@@ -71,9 +76,8 @@ module RecordingStudioWebhooks
 
     def normalize_attributes
       self.provider_name = provider_name.to_s.downcase
-      self.identity_key = identity_key.to_s.downcase
       self.label = label.to_s.strip
-      self.label = identity_key if label.blank?
+      self.label = recording_studio_recording_id.to_s if label.blank?
       self.identity ||= {}
       self.metadata ||= {}
       self.policy_overrides = Policy.normalize_override(policy_overrides || {})
