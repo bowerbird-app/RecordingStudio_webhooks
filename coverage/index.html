@@ -13,7 +13,7 @@
       <img src="./assets/0.13.2/loading.gif" alt="loading"/>
     </div>
     <div id="wrapper" class="hide">
-      <div class="timestamp">Generated <abbr class="timeago" title="2026-07-29T12:18:05+00:00">2026-07-29T12:18:05+00:00</abbr></div>
+      <div class="timestamp">Generated <abbr class="timeago" title="2026-07-29T14:08:00+00:00">2026-07-29T14:08:00+00:00</abbr></div>
       <ul class="group_tabs"></ul>
 
       <div id="content">
@@ -22,14 +22,14 @@
     <span class="group_name">All Files</span>
     (<span class="covered_percent">
       <span class="yellow">
-  81.71%
+  80.97%
 </span>
 
      </span>
      covered at
      <span class="covered_strength">
        <span class="green">
-         11.32
+         11.16
        </span>
     </span> hits/line
     )
@@ -42,22 +42,22 @@
   </div>
 
   <div class="t-line-summary">
-    <b>749</b> relevant lines,
-    <span class="green"><b>612</b> lines covered</span> and
-    <span class="red"><b>137</b> lines missed. </span>
+    <b>762</b> relevant lines,
+    <span class="green"><b>617</b> lines covered</span> and
+    <span class="red"><b>145</b> lines missed. </span>
     (<span class="yellow">
-  81.71%
+  80.97%
 </span>
 )
   </div>
 
   
     <div class="t-branch-summary">
-      <span><b>234</b> total branches, </span>
-      <span class="green"><b>114</b> branches covered</span> and
-      <span class="red"><b>120</b> branches missed.</span>
+      <span><b>242</b> total branches, </span>
+      <span class="green"><b>116</b> branches covered</span> and
+      <span class="red"><b>126</b> branches missed.</span>
       (<span class="red">
-  48.72%
+  47.93%
 </span>
 )
     </div>
@@ -102,17 +102,17 @@
         
           <tr class="t-file">
             <td class="strong t-file__name"><a href="#a9f3c5eab5308f269459bc16e4c18d47acacc853" class="src_link" title="lib/recording_studio_webhooks.rb">lib/recording_studio_webhooks.rb</a></td>
-            <td class="green strong cell--number t-file__coverage">90.70 %</td>
-            <td class="cell--number">65</td>
-            <td class="cell--number">43</td>
+            <td class="red strong cell--number t-file__coverage">76.47 %</td>
+            <td class="cell--number">81</td>
+            <td class="cell--number">51</td>
             <td class="cell--number">39</td>
-            <td class="cell--number">4</td>
-            <td class="cell--number">1.12</td>
+            <td class="cell--number">12</td>
+            <td class="cell--number">0.94</td>
             
               <td class="red strong cell--number t-file__branch-coverage">0.00 %</td>
-              <td class="cell--number">2</td>
+              <td class="cell--number">8</td>
               <td class="cell--number">0</td>
-              <td class="cell--number">2</td>
+              <td class="cell--number">8</td>
             
           </tr>
         
@@ -198,16 +198,16 @@
         
           <tr class="t-file">
             <td class="strong t-file__name"><a href="#07499c5e3bfa84de3e66460f726078ed95e978e1" class="src_link" title="lib/recording_studio_webhooks/configuration.rb">lib/recording_studio_webhooks/configuration.rb</a></td>
-            <td class="yellow strong cell--number t-file__coverage">80.15 %</td>
-            <td class="cell--number">277</td>
-            <td class="cell--number">131</td>
-            <td class="cell--number">105</td>
+            <td class="yellow strong cell--number t-file__coverage">80.88 %</td>
+            <td class="cell--number">285</td>
+            <td class="cell--number">136</td>
+            <td class="cell--number">110</td>
             <td class="cell--number">26</td>
-            <td class="cell--number">2.92</td>
+            <td class="cell--number">3.00</td>
             
-              <td class="red strong cell--number t-file__branch-coverage">44.44 %</td>
-              <td class="cell--number">36</td>
-              <td class="cell--number">16</td>
+              <td class="red strong cell--number t-file__branch-coverage">47.37 %</td>
+              <td class="cell--number">38</td>
+              <td class="cell--number">18</td>
               <td class="cell--number">20</td>
             
           </tr>
@@ -1198,8 +1198,8 @@
   <div class="header">
     <h3>lib/recording_studio_webhooks.rb</h3>
     <h4>
-      <span class="green">
-  90.7%
+      <span class="red">
+  76.47%
 </span>
 
       lines covered
@@ -1216,16 +1216,16 @@
     
 
     <div class="t-line-summary">
-      <b>43</b> relevant lines.
+      <b>51</b> relevant lines.
       <span class="green"><b>39</b> lines covered</span> and
-      <span class="red"><b>4</b> lines missed.</span>
+      <span class="red"><b>12</b> lines missed.</span>
     </div>
 
     
       <div class="t-branch-summary">
-          <span><b>2</b> total branches, </span>
+          <span><b>8</b> total branches, </span>
           <span class="green"><b>0</b> branches covered</span> and
-          <span class="red"><b>2</b> branches missed.</span>
+          <span class="red"><b>8</b> branches missed.</span>
       </div>
     
 
@@ -2053,14 +2053,22 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="62">
+          <li class="missed-branch" data-hits="0" data-linenumber="62">
             
 
             
               
+                <span class="hits" title="else branch hit 0 times">
+                  else: 0
+                </span>
+              
+                <span class="hits" title="then branch hit 0 times">
+                  then: 0
+                </span>
+              
             
 
-            <code class="ruby">      RecordingStudioGateway.available?</code>
+            <code class="ruby">      return false unless RecordingStudioGateway.available?</code>
           </li>
         </div>
       
@@ -2072,12 +2080,220 @@
               
             
 
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="64">
+            
+
+            
+              
+            
+
+            <code class="ruby">      required_types = [</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="65">
+            
+
+            
+              
+            
+
+            <code class="ruby">        &quot;RecordingStudioWebhooks::Endpoint&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="66">
+            
+
+            
+              
+            
+
+            <code class="ruby">        &quot;RecordingStudioWebhooks::EndpointToken&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="67">
+            
+
+            
+              
+            
+
+            <code class="ruby">      ]</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="68">
+            
+
+            
+              
+            
+
+            <code class="ruby">      configured_types = Array(RecordingStudio.configuration.recordable_types).map(&amp;:to_s)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed-branch" data-hits="0" data-linenumber="69">
+            
+
+            
+              
+                <span class="hits" title="then branch hit 0 times">
+                  then: 0
+                </span>
+              
+            
+
+            <code class="ruby">      declared_types = if RecordingStudio.respond_to?(:recordable_declarations)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="70">
+            
+
+            
+              
+            
+
+            <code class="ruby">                         RecordingStudio.recordable_declarations.keys.map(&amp;:to_s)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed-branch" data-hits="" data-linenumber="71">
+            
+
+            
+              
+                <span class="hits" title="else branch hit 0 times">
+                  else: 0
+                </span>
+              
+            
+
+            <code class="ruby">                       else</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="72">
+            
+
+            
+              
+            
+
+            <code class="ruby">                         []</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="73">
+            
+
+            
+              
+            
+
+            <code class="ruby">                       end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="74">
+            
+
+            
+              
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="75">
+            
+
+            
+              
+            
+
+            <code class="ruby">      RecordingStudio.configuration.recordable_types = (configured_types + declared_types + required_types).uniq</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed-branch" data-hits="0" data-linenumber="76">
+            
+
+            
+              
+                <span class="hits" title="then branch hit 0 times">
+                  then: 0
+                </span>
+              
+                <span class="hits" title="else branch hit 0 times">
+                  else: 0
+                </span>
+              
+            
+
+            <code class="ruby">      RecordingStudio::DelegatedTypeRegistrar.apply! if defined?(RecordingStudio::DelegatedTypeRegistrar)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="77">
+            
+
+            
+              
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="78">
+            
+
+            
+              
+            
+
+            <code class="ruby">      true</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="79">
+            
+
+            
+              
+            
+
             <code class="ruby">    end</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="64">
+          <li class="never" data-hits="" data-linenumber="80">
             
 
             
@@ -2089,7 +2305,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="65">
+          <li class="never" data-hits="" data-linenumber="81">
             
 
             
@@ -5105,7 +5321,7 @@
     <h3>lib/recording_studio_webhooks/configuration.rb</h3>
     <h4>
       <span class="yellow">
-  80.15%
+  80.88%
 </span>
 
       lines covered
@@ -5114,7 +5330,7 @@
     
       <h4>
         <span class="red">
-  44.44%
+  47.37%
 </span>
 
         branches covered
@@ -5122,15 +5338,15 @@
     
 
     <div class="t-line-summary">
-      <b>131</b> relevant lines.
-      <span class="green"><b>105</b> lines covered</span> and
+      <b>136</b> relevant lines.
+      <span class="green"><b>110</b> lines covered</span> and
       <span class="red"><b>26</b> lines missed.</span>
     </div>
 
     
       <div class="t-branch-summary">
-          <span><b>36</b> total branches, </span>
-          <span class="green"><b>16</b> branches covered</span> and
+          <span><b>38</b> total branches, </span>
+          <span class="green"><b>18</b> branches covered</span> and
           <span class="red"><b>20</b> branches missed.</span>
       </div>
     
@@ -5364,7 +5580,7 @@
               
             
 
-            <code class="ruby">      :default_policy_overrides, :global_policy_overrides</code>
+            <code class="ruby">      :default_policy_overrides, :global_policy_overrides, :endpoint_token_bytesize</code>
           </li>
         </div>
       
@@ -5544,7 +5760,7 @@
               
             
 
-            <code class="ruby">      @content_types = DEFAULT_CONTENT_TYPES</code>
+            <code class="ruby">      @endpoint_token_bytesize = 18</code>
           </li>
         </div>
       
@@ -5558,7 +5774,7 @@
               
             
 
-            <code class="ruby">      @secret_redaction_keys = DEFAULT_REDACTION_KEYS</code>
+            <code class="ruby">      @content_types = DEFAULT_CONTENT_TYPES</code>
           </li>
         </div>
       
@@ -5572,7 +5788,7 @@
               
             
 
-            <code class="ruby">      @provenance_keys = DEFAULT_PROVENANCE_KEYS</code>
+            <code class="ruby">      @secret_redaction_keys = DEFAULT_REDACTION_KEYS</code>
           </li>
         </div>
       
@@ -5586,7 +5802,7 @@
               
             
 
-            <code class="ruby">      @authorization_hook = nil</code>
+            <code class="ruby">      @provenance_keys = DEFAULT_PROVENANCE_KEYS</code>
           </li>
         </div>
       
@@ -5600,7 +5816,7 @@
               
             
 
-            <code class="ruby">      @rate_limiter = nil</code>
+            <code class="ruby">      @authorization_hook = nil</code>
           </li>
         </div>
       
@@ -5614,7 +5830,7 @@
               
             
 
-            <code class="ruby">      @admin_authorizer = nil</code>
+            <code class="ruby">      @rate_limiter = nil</code>
           </li>
         </div>
       
@@ -5628,7 +5844,7 @@
               
             
 
-            <code class="ruby">      @admin_recording_scope = nil</code>
+            <code class="ruby">      @admin_authorizer = nil</code>
           </li>
         </div>
       
@@ -5642,7 +5858,7 @@
               
             
 
-            <code class="ruby">      @token_digest_secret = nil</code>
+            <code class="ruby">      @admin_recording_scope = nil</code>
           </li>
         </div>
       
@@ -5656,7 +5872,7 @@
               
             
 
-            <code class="ruby">      @provider_roots = [].freeze</code>
+            <code class="ruby">      @token_digest_secret = nil</code>
           </li>
         </div>
       
@@ -5670,7 +5886,7 @@
               
             
 
-            <code class="ruby">      @action_roots = [].freeze</code>
+            <code class="ruby">      @provider_roots = [].freeze</code>
           </li>
         </div>
       
@@ -5684,19 +5900,21 @@
               
             
 
-            <code class="ruby">      @automatic_discovery = false</code>
+            <code class="ruby">      @action_roots = [].freeze</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="42">
+          <li class="covered" data-hits="13" data-linenumber="42">
+            
+              <span class="hits">13</span>
             
 
             
               
             
 
-            <code class="ruby">    end</code>
+            <code class="ruby">      @automatic_discovery = false</code>
           </li>
         </div>
       
@@ -5708,21 +5926,19 @@
               
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    end</code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="44">
-            
-              <span class="hits">1</span>
+          <li class="never" data-hits="" data-linenumber="44">
             
 
             
               
             
 
-            <code class="ruby">    def default_policy=(value)</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -5736,7 +5952,7 @@
               
             
 
-            <code class="ruby">      @default_policy_overrides = ImmutableSnapshot.build(Policy.normalize_override(value))</code>
+            <code class="ruby">    def default_policy=(value)</code>
           </li>
         </div>
       
@@ -5750,19 +5966,21 @@
               
             
 
-            <code class="ruby">      @default_policy = Policy.new(Policy::DEFAULT_VALUES.merge(@default_policy_overrides))</code>
+            <code class="ruby">      @default_policy_overrides = ImmutableSnapshot.build(Policy.normalize_override(value))</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="47">
+          <li class="covered" data-hits="1" data-linenumber="47">
+            
+              <span class="hits">1</span>
             
 
             
               
             
 
-            <code class="ruby">    end</code>
+            <code class="ruby">      @default_policy = Policy.new(Policy::DEFAULT_VALUES.merge(@default_policy_overrides))</code>
           </li>
         </div>
       
@@ -5774,7 +5992,7 @@
               
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    end</code>
           </li>
         </div>
       
@@ -5786,7 +6004,7 @@
               
             
 
-            <code class="ruby">    # The first three PolicyResolver slots are host configurable here. The</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -5798,7 +6016,7 @@
               
             
 
-            <code class="ruby">    # remaining slots live with their natural owners: provider registrations,</code>
+            <code class="ruby">    # The first three PolicyResolver slots are host configurable here. The</code>
           </li>
         </div>
       
@@ -5810,12 +6028,24 @@
               
             
 
+            <code class="ruby">    # remaining slots live with their natural owners: provider registrations,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="52">
+            
+
+            
+              
+            
+
             <code class="ruby">    # immutable endpoint snapshots and event rules, and action registrations.</code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="52">
+          <li class="covered" data-hits="1" data-linenumber="53">
             
               <span class="hits">1</span>
             
@@ -5829,7 +6059,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="53">
+          <li class="missed" data-hits="0" data-linenumber="54">
             
 
             
@@ -5841,7 +6071,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="54">
+          <li class="never" data-hits="" data-linenumber="55">
             
 
             
@@ -5853,7 +6083,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="55">
+          <li class="never" data-hits="" data-linenumber="56">
             
 
             
@@ -5861,20 +6091,6 @@
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="56">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    def global_policy=(value)</code>
           </li>
         </div>
       
@@ -5888,19 +6104,21 @@
               
             
 
-            <code class="ruby">      @global_policy_overrides = ImmutableSnapshot.build(Policy.normalize_override(value))</code>
+            <code class="ruby">    def global_policy=(value)</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="58">
+          <li class="covered" data-hits="1" data-linenumber="58">
+            
+              <span class="hits">1</span>
             
 
             
               
             
 
-            <code class="ruby">    end</code>
+            <code class="ruby">      @global_policy_overrides = ImmutableSnapshot.build(Policy.normalize_override(value))</code>
           </li>
         </div>
       
@@ -5912,12 +6130,24 @@
               
             
 
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="60">
+            
+
+            
+              
+            
+
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="60">
+          <li class="covered" data-hits="1" data-linenumber="61">
             
               <span class="hits">1</span>
             
@@ -5931,7 +6161,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="61">
+          <li class="never" data-hits="" data-linenumber="62">
             
 
             
@@ -5943,7 +6173,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="62">
+          <li class="covered" data-hits="1" data-linenumber="63">
             
               <span class="hits">1</span>
             
@@ -5957,7 +6187,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="63">
+          <li class="missed" data-hits="0" data-linenumber="64">
             
 
             
@@ -5969,7 +6199,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="64">
+          <li class="never" data-hits="" data-linenumber="65">
             
 
             
@@ -5981,7 +6211,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="65">
+          <li class="never" data-hits="" data-linenumber="66">
             
 
             
@@ -5993,7 +6223,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="66">
+          <li class="never" data-hits="" data-linenumber="67">
             
 
             
@@ -6005,7 +6235,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="67">
+          <li class="never" data-hits="" data-linenumber="68">
             
 
             
@@ -6017,7 +6247,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="68">
+          <li class="never" data-hits="" data-linenumber="69">
             
 
             
@@ -6029,7 +6259,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="69">
+          <li class="never" data-hits="" data-linenumber="70">
             
 
             
@@ -6041,7 +6271,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="70">
+          <li class="never" data-hits="" data-linenumber="71">
             
 
             
@@ -6053,7 +6283,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="71">
+          <li class="covered" data-hits="1" data-linenumber="72">
             
               <span class="hits">1</span>
             
@@ -6067,7 +6297,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="72">
+          <li class="missed" data-hits="0" data-linenumber="73">
             
 
             
@@ -6079,7 +6309,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="0" data-linenumber="73">
+          <li class="missed-branch" data-hits="0" data-linenumber="74">
             
 
             
@@ -6099,7 +6329,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="74">
+          <li class="never" data-hits="" data-linenumber="75">
             
 
             
@@ -6111,7 +6341,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="75">
+          <li class="missed" data-hits="0" data-linenumber="76">
             
 
             
@@ -6123,7 +6353,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="76">
+          <li class="never" data-hits="" data-linenumber="77">
             
 
             
@@ -6135,7 +6365,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="77">
+          <li class="never" data-hits="" data-linenumber="78">
             
 
             
@@ -6147,7 +6377,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="78">
+          <li class="never" data-hits="" data-linenumber="79">
             
 
             
@@ -6159,7 +6389,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="79">
+          <li class="covered" data-hits="1" data-linenumber="80">
             
               <span class="hits">1</span>
             
@@ -6173,7 +6403,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="4" data-linenumber="80">
+          <li class="covered" data-hits="4" data-linenumber="81">
             
               <span class="hits">4</span>
             
@@ -6195,7 +6425,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="81">
+          <li class="covered" data-hits="1" data-linenumber="82">
             
               <span class="hits">1</span>
             
@@ -6209,7 +6439,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="82">
+          <li class="never" data-hits="" data-linenumber="83">
             
 
             
@@ -6221,7 +6451,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="83">
+          <li class="never" data-hits="" data-linenumber="84">
             
 
             
@@ -6233,7 +6463,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="3" data-linenumber="84">
+          <li class="covered" data-hits="3" data-linenumber="85">
             
               <span class="hits">3</span>
             
@@ -6247,7 +6477,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="85">
+          <li class="never" data-hits="" data-linenumber="86">
             
 
             
@@ -6259,7 +6489,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="86">
+          <li class="never" data-hits="" data-linenumber="87">
             
 
             
@@ -6271,7 +6501,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="87">
+          <li class="covered" data-hits="1" data-linenumber="88">
             
               <span class="hits">1</span>
             
@@ -6285,7 +6515,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="3" data-linenumber="88">
+          <li class="covered" data-hits="3" data-linenumber="89">
             
               <span class="hits">3</span>
             
@@ -6299,7 +6529,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="89">
+          <li class="never" data-hits="" data-linenumber="90">
             
 
             
@@ -6311,7 +6541,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="90">
+          <li class="never" data-hits="" data-linenumber="91">
             
 
             
@@ -6323,7 +6553,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="91">
+          <li class="covered" data-hits="1" data-linenumber="92">
             
               <span class="hits">1</span>
             
@@ -6337,7 +6567,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="3" data-linenumber="92">
+          <li class="covered" data-hits="3" data-linenumber="93">
             
               <span class="hits">3</span>
             
@@ -6351,7 +6581,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="1" data-linenumber="93">
+          <li class="missed-branch" data-hits="1" data-linenumber="94">
             
               <span class="hits">1</span>
             
@@ -6373,7 +6603,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="94">
+          <li class="never" data-hits="" data-linenumber="95">
             
 
             
@@ -6385,7 +6615,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="95">
+          <li class="covered" data-hits="1" data-linenumber="96">
             
               <span class="hits">1</span>
             
@@ -6399,7 +6629,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="96">
+          <li class="never" data-hits="" data-linenumber="97">
             
 
             
@@ -6411,7 +6641,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="97">
+          <li class="never" data-hits="" data-linenumber="98">
             
 
             
@@ -6423,7 +6653,107 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="98">
+          <li class="covered" data-hits="1" data-linenumber="99">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">    def endpoint_token_bytesize=(value)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="2" data-linenumber="100">
+            
+              <span class="hits">2</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">      bytesize = positive_integer(value, &quot;endpoint token bytesize&quot;)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="2" data-linenumber="101">
+            
+              <span class="hits">2</span>
+            
+
+            
+              
+                <span class="hits" title="then branch hit 1 times">
+                  then: 1
+                </span>
+              
+                <span class="hits" title="else branch hit 1 times">
+                  else: 1
+                </span>
+              
+            
+
+            <code class="ruby">      raise ConfigurationError, &quot;endpoint token bytesize must be at least 12&quot; if bytesize &lt; 12</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="102">
+            
+
+            
+              
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="103">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">      @endpoint_token_bytesize = bytesize</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="104">
+            
+
+            
+              
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="105">
+            
+
+            
+              
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="106">
             
               <span class="hits">1</span>
             
@@ -6437,7 +6767,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="99">
+          <li class="missed" data-hits="0" data-linenumber="107">
             
 
             
@@ -6449,7 +6779,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="100">
+          <li class="never" data-hits="" data-linenumber="108">
             
 
             
@@ -6461,7 +6791,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="101">
+          <li class="never" data-hits="" data-linenumber="109">
             
 
             
@@ -6473,7 +6803,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="102">
+          <li class="covered" data-hits="1" data-linenumber="110">
             
               <span class="hits">1</span>
             
@@ -6487,7 +6817,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="103">
+          <li class="missed" data-hits="0" data-linenumber="111">
             
 
             
@@ -6499,7 +6829,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="0" data-linenumber="104">
+          <li class="missed-branch" data-hits="0" data-linenumber="112">
             
 
             
@@ -6519,7 +6849,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="105">
+          <li class="never" data-hits="" data-linenumber="113">
             
 
             
@@ -6527,106 +6857,6 @@
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="106">
-            
-
-            
-              
-            
-
-            <code class="ruby">      @provenance_keys = keys</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="107">
-            
-
-            
-              
-            
-
-            <code class="ruby">    end</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="108">
-            
-
-            
-              
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="109">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    def authorization_hook=(value)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="110">
-            
-
-            
-              
-            
-
-            <code class="ruby">      @authorization_hook = callable_or_nil(value, &quot;authorization hook&quot;)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="111">
-            
-
-            
-              
-            
-
-            <code class="ruby">    end</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="112">
-            
-
-            
-              
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="113">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    def rate_limiter=(value)</code>
           </li>
         </div>
       
@@ -6638,7 +6868,7 @@
               
             
 
-            <code class="ruby">      @rate_limiter = callable_or_nil(value, &quot;rate limiter&quot;)</code>
+            <code class="ruby">      @provenance_keys = keys</code>
           </li>
         </div>
       
@@ -6667,26 +6897,28 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="117">
+          <li class="covered" data-hits="1" data-linenumber="117">
+            
+              <span class="hits">1</span>
             
 
             
               
             
 
-            <code class="ruby">    # Administrative access is deliberately opt-in. The engine&#39;s controllers</code>
+            <code class="ruby">    def authorization_hook=(value)</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="118">
+          <li class="missed" data-hits="0" data-linenumber="118">
             
 
             
               
             
 
-            <code class="ruby">    # fail closed when this is unset, rather than guessing how a host app</code>
+            <code class="ruby">      @authorization_hook = callable_or_nil(value, &quot;authorization hook&quot;)</code>
           </li>
         </div>
       
@@ -6698,52 +6930,12 @@
               
             
 
-            <code class="ruby">    # represents an administrator.</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="120">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    def admin_authorizer=(value)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="2" data-linenumber="121">
-            
-              <span class="hits">2</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">      @admin_authorizer = callable_or_nil(value, &quot;admin authorizer&quot;)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="122">
-            
-
-            
-              
-            
-
             <code class="ruby">    end</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="123">
+          <li class="never" data-hits="" data-linenumber="120">
             
 
             
@@ -6755,6 +6947,44 @@
         </div>
       
         <div>
+          <li class="covered" data-hits="1" data-linenumber="121">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">    def rate_limiter=(value)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="122">
+            
+
+            
+              
+            
+
+            <code class="ruby">      @rate_limiter = callable_or_nil(value, &quot;rate limiter&quot;)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="123">
+            
+
+            
+              
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
           <li class="never" data-hits="" data-linenumber="124">
             
 
@@ -6762,7 +6992,7 @@
               
             
 
-            <code class="ruby">    # An optional callable returning the RecordingStudio::Recording relation</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -6774,7 +7004,7 @@
               
             
 
-            <code class="ruby">    # visible to an already-authorized administrator. Returning nil means no</code>
+            <code class="ruby">    # Administrative access is deliberately opt-in. The engine&#39;s controllers</code>
           </li>
         </div>
       
@@ -6786,21 +7016,19 @@
               
             
 
-            <code class="ruby">    # recordings are visible; it must never widen a host application&#39;s scope.</code>
+            <code class="ruby">    # fail closed when this is unset, rather than guessing how a host app</code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="127">
-            
-              <span class="hits">1</span>
+          <li class="never" data-hits="" data-linenumber="127">
             
 
             
               
             
 
-            <code class="ruby">    def admin_recording_scope=(value)</code>
+            <code class="ruby">    # represents an administrator.</code>
           </li>
         </div>
       
@@ -6814,19 +7042,21 @@
               
             
 
-            <code class="ruby">      @admin_recording_scope = callable_or_nil(value, &quot;admin recording scope&quot;)</code>
+            <code class="ruby">    def admin_authorizer=(value)</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="129">
+          <li class="covered" data-hits="2" data-linenumber="129">
+            
+              <span class="hits">2</span>
             
 
             
               
             
 
-            <code class="ruby">    end</code>
+            <code class="ruby">      @admin_authorizer = callable_or_nil(value, &quot;admin authorizer&quot;)</code>
           </li>
         </div>
       
@@ -6838,7 +7068,7 @@
               
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    end</code>
           </li>
         </div>
       
@@ -6850,7 +7080,7 @@
               
             
 
-            <code class="ruby">    # Kept out of #report and every persisted snapshot. Set this from credentials</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -6862,12 +7092,36 @@
               
             
 
-            <code class="ruby">    # or an initializer; rotating it invalidates existing endpoint tokens.</code>
+            <code class="ruby">    # An optional callable returning the RecordingStudio::Recording relation</code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="133">
+          <li class="never" data-hits="" data-linenumber="133">
+            
+
+            
+              
+            
+
+            <code class="ruby">    # visible to an already-authorized administrator. Returning nil means no</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="134">
+            
+
+            
+              
+            
+
+            <code class="ruby">    # recordings are visible; it must never widen a host application&#39;s scope.</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="135">
             
               <span class="hits">1</span>
             
@@ -6876,34 +7130,26 @@
               
             
 
-            <code class="ruby">    def token_digest_secret=(value)</code>
+            <code class="ruby">    def admin_recording_scope=(value)</code>
           </li>
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="2" data-linenumber="134">
+          <li class="covered" data-hits="1" data-linenumber="136">
             
-              <span class="hits">2</span>
+              <span class="hits">1</span>
             
 
             
-              
-                <span class="hits" title="then branch hit 0 times">
-                  then: 0
-                </span>
-              
-                <span class="hits" title="else branch hit 2 times">
-                  else: 2
-                </span>
               
             
 
-            <code class="ruby">      @token_digest_secret = value.nil? ? nil : value.to_s.dup.freeze</code>
+            <code class="ruby">      @admin_recording_scope = callable_or_nil(value, &quot;admin recording scope&quot;)</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="135">
+          <li class="never" data-hits="" data-linenumber="137">
             
 
             
@@ -6911,32 +7157,6 @@
             
 
             <code class="ruby">    end</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="136">
-            
-
-            
-              
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="137">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    def token_digest_secret_configured? = !@token_digest_secret.nil?</code>
           </li>
         </div>
       
@@ -6960,7 +7180,7 @@
               
             
 
-            <code class="ruby">    # Keeps the HMAC key private while providing the only supported way to</code>
+            <code class="ruby">    # Kept out of #report and every persisted snapshot. Set this from credentials</code>
           </li>
         </div>
       
@@ -6972,7 +7192,7 @@
               
             
 
-            <code class="ruby">    # calculate a token digest.</code>
+            <code class="ruby">    # or an initializer; rotating it invalidates existing endpoint tokens.</code>
           </li>
         </div>
       
@@ -6986,12 +7206,122 @@
               
             
 
+            <code class="ruby">    def token_digest_secret=(value)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed-branch" data-hits="2" data-linenumber="142">
+            
+              <span class="hits">2</span>
+            
+
+            
+              
+                <span class="hits" title="then branch hit 0 times">
+                  then: 0
+                </span>
+              
+                <span class="hits" title="else branch hit 2 times">
+                  else: 2
+                </span>
+              
+            
+
+            <code class="ruby">      @token_digest_secret = value.nil? ? nil : value.to_s.dup.freeze</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="143">
+            
+
+            
+              
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="144">
+            
+
+            
+              
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="145">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">    def token_digest_secret_configured? = !@token_digest_secret.nil?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="146">
+            
+
+            
+              
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="147">
+            
+
+            
+              
+            
+
+            <code class="ruby">    # Keeps the HMAC key private while providing the only supported way to</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="148">
+            
+
+            
+              
+            
+
+            <code class="ruby">    # calculate a token digest.</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="149">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
             <code class="ruby">    def digest_token(value)</code>
           </li>
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="1" data-linenumber="142">
+          <li class="missed-branch" data-hits="1" data-linenumber="150">
             
               <span class="hits">1</span>
             
@@ -7009,7 +7339,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="143">
+          <li class="missed" data-hits="0" data-linenumber="151">
             
 
             
@@ -7021,7 +7351,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="144">
+          <li class="never" data-hits="" data-linenumber="152">
             
 
             
@@ -7037,7 +7367,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="145">
+          <li class="covered" data-hits="1" data-linenumber="153">
             
               <span class="hits">1</span>
             
@@ -7051,7 +7381,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="146">
+          <li class="never" data-hits="" data-linenumber="154">
             
 
             
@@ -7059,108 +7389,6 @@
             
 
             <code class="ruby">      end</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="147">
-            
-
-            
-              
-            
-
-            <code class="ruby">    end</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="148">
-            
-
-            
-              
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="149">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    def provider_roots=(value)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="150">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">      @provider_roots = discovery_roots(value)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="151">
-            
-
-            
-              
-            
-
-            <code class="ruby">    end</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="152">
-            
-
-            
-              
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="153">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    def action_roots=(value)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="154">
-            
-
-            
-              
-            
-
-            <code class="ruby">      @action_roots = discovery_roots(value)</code>
           </li>
         </div>
       
@@ -7198,41 +7426,33 @@
               
             
 
-            <code class="ruby">    def automatic_discovery=(value)</code>
+            <code class="ruby">    def provider_roots=(value)</code>
           </li>
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="1" data-linenumber="158">
+          <li class="covered" data-hits="1" data-linenumber="158">
             
               <span class="hits">1</span>
             
 
             
               
-                <span class="hits" title="else branch hit 1 times">
-                  else: 1
-                </span>
-              
-                <span class="hits" title="then branch hit 0 times">
-                  then: 0
-                </span>
-              
             
 
-            <code class="ruby">      unless value == true || value == false</code>
+            <code class="ruby">      @provider_roots = discovery_roots(value)</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="159">
+          <li class="never" data-hits="" data-linenumber="159">
             
 
             
               
             
 
-            <code class="ruby">        raise ConfigurationError, &quot;automatic discovery must be boolean&quot;</code>
+            <code class="ruby">    end</code>
           </li>
         </div>
       
@@ -7244,24 +7464,12 @@
               
             
 
-            <code class="ruby">      end</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="161">
-            
-
-            
-              
-            
-
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="162">
+          <li class="covered" data-hits="1" data-linenumber="161">
             
               <span class="hits">1</span>
             
@@ -7270,7 +7478,19 @@
               
             
 
-            <code class="ruby">      @automatic_discovery = value</code>
+            <code class="ruby">    def action_roots=(value)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="162">
+            
+
+            
+              
+            
+
+            <code class="ruby">      @action_roots = discovery_roots(value)</code>
           </li>
         </div>
       
@@ -7308,33 +7528,41 @@
               
             
 
-            <code class="ruby">    def provider(name, implementation = nil, **options, &amp;)</code>
+            <code class="ruby">    def automatic_discovery=(value)</code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="5" data-linenumber="166">
+          <li class="missed-branch" data-hits="1" data-linenumber="166">
             
-              <span class="hits">5</span>
+              <span class="hits">1</span>
+            
+
+            
+              
+                <span class="hits" title="else branch hit 1 times">
+                  else: 1
+                </span>
+              
+                <span class="hits" title="then branch hit 0 times">
+                  then: 0
+                </span>
+              
+            
+
+            <code class="ruby">      unless value == true || value == false</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="167">
             
 
             
               
             
 
-            <code class="ruby">      providers.register(name, implementation, **options, &amp;)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="167">
-            
-
-            
-              
-            
-
-            <code class="ruby">    end</code>
+            <code class="ruby">        raise ConfigurationError, &quot;automatic discovery must be boolean&quot;</code>
           </li>
         </div>
       
@@ -7346,12 +7574,24 @@
               
             
 
+            <code class="ruby">      end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="169">
+            
+
+            
+              
+            
+
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="169">
+          <li class="covered" data-hits="1" data-linenumber="170">
             
               <span class="hits">1</span>
             
@@ -7360,21 +7600,7 @@
               
             
 
-            <code class="ruby">    def action(name, implementation = nil, **options, &amp;)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="6" data-linenumber="170">
-            
-              <span class="hits">6</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">      actions.register(name, implementation, **options, &amp;)</code>
+            <code class="ruby">      @automatic_discovery = value</code>
           </li>
         </div>
       
@@ -7412,12 +7638,116 @@
               
             
 
+            <code class="ruby">    def provider(name, implementation = nil, **options, &amp;)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="5" data-linenumber="174">
+            
+              <span class="hits">5</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">      providers.register(name, implementation, **options, &amp;)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="175">
+            
+
+            
+              
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="176">
+            
+
+            
+              
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="177">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">    def action(name, implementation = nil, **options, &amp;)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="6" data-linenumber="178">
+            
+              <span class="hits">6</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">      actions.register(name, implementation, **options, &amp;)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="179">
+            
+
+            
+              
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="180">
+            
+
+            
+              
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="181">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
             <code class="ruby">    alias register_provider provider</code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="174">
+          <li class="covered" data-hits="1" data-linenumber="182">
             
               <span class="hits">1</span>
             
@@ -7431,7 +7761,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="175">
+          <li class="never" data-hits="" data-linenumber="183">
             
 
             
@@ -7443,7 +7773,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="176">
+          <li class="covered" data-hits="1" data-linenumber="184">
             
               <span class="hits">1</span>
             
@@ -7457,7 +7787,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="0" data-linenumber="177">
+          <li class="missed-branch" data-hits="0" data-linenumber="185">
             
 
             
@@ -7477,7 +7807,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="178">
+          <li class="never" data-hits="" data-linenumber="186">
             
 
             
@@ -7489,7 +7819,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="0" data-linenumber="179">
+          <li class="missed-branch" data-hits="0" data-linenumber="187">
             
 
             
@@ -7509,7 +7839,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="180">
+          <li class="missed" data-hits="0" data-linenumber="188">
             
 
             
@@ -7521,7 +7851,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="181">
+          <li class="missed" data-hits="0" data-linenumber="189">
             
 
             
@@ -7533,7 +7863,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="0" data-linenumber="182">
+          <li class="missed-branch" data-hits="0" data-linenumber="190">
             
 
             
@@ -7553,7 +7883,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="183">
+          <li class="never" data-hits="" data-linenumber="191">
             
 
             
@@ -7565,7 +7895,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="184">
+          <li class="missed" data-hits="0" data-linenumber="192">
             
 
             
@@ -7577,7 +7907,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="185">
+          <li class="never" data-hits="" data-linenumber="193">
             
 
             
@@ -7589,7 +7919,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="186">
+          <li class="never" data-hits="" data-linenumber="194">
             
 
             
@@ -7601,7 +7931,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="187">
+          <li class="never" data-hits="" data-linenumber="195">
             
 
             
@@ -7613,7 +7943,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="188">
+          <li class="never" data-hits="" data-linenumber="196">
             
 
             
@@ -7625,7 +7955,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="189">
+          <li class="covered" data-hits="1" data-linenumber="197">
             
               <span class="hits">1</span>
             
@@ -7639,7 +7969,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="1" data-linenumber="190">
+          <li class="missed-branch" data-hits="1" data-linenumber="198">
             
               <span class="hits">1</span>
             
@@ -7661,7 +7991,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="191">
+          <li class="never" data-hits="" data-linenumber="199">
             
 
             
@@ -7673,7 +8003,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="2" data-linenumber="192">
+          <li class="covered" data-hits="2" data-linenumber="200">
             
               <span class="hits">2</span>
             
@@ -7687,7 +8017,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="3" data-linenumber="193">
+          <li class="covered" data-hits="3" data-linenumber="201">
             
               <span class="hits">3</span>
             
@@ -7701,7 +8031,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="194">
+          <li class="covered" data-hits="1" data-linenumber="202">
             
               <span class="hits">1</span>
             
@@ -7715,7 +8045,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="195">
+          <li class="never" data-hits="" data-linenumber="203">
             
 
             
@@ -7727,7 +8057,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="196">
+          <li class="never" data-hits="" data-linenumber="204">
             
 
             
@@ -7739,7 +8069,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="197">
+          <li class="covered" data-hits="1" data-linenumber="205">
             
               <span class="hits">1</span>
             
@@ -7753,7 +8083,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="2" data-linenumber="198">
+          <li class="covered" data-hits="2" data-linenumber="206">
             
               <span class="hits">2</span>
             
@@ -7767,7 +8097,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="199">
+          <li class="never" data-hits="" data-linenumber="207">
             
 
             
@@ -7779,7 +8109,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="200">
+          <li class="never" data-hits="" data-linenumber="208">
             
 
             
@@ -7791,7 +8121,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="201">
+          <li class="never" data-hits="" data-linenumber="209">
             
 
             
@@ -7803,7 +8133,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="202">
+          <li class="never" data-hits="" data-linenumber="210">
             
 
             
@@ -7815,7 +8145,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="203">
+          <li class="never" data-hits="" data-linenumber="211">
             
 
             
@@ -7827,7 +8157,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="204">
+          <li class="never" data-hits="" data-linenumber="212">
             
 
             
@@ -7839,7 +8169,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="205">
+          <li class="never" data-hits="" data-linenumber="213">
             
 
             
@@ -7851,7 +8181,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="206">
+          <li class="never" data-hits="" data-linenumber="214">
             
 
             
@@ -7863,7 +8193,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="207">
+          <li class="never" data-hits="" data-linenumber="215">
             
 
             
@@ -7875,7 +8205,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="208">
+          <li class="never" data-hits="" data-linenumber="216">
             
 
             
@@ -7887,7 +8217,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="209">
+          <li class="never" data-hits="" data-linenumber="217">
             
 
             
@@ -7899,7 +8229,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="210">
+          <li class="never" data-hits="" data-linenumber="218">
             
 
             
@@ -7911,7 +8241,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="211">
+          <li class="never" data-hits="" data-linenumber="219">
             
 
             
@@ -7923,7 +8253,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="212">
+          <li class="never" data-hits="" data-linenumber="220">
             
 
             
@@ -7935,7 +8265,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="213">
+          <li class="never" data-hits="" data-linenumber="221">
             
 
             
@@ -7947,7 +8277,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="214">
+          <li class="never" data-hits="" data-linenumber="222">
             
 
             
@@ -7959,7 +8289,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="215">
+          <li class="never" data-hits="" data-linenumber="223">
             
 
             
@@ -7971,7 +8301,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="216">
+          <li class="never" data-hits="" data-linenumber="224">
             
 
             
@@ -7983,7 +8313,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="217">
+          <li class="never" data-hits="" data-linenumber="225">
             
 
             
@@ -7995,7 +8325,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="218">
+          <li class="never" data-hits="" data-linenumber="226">
             
 
             
@@ -8007,7 +8337,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="219">
+          <li class="never" data-hits="" data-linenumber="227">
             
 
             
@@ -8019,7 +8349,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="220">
+          <li class="never" data-hits="" data-linenumber="228">
             
 
             
@@ -8031,7 +8361,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="221">
+          <li class="never" data-hits="" data-linenumber="229">
             
 
             
@@ -8043,7 +8373,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="222">
+          <li class="never" data-hits="" data-linenumber="230">
             
 
             
@@ -8055,7 +8385,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="223">
+          <li class="covered" data-hits="1" data-linenumber="231">
             
               <span class="hits">1</span>
             
@@ -8065,120 +8395,6 @@
             
 
             <code class="ruby">    alias to_h report</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="224">
-            
-
-            
-              
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="225">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    def inspect = &quot;#&lt;#{self.class.name} dispatcher=#{dispatcher_name.inspect} secrets=[FILTERED]&gt;&quot;</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="226">
-            
-
-            
-              
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="227">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    private</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="228">
-            
-
-            
-              
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="229">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    def positive_integer(value, label)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="3" data-linenumber="230">
-            
-              <span class="hits">3</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">      integer = Integer(value)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="3" data-linenumber="231">
-            
-              <span class="hits">3</span>
-            
-
-            
-              
-                <span class="hits" title="else branch hit 2 times">
-                  else: 2
-                </span>
-              
-                <span class="hits" title="then branch hit 1 times">
-                  then: 1
-                </span>
-              
-            
-
-            <code class="ruby">      raise ConfigurationError, &quot;#{label} must be positive&quot; unless integer.positive?</code>
           </li>
         </div>
       
@@ -8195,16 +8411,16 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="2" data-linenumber="233">
+          <li class="covered" data-hits="1" data-linenumber="233">
             
-              <span class="hits">2</span>
+              <span class="hits">1</span>
             
 
             
               
             
 
-            <code class="ruby">      integer</code>
+            <code class="ruby">    def inspect = &quot;#&lt;#{self.class.name} dispatcher=#{dispatcher_name.inspect} secrets=[FILTERED]&gt;&quot;</code>
           </li>
         </div>
       
@@ -8216,19 +8432,21 @@
               
             
 
-            <code class="ruby">    rescue ArgumentError, TypeError</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="235">
+          <li class="covered" data-hits="1" data-linenumber="235">
+            
+              <span class="hits">1</span>
             
 
             
               
             
 
-            <code class="ruby">      raise ConfigurationError, &quot;#{label} must be an integer&quot;</code>
+            <code class="ruby">    private</code>
           </li>
         </div>
       
@@ -8240,12 +8458,62 @@
               
             
 
-            <code class="ruby">    end</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="237">
+          <li class="covered" data-hits="1" data-linenumber="237">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">    def positive_integer(value, label)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="5" data-linenumber="238">
+            
+              <span class="hits">5</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">      integer = Integer(value)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="5" data-linenumber="239">
+            
+              <span class="hits">5</span>
+            
+
+            
+              
+                <span class="hits" title="else branch hit 4 times">
+                  else: 4
+                </span>
+              
+                <span class="hits" title="then branch hit 1 times">
+                  then: 1
+                </span>
+              
+            
+
+            <code class="ruby">      raise ConfigurationError, &quot;#{label} must be positive&quot; unless integer.positive?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="240">
             
 
             
@@ -8257,7 +8525,69 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="238">
+          <li class="covered" data-hits="4" data-linenumber="241">
+            
+              <span class="hits">4</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">      integer</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="242">
+            
+
+            
+              
+            
+
+            <code class="ruby">    rescue ArgumentError, TypeError</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="243">
+            
+
+            
+              
+            
+
+            <code class="ruby">      raise ConfigurationError, &quot;#{label} must be an integer&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="244">
+            
+
+            
+              
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="245">
+            
+
+            
+              
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="246">
             
               <span class="hits">1</span>
             
@@ -8271,7 +8601,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="239">
+          <li class="missed" data-hits="0" data-linenumber="247">
             
 
             
@@ -8283,7 +8613,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="0" data-linenumber="240">
+          <li class="missed-branch" data-hits="0" data-linenumber="248">
             
 
             
@@ -8303,7 +8633,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="241">
+          <li class="never" data-hits="" data-linenumber="249">
             
 
             
@@ -8315,7 +8645,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="242">
+          <li class="missed" data-hits="0" data-linenumber="250">
             
 
             
@@ -8327,7 +8657,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="243">
+          <li class="never" data-hits="" data-linenumber="251">
             
 
             
@@ -8339,7 +8669,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="244">
+          <li class="never" data-hits="" data-linenumber="252">
             
 
             
@@ -8351,7 +8681,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="245">
+          <li class="covered" data-hits="1" data-linenumber="253">
             
               <span class="hits">1</span>
             
@@ -8365,7 +8695,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="3" data-linenumber="246">
+          <li class="missed-branch" data-hits="3" data-linenumber="254">
             
               <span class="hits">3</span>
             
@@ -8387,7 +8717,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="3" data-linenumber="247">
+          <li class="covered" data-hits="3" data-linenumber="255">
             
               <span class="hits">3</span>
             
@@ -8409,7 +8739,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="248">
+          <li class="never" data-hits="" data-linenumber="256">
             
 
             
@@ -8421,7 +8751,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="2" data-linenumber="249">
+          <li class="covered" data-hits="2" data-linenumber="257">
             
               <span class="hits">2</span>
             
@@ -8435,7 +8765,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="250">
+          <li class="never" data-hits="" data-linenumber="258">
             
 
             
@@ -8447,7 +8777,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="251">
+          <li class="never" data-hits="" data-linenumber="259">
             
 
             
@@ -8459,7 +8789,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="252">
+          <li class="covered" data-hits="1" data-linenumber="260">
             
               <span class="hits">1</span>
             
@@ -8473,7 +8803,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="253">
+          <li class="covered" data-hits="1" data-linenumber="261">
             
               <span class="hits">1</span>
             
@@ -8487,7 +8817,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="254">
+          <li class="covered" data-hits="1" data-linenumber="262">
             
               <span class="hits">1</span>
             
@@ -8501,7 +8831,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="1" data-linenumber="255">
+          <li class="missed-branch" data-hits="1" data-linenumber="263">
             
               <span class="hits">1</span>
             
@@ -8523,7 +8853,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="256">
+          <li class="never" data-hits="" data-linenumber="264">
             
 
             
@@ -8531,108 +8861,6 @@
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="257">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">        path.freeze</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="258">
-            
-
-            
-              
-            
-
-            <code class="ruby">      rescue Errno::ENOENT</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="259">
-            
-
-            
-              
-            
-
-            <code class="ruby">        raise ConfigurationError, &quot;discovery root is unavailable&quot;</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="260">
-            
-
-            
-              
-            
-
-            <code class="ruby">      end.uniq.sort.freeze</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="261">
-            
-
-            
-              
-            
-
-            <code class="ruby">    end</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="262">
-            
-
-            
-              
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="263">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">    def ruby_files_under(root)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="covered" data-hits="1" data-linenumber="264">
-            
-              <span class="hits">1</span>
-            
-
-            
-              
-            
-
-            <code class="ruby">      prefix = &quot;#{root}/&quot;</code>
           </li>
         </div>
       
@@ -8646,12 +8874,114 @@
               
             
 
+            <code class="ruby">        path.freeze</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="266">
+            
+
+            
+              
+            
+
+            <code class="ruby">      rescue Errno::ENOENT</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="267">
+            
+
+            
+              
+            
+
+            <code class="ruby">        raise ConfigurationError, &quot;discovery root is unavailable&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="268">
+            
+
+            
+              
+            
+
+            <code class="ruby">      end.uniq.sort.freeze</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="269">
+            
+
+            
+              
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="270">
+            
+
+            
+              
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="271">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">    def ruby_files_under(root)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="272">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
+            <code class="ruby">      prefix = &quot;#{root}/&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="273">
+            
+              <span class="hits">1</span>
+            
+
+            
+              
+            
+
             <code class="ruby">      Dir.glob(File.join(root, &quot;**&quot;, &quot;*.rb&quot;)).sort.filter_map do |file|</code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="2" data-linenumber="266">
+          <li class="covered" data-hits="2" data-linenumber="274">
             
               <span class="hits">2</span>
             
@@ -8665,7 +8995,7 @@
         </div>
       
         <div>
-          <li class="missed-branch" data-hits="2" data-linenumber="267">
+          <li class="missed-branch" data-hits="2" data-linenumber="275">
             
               <span class="hits">2</span>
             
@@ -8687,7 +9017,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="268">
+          <li class="never" data-hits="" data-linenumber="276">
             
 
             
@@ -8699,7 +9029,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="269">
+          <li class="missed" data-hits="0" data-linenumber="277">
             
 
             
@@ -8711,7 +9041,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="270">
+          <li class="never" data-hits="" data-linenumber="278">
             
 
             
@@ -8723,7 +9053,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="271">
+          <li class="never" data-hits="" data-linenumber="279">
             
 
             
@@ -8735,7 +9065,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="272">
+          <li class="never" data-hits="" data-linenumber="280">
             
 
             
@@ -8747,7 +9077,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="273">
+          <li class="covered" data-hits="1" data-linenumber="281">
             
               <span class="hits">1</span>
             
@@ -8761,7 +9091,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="3" data-linenumber="274">
+          <li class="covered" data-hits="3" data-linenumber="282">
             
               <span class="hits">3</span>
             
@@ -8783,7 +9113,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="275">
+          <li class="never" data-hits="" data-linenumber="283">
             
 
             
@@ -8795,7 +9125,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="276">
+          <li class="never" data-hits="" data-linenumber="284">
             
 
             
@@ -8807,7 +9137,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="277">
+          <li class="never" data-hits="" data-linenumber="285">
             
 
             
@@ -18404,7 +18734,7 @@
               
             
 
-            <code class="ruby">    INBOUND_PATH = %r{(?:\A|/)inbound/[a-z][a-z0-9_-]*/[0-9a-fA-F-]{36}\z}.freeze</code>
+            <code class="ruby">    INBOUND_PATH = %r{(?:\A|/)inbound/rswh_[A-Za-z0-9_-]+\z}.freeze</code>
           </li>
         </div>
       
