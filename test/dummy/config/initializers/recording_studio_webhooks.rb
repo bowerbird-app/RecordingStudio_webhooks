@@ -4,12 +4,23 @@ RecordingStudioWebhooks.configure do |config|
   # The dummy app has a deliberately narrow admin rule. Production hosts must
   # supply their own authorization and recording scope.
   config.admin_authorizer = lambda do |context|
-    actor_allowed = context.actor&.email == "admin@admin.com"
-    selected_root = context.controller.current_root_recording
-    selected_root_recordable = context.controller.current_root_recordable
-    in_admin_tree = selected_root_recordable.respond_to?(:name) && selected_root_recordable.name == "Studio Workspace"
+    next false unless defined?(::RecordingStudioAccessible)
 
-    actor_allowed && selected_root.present? && in_admin_tree
+    actor = context.actor
+    next false unless actor
+
+    selected_root = context.controller.current_root_recording
+    next false unless selected_root
+
+    required_role = context.permission.to_sym == :admin ? :admin : :view
+
+    ::RecordingStudioAccessible.authorized?(
+      actor: actor,
+      recording: selected_root,
+      role: required_role
+    )
+  rescue StandardError
+    false
   end
 
   config.admin_recording_scope = lambda do |context|
@@ -23,7 +34,7 @@ RecordingStudioWebhooks.configure do |config|
 
   config.dispatcher = :sidekiq
 
-  config.provider_roots = what[Rails.root.join("app/webhooks/providers").to_s]
+  config.provider_roots = [Rails.root.join("app/webhooks/providers").to_s]
   config.action_roots = [Rails.root.join("app/webhooks/actions").to_s]
   config.automatic_discovery = true
 end
