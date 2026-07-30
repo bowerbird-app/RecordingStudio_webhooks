@@ -20,7 +20,6 @@
             <tr>
               <th class="p-2">Provider</th>
               <th class="p-2">Source</th>
-              <th class="p-2">Fingerprint</th>
               <th class="p-2">Endpoints</th>
               <th class="p-2"></th>
             </tr>
@@ -30,7 +29,6 @@
               <tr class="border-t">
                 <td class="p-2"><%= provider.name %></td>
                 <td class="p-2"><%= provider.source %></td>
-                <td class="p-2 font-mono text-xs"><%= provider.fingerprint.first(16) %>…</td>
                 <td class="p-2"><%= @provider_endpoint_counts.fetch(provider.name, 0) %></td>
                 <td class="p-2 text-right"><%= link_to "Open", admin_provider_path(provider.name) %></td>
               </tr>
