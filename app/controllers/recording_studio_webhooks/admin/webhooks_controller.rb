@@ -5,7 +5,11 @@ module RecordingStudioWebhooks
     class WebhooksController < BaseController
       def show
         @providers = webhook_configuration.providers.all.sort_by(&:name)
+        @show_all_providers = ActiveModel::Type::Boolean.new.cast(params[:show_all_providers])
+        @visible_providers = @show_all_providers ? @providers : @providers.first(5)
         @actions = webhook_configuration.actions.all.sort_by(&:sort_key)
+        @show_all_actions = ActiveModel::Type::Boolean.new.cast(params[:show_all_actions])
+        @visible_actions = @show_all_actions ? @actions : @actions.first(5)
 
         scoped_endpoints = endpoint_scope
         health_endpoints = scoped_endpoints.current

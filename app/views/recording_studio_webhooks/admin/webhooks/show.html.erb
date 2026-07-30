@@ -61,12 +61,12 @@
 <div class="grid gap-6 lg:grid-cols-2">
   <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
     <% card.header do %>
-      <%= render FlatPack::PageTitle::Component.new(title: "Providers and endpoints", variant: :h3, class: "mb-0 pb-0") %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Providers", variant: :h3, class: "mb-0 pb-0") %>
     <% end %>
     <% card.body do %>
       <% if @providers.any? %>
         <ul class="space-y-3 text-sm">
-          <% @providers.each do |provider| %>
+          <% @visible_providers.each do |provider| %>
             <li class="flex items-center justify-between gap-3 border-b pb-3">
               <span>
                 <strong><%= provider.name %></strong>
@@ -76,6 +76,9 @@
             </li>
           <% end %>
         </ul>
+        <% if @providers.size > @visible_providers.size %>
+          <p class="mt-4 text-sm"><%= link_to "View all", admin_root_path(show_all_providers: true) %></p>
+        <% end %>
       <% else %>
         <p class="text-sm">No providers are registered.</p>
       <% end %>
@@ -84,18 +87,21 @@
 
   <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
     <% card.header do %>
-      <%= render FlatPack::PageTitle::Component.new(title: "Actions and policy", variant: :h3, class: "mb-0 pb-0") %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Actions", variant: :h3, class: "mb-0 pb-0") %>
     <% end %>
     <% card.body do %>
       <% if @actions.any? %>
         <ul class="space-y-3 text-sm">
-          <% @actions.each do |action| %>
+          <% @visible_actions.each do |action| %>
             <li class="border-b pb-3">
               <strong><%= action.name %></strong>
               <div class="text-xs text-gray-600">provider: <%= action.provider_name || "any" %> · pattern: <%= action.event_pattern.value %></div>
             </li>
           <% end %>
         </ul>
+        <% if @actions.size > @visible_actions.size %>
+          <p class="mt-4 text-sm"><%= link_to "View all", admin_root_path(show_all_actions: true) %></p>
+        <% end %>
       <% else %>
         <p class="text-sm">No actions are registered.</p>
       <% end %>
