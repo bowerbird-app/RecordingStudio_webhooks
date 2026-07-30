@@ -14,8 +14,8 @@ settings.
 | `provenance_keys` | request metadata allowlist | fields retained with events |
 | `authorization_hook` | nil | final intake authorization hook |
 | `rate_limiter` | nil | intake rate-limit hook |
-| `admin_authorizer` | nil | required admin authorization callback |
-| `admin_recording_scope` | nil | optional Recording Studio scope callback |
+| `admin_authorizer` | nil | decides which users can access the webhooks admin UI |
+| `admin_recording_scope` | nil | decides which recordings those users can view and manage |
 | `token_digest_secret` | nil | optional HMAC key from host credentials |
 
 Provider callbacks and intake hooks should return `true` to permit work. A

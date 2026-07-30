@@ -64,9 +64,10 @@ RecordingStudioWebhooks.configure do |config|
 end
 ```
 
-`admin_authorizer` receives a context with `actor` and `controller`.
-`admin_recording_scope` receives the same context and must return only
-`RecordingStudio::Recording` records that the authorized actor may administer.
+`admin_authorizer` is where your app decides who is allowed into the webhooks
+admin area.
+`admin_recording_scope` is where your app decides which recordings that allowed
+user can see and manage.
 An absent authorizer always returns a generic not-found response.
 
 ## Provider and action registration
