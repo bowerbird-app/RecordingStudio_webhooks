@@ -22,6 +22,12 @@
       ) %>
 
       <%= render FlatPack::Sidebar::Item::Component.new(
+        label: "Dummy webhook tester",
+        href: main_app.dummy_webhook_tester_path,
+        icon: :beaker
+      ) %>
+
+      <%= render FlatPack::Sidebar::Item::Component.new(
         label: "Recording tree",
         href: main_app.recording_tree_path,
         icon: :folder

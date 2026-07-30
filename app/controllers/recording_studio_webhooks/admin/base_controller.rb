@@ -83,7 +83,12 @@ module RecordingStudioWebhooks
       end
 
       def load_endpoint
-        @endpoint = endpoint_scope.find_by!(id: params[:endpoint_id] || params[:id])
+        requested = endpoint_scope.find_by!(id: params[:endpoint_id] || params[:id])
+        @endpoint = endpoint_scope.current.find_by(recording_studio_recording_id: requested.recording_studio_recording_id) || requested
+      end
+
+      def endpoint_revision_ids(endpoint)
+        Endpoint.where(recording_studio_recording_id: endpoint.recording_studio_recording_id).select(:id)
       end
 
       def invoke_callable(callable, context)

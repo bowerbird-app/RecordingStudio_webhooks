@@ -13,6 +13,30 @@
   <%= render FlatPack::Alert::Component.new(description: @form_error, style: :danger) %>
 <% end %>
 
+<%
+  default_headers_json = JSON.pretty_generate(
+    {
+      authorization: "Bearer rswh_example_token",
+      "x-webhook-timestamp": Time.current.iso8601,
+      "content-type": "application/json"
+    }
+  )
+  default_payload_json = JSON.pretty_generate(
+    {
+      id: "evt_sample_123",
+      type: "demo.received",
+      data: {
+        object: {
+          id: "obj_123",
+          status: "active"
+        }
+      }
+    }
+  )
+  headers_value = params.dig(:sandbox, :headers_json).to_s.presence || default_headers_json
+  payload_value = params.dig(:sandbox, :payload).to_s.presence || default_payload_json
+%>
+
 <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
   <% card.body do %>
     <%= form_with url: admin_webhook_sandbox_path, scope: :sandbox, class: "space-y-4" do |form| %>
@@ -40,15 +64,15 @@
       </div>
       <%= render FlatPack::TextInput::Component.new(
         name: "sandbox[event_type]",
-        label: "Event type (optional when extractor exists)",
+        label: "Event type",
         value: params.dig(:sandbox, :event_type).to_s,
         required: false,
         placeholder: "invoice.paid"
       ) %>
       <label class="block text-sm font-medium" for="sandbox_headers_json">Test headers JSON</label>
-      <%= form.text_area :headers_json, value: params.dig(:sandbox, :headers_json).to_s, rows: 6, class: "block w-full rounded border p-2 font-mono text-sm", placeholder: '{"authorization":"Bearer rswh_...","x-webhook-timestamp":"2026-07-29T00:00:00Z"}' %>
+      <%= form.text_area :headers_json, value: headers_value, rows: 6, class: "block w-full rounded border p-2 font-mono text-sm", placeholder: '{"authorization":"Bearer rswh_...","x-webhook-timestamp":"2026-07-29T00:00:00Z"}' %>
       <label class="block text-sm font-medium" for="sandbox_payload">Sample JSON payload</label>
-      <%= form.text_area :payload, value: params.dig(:sandbox, :payload).to_s, rows: 10, class: "block w-full rounded border p-2 font-mono text-sm", required: true %>
+      <%= form.text_area :payload, value: payload_value, rows: 10, class: "block w-full rounded border p-2 font-mono text-sm", required: true %>
       <%= render FlatPack::Button::Component.new(text: "Run dry-run validation", style: :primary, size: :md, type: "submit") %>
     <% end %>
   <% end %>
@@ -64,8 +88,6 @@
         <% checks = @sandbox_result.fetch("checks") %>
         <ul class="space-y-2 text-sm">
           <li>Endpoint resolved: <strong><%= checks.fetch("endpoint_resolved") ? "yes" : "no" %></strong></li>
-          <li>Token resolved: <strong><%= checks.fetch("token_resolved") ? "yes" : "no" %></strong></li>
-          <li>Token snapshot: <strong><%= checks.fetch("token_snapshot_id") || "none" %></strong></li>
           <li>Timestamp: <strong><%= checks.fetch("timestamp_valid") ? "valid" : "invalid" %></strong> · <%= checks.fetch("timestamp_message") %></li>
           <li>Signature: <strong><%= checks.fetch("signature_verified") ? "verified" : "not verified" %></strong> · <%= checks.fetch("signature_message") %></li>
           <li>Event extraction: <strong><%= checks.fetch("event_type") %></strong></li>

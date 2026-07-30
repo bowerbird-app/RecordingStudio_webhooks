@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_29_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_29_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -112,11 +112,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_29_140000) do
     t.jsonb "metadata", default: {}, null: false
     t.string "prefix", null: false
     t.datetime "revoked_at"
+    t.string "revoked_by_actor_id"
+    t.string "token"
     t.datetime "updated_at", null: false
-    t.index ["digest"], name: "index_recording_studio_webhooks_endpoint_tokens_on_digest", unique: true
+    t.index ["digest"], name: "index_recording_studio_webhooks_endpoint_tokens_on_digest"
     t.index ["endpoint_id", "active_at"], name: "index_rsw_tokens_on_endpoint_and_active_at"
     t.index ["endpoint_id"], name: "index_recording_studio_webhooks_endpoint_tokens_on_endpoint_id"
-    t.index ["endpoint_id"], name: "index_rsw_tokens_one_unrevoked_per_endpoint", unique: true, where: "(revoked_at IS NULL)"
   end
 
   create_table "recording_studio_webhooks_endpoints", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

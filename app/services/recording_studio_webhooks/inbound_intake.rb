@@ -2,9 +2,8 @@
 
 # app/services/recording_studio_webhooks/inbound_intake.rb
 module RecordingStudioWebhooks
-  # Controller-independent public intake. The provider and endpoint recording id in
-  # the route identify the stable endpoint before its current credential is
-  # checked.
+  # Controller-independent public intake. The route carries the endpoint token
+  # credential directly, which resolves endpoint and provider.
   class InboundIntake
     SignatureContext = Struct.new(:raw_payload, :headers, :endpoint, :provider, keyword_init: true) do
       def inspect = "#<#{self.class.name} raw_payload=[FILTERED]>"
@@ -14,10 +13,8 @@ module RecordingStudioWebhooks
 
     def self.call(...) = new(...).call
 
-    def initialize(provider_name:, endpoint_recording_id:, token:, raw_payload: nil, payload: nil, content_type: nil, headers: {},
+    def initialize(token:, raw_payload: nil, payload: nil, content_type: nil, headers: {},
       request_metadata: {}, event_type: nil, provider_event_id: nil)
-      @provider_name = provider_name.to_s.downcase
-      @endpoint_recording_id = endpoint_recording_id.to_s
       @token = token
       @raw_payload = raw_payload.nil? ? payload : raw_payload
       @content_type = content_type
@@ -30,18 +27,16 @@ module RecordingStudioWebhooks
     def call
       return failure(503, "recording_studio_unavailable") unless RecordingStudioGateway.available?
 
-      provider = configuration.providers.fetch(@provider_name)
-      return failure(404, "provider_unavailable") unless provider
+      endpoint_token = EndpointToken.authenticate(plaintext: @token)
+      return failure(401, "token_invalid") unless endpoint_token
 
-      endpoint = Endpoint.current.find_by(
-        provider_name: provider.name,
-        recording_studio_recording_id: @endpoint_recording_id
-      )
+      endpoint = endpoint_token.endpoint
       return failure(404, "endpoint_unavailable") unless endpoint
       return failure(401, "endpoint_disabled") unless endpoint.enabled?
 
-      endpoint_token = EndpointToken.authenticate(endpoint: endpoint, plaintext: @token)
-      return failure(401, "token_invalid") unless endpoint_token
+      provider = configuration.providers.fetch(endpoint.provider_name)
+      return failure(404, "provider_unavailable") unless provider
+
       return failure(415, "content_type_invalid") unless allowed_content_type?
 
       body = payload_string

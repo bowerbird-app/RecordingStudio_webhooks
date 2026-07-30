@@ -8,6 +8,7 @@ class ConfigurationTest < Minitest::Test
     with_fresh_configuration do |configuration|
       assert_equal :sidekiq, configuration.dispatcher
       assert_equal 1_048_576, configuration.max_payload_bytes
+      assert_equal 18, configuration.endpoint_token_bytesize
       assert_equal true, configuration.default_policy.deduplicate?
       assert_nil configuration.admin_authorizer
 
@@ -29,11 +30,13 @@ class ConfigurationTest < Minitest::Test
       configuration.admin_recording_scope = ->(_context) { [] }
       configuration.dispatcher = dispatcher
       configuration.max_payload_bytes = "2048"
+      configuration.endpoint_token_bytesize = "16"
       configuration.content_types = ["application/json", "application/problem+json"]
 
       assert_same authorizer, configuration.admin_authorizer
       assert_same dispatcher, configuration.dispatcher
       assert_equal 2048, configuration.max_payload_bytes
+      assert_equal 16, configuration.endpoint_token_bytesize
       assert_equal ["application/json", "application/problem+json"], configuration.content_types
       assert_equal "custom", configuration.report.fetch("dispatcher")
     end
@@ -64,6 +67,7 @@ class ConfigurationTest < Minitest::Test
   def test_invalid_configuration_is_rejected
     with_fresh_configuration do |configuration|
       assert_raises(RecordingStudioWebhooks::ConfigurationError) { configuration.max_payload_bytes = 0 }
+      assert_raises(RecordingStudioWebhooks::ConfigurationError) { configuration.endpoint_token_bytesize = 11 }
       assert_raises(RecordingStudioWebhooks::ConfigurationError) { configuration.dispatcher = Object.new }
       assert_raises(RecordingStudioWebhooks::ConfigurationError) { configuration.admin_authorizer = "yes" }
     end

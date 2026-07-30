@@ -1,7 +1,6 @@
 <div class="flex flex-wrap items-center justify-between gap-4">
   <%= render FlatPack::PageTitle::Component.new(
     title: @endpoint.label,
-    subtitle: "Provider #{@endpoint.provider_name} · Recording #{@endpoint.recording_studio_recording_id}",
     variant: :h1
   ) %>
   <div class="flex gap-2">
@@ -32,10 +31,11 @@
       <%= render FlatPack::PageTitle::Component.new(title: "Token lifecycle", variant: :h3, class: "mb-0 pb-0") %>
     <% end %>
     <% card.body do %>
-      <p class="mb-4 text-sm">Issuing a token revokes the previous token. A plaintext token is displayed only in the immediate response.</p>
-      <%= form_with url: admin_endpoint_tokens_path(@endpoint), scope: :endpoint_token, class: "space-y-3" do |form| %>
-        <label class="block text-sm font-medium" for="endpoint_token_expires_at">Expiration (optional)</label>
-        <%= form.datetime_local_field :expires_at, class: "block w-full rounded border p-2" %>
+      <%= form_with url: admin_endpoint_tokens_path(@endpoint), scope: :endpoint_token, class: "space-y-3" do |_form| %>
+        <%= render FlatPack::DateTimeInput::Component.new(
+          name: "endpoint_token[expires_at]",
+          label: "Expiration (optional)"
+        ) %>
         <%= render FlatPack::Button::Component.new(text: "Issue new token", style: :primary, size: :sm, type: "submit") %>
       <% end %>
       <p class="mt-4 text-sm"><%= link_to "View token history", admin_endpoint_tokens_path(@endpoint) %></p>
@@ -47,45 +47,31 @@
       <%= render FlatPack::PageTitle::Component.new(title: "Endpoint status", variant: :h3, class: "mb-0 pb-0") %>
     <% end %>
     <% card.body do %>
-      <p class="text-sm">Public address:</p>
-      <code class="mt-2 block break-all rounded bg-black/5 p-2 text-xs"><%= inbound_path(provider: @endpoint.provider_name, endpoint_recording_id: @endpoint.recording_studio_recording_id) %></code>
+      <% now = Time.current %>
+      <% current_token = @tokens
+        .select { |token| token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now) }
+        .max_by(&:active_at) %>
+      <% current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence %>
+      <% endpoint_url_value = if current_plaintext_token.present?
+                                "#{request.base_url}#{inbound_path(endpoint_token: current_plaintext_token)}"
+                              else
+                                "No active token URL available"
+                              end %>
+      <% endpoint_url_help = if current_plaintext_token.present?
+                               "Copy and paste this full URL into your provider webhook configuration."
+                             else
+                               "Issue a token to generate the active webhook URL."
+                             end %>
+
+      <%= render FlatPack::TextInput::Component.new(
+        name: "endpoint_url_status",
+        label: "Active webhook URL",
+        value: endpoint_url_value,
+        quick_copy: current_plaintext_token.present?,
+        required: false,
+        help_text: endpoint_url_help
+      ) %>
       <p class="mt-4 text-sm">Payload limit: <strong><%= webhook_configuration.max_payload_bytes %></strong> bytes</p>
-      <p class="mt-4 text-sm">Status:
-        <%= render FlatPack::Badge::Component.new(
-          text: @endpoint.enabled? ? "enabled" : "disabled",
-          style: @endpoint.enabled? ? :success : :warning,
-          size: :sm
-        ) %>
-      </p>
-    <% end %>
-  <% end %>
-</div>
-
-<div class="grid gap-6 lg:grid-cols-2">
-  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-    <% card.header do %>
-      <%= render FlatPack::PageTitle::Component.new(title: "Settings and policies", variant: :h3, class: "mb-0 pb-0") %>
-    <% end %>
-    <% card.body do %>
-      <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json({
-        provider_fingerprint: @provider&.fingerprint,
-        identity: @endpoint.identity,
-        metadata: @endpoint.metadata,
-        policy_overrides: @endpoint.policy_overrides
-      }) %></pre>
-    <% end %>
-  <% end %>
-
-  <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
-    <% card.header do %>
-      <%= render FlatPack::PageTitle::Component.new(title: "Revision history", variant: :h3, class: "mb-0 pb-0") %>
-    <% end %>
-    <% card.body do %>
-      <dl class="grid gap-2 text-sm">
-        <div><dt class="font-medium">Created</dt><dd><%= @endpoint.created_at %></dd></div>
-        <div><dt class="font-medium">Last changed</dt><dd><%= @endpoint.updated_at %></dd></div>
-        <div><dt class="font-medium">Token revisions</dt><dd><%= @tokens.size %></dd></div>
-      </dl>
     <% end %>
   <% end %>
 </div>

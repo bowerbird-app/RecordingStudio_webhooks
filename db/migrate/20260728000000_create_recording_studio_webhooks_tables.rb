@@ -24,19 +24,19 @@ module RecordingStudioWebhooks
       create_table :recording_studio_webhooks_endpoint_tokens, id: :uuid do |t|
         t.references :endpoint, type: :uuid, null: false,
           foreign_key: { to_table: :recording_studio_webhooks_endpoints }, index: false
+        t.string :token
         t.string :digest, null: false
         t.string :prefix, null: false
         t.datetime :active_at, null: false
         t.datetime :expires_at
         t.datetime :revoked_at
+        t.string :revoked_by_actor_id
         t.jsonb :metadata, null: false, default: {}
         t.timestamps
       end
-      add_index :recording_studio_webhooks_endpoint_tokens, :digest, unique: true
+      add_index :recording_studio_webhooks_endpoint_tokens, :digest
       add_index :recording_studio_webhooks_endpoint_tokens, %i[endpoint_id active_at],
         name: "index_rsw_tokens_on_endpoint_and_active_at"
-      add_index :recording_studio_webhooks_endpoint_tokens, :endpoint_id, unique: true,
-        where: "revoked_at IS NULL", name: "index_rsw_tokens_one_unrevoked_per_endpoint"
 
       create_table :recording_studio_webhooks_inbound_events, id: :uuid do |t|
         t.references :endpoint, type: :uuid, null: false,

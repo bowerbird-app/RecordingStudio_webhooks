@@ -8,8 +8,9 @@ module RecordingStudioWebhooks
         @actions = webhook_configuration.actions.all.sort_by(&:sort_key)
 
         scoped_endpoints = endpoint_scope
-        @endpoint_count = scoped_endpoints.count
-        @enabled_endpoint_count = scoped_endpoints.where(enabled: true).count
+        health_endpoints = scoped_endpoints.current
+        @endpoint_count = health_endpoints.count
+        @enabled_endpoint_count = health_endpoints.where(enabled: true).count
         @disabled_endpoint_count = @endpoint_count - @enabled_endpoint_count
 
         scoped_events = InboundEvent.where(endpoint_id: scoped_endpoints.select(:id))
@@ -22,7 +23,7 @@ module RecordingStudioWebhooks
         @failed_plan_count = scoped_plans.where(status: "failed").count
         @retrying_plan_count = scoped_plans.where(status: "retrying").count
         @blocked_plan_count = scoped_plans.where(status: "pending").count
-        @paused_plan_count = scoped_endpoints.where(enabled: false).count
+        @paused_plan_count = @disabled_endpoint_count
 
         @dispatcher_name = webhook_configuration.dispatcher.is_a?(Symbol) ? webhook_configuration.dispatcher.to_s : "custom"
         @dispatcher_healthy = dispatcher_healthy?

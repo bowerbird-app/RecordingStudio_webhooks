@@ -88,13 +88,10 @@ module RecordingStudioWebhooks
 
       def build_checks(provider:, endpoint:, headers:, payload:, event_type:)
         timestamp_check = validate_timestamp(headers)
-        token_check = validate_token(endpoint, headers)
         signature_check = validate_signature(provider, endpoint, headers, payload)
 
         {
           endpoint_resolved: endpoint.present?,
-          token_resolved: token_check[:resolved],
-          token_snapshot_id: token_check[:snapshot_id],
           signature_verified: signature_check[:verified],
           signature_message: signature_check[:message],
           timestamp_valid: timestamp_check[:valid],
@@ -153,19 +150,6 @@ module RecordingStudioWebhooks
       def load_provider_options
         @providers = webhook_configuration.providers.all.sort_by(&:name)
         @endpoints = endpoint_scope.current.order(:provider_name, :label)
-      end
-
-      def validate_token(endpoint, headers)
-        return { resolved: false, snapshot_id: nil } unless endpoint
-
-        bearer = headers.fetch("authorization", "").to_s
-        token = bearer.split(" ", 2).last.to_s
-        return { resolved: false, snapshot_id: nil } if token.empty?
-
-        matched = EndpointToken.authenticate(endpoint: endpoint, plaintext: token)
-        { resolved: matched.present?, snapshot_id: matched&.id }
-      rescue StandardError
-        { resolved: false, snapshot_id: nil }
       end
 
       def validate_signature(provider, endpoint, headers, payload)

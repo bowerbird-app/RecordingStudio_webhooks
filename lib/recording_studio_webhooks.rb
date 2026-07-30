@@ -59,7 +59,23 @@ module RecordingStudioWebhooks
     # Endpoint snapshots now follow Recording Studio's standard record/revise
     # lifecycle and are declared recordables in the endpoint model.
     def configure_recordables!
-      RecordingStudioGateway.available?
+      return false unless RecordingStudioGateway.available?
+
+      required_types = [
+        "RecordingStudioWebhooks::Endpoint",
+        "RecordingStudioWebhooks::EndpointToken"
+      ]
+      configured_types = Array(RecordingStudio.configuration.recordable_types).map(&:to_s)
+      declared_types = if RecordingStudio.respond_to?(:recordable_declarations)
+                         RecordingStudio.recordable_declarations.keys.map(&:to_s)
+                       else
+                         []
+                       end
+
+      RecordingStudio.configuration.recordable_types = (configured_types + declared_types + required_types).uniq
+      RecordingStudio::DelegatedTypeRegistrar.apply! if defined?(RecordingStudio::DelegatedTypeRegistrar)
+
+      true
     end
   end
 end

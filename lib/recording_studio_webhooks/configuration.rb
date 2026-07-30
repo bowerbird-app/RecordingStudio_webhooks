@@ -15,7 +15,7 @@ module RecordingStudioWebhooks
       :max_payload_bytes, :content_types, :secret_redaction_keys, :provenance_keys,
       :authorization_hook, :rate_limiter, :admin_authorizer, :admin_recording_scope,
       :provider_roots, :action_roots, :framework_policy_overrides,
-      :default_policy_overrides, :global_policy_overrides
+      :default_policy_overrides, :global_policy_overrides, :endpoint_token_bytesize
     attr_reader :automatic_discovery
 
     def initialize
@@ -28,6 +28,7 @@ module RecordingStudioWebhooks
       @queue_name = "recording_studio_webhooks"
       @dispatcher = :sidekiq
       @max_payload_bytes = 1_048_576
+      @endpoint_token_bytesize = 18
       @content_types = DEFAULT_CONTENT_TYPES
       @secret_redaction_keys = DEFAULT_REDACTION_KEYS
       @provenance_keys = DEFAULT_PROVENANCE_KEYS
@@ -93,6 +94,13 @@ module RecordingStudioWebhooks
       raise ConfigurationError, "content types are required" if values.empty?
 
       @content_types = values.map(&:freeze).freeze
+    end
+
+    def endpoint_token_bytesize=(value)
+      bytesize = positive_integer(value, "endpoint token bytesize")
+      raise ConfigurationError, "endpoint token bytesize must be at least 12" if bytesize < 12
+
+      @endpoint_token_bytesize = bytesize
     end
 
     def secret_redaction_keys=(value)

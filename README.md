@@ -47,6 +47,10 @@ RecordingStudioWebhooks.configure do |config|
     :recording_studio_webhooks, :token_digest_secret
   )
 
+  # Optional: shorten/lengthen generated endpoint tokens.
+  # Default is 18 bytes (about 24 URL-safe chars after rswh_ prefix).
+  config.endpoint_token_bytesize = 18
+
   config.provider "billing" do |provider|
     provider.event_type ->(payload) { payload.fetch("type") }
     provider.event_id ->(payload) { payload["id"] }
@@ -107,7 +111,7 @@ additive and cannot be removed by a lower-level policy.
 With the default mount, providers POST JSON to:
 
 ```text
-POST /recording_studio_webhooks/inbound/:provider/:endpoint_recording_id
+POST /recording_studio_webhooks/inbound/:endpoint_token
 Authorization header: endpoint credential
 Content-Type: application/json
 ```

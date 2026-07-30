@@ -48,7 +48,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
       name: "Ada"
     }
 
-    post inbound_path, params: JSON.generate(payload), headers: intake_headers(token)
+    post inbound_path(token), params: JSON.generate(payload), headers: intake_headers
 
     assert_response :accepted
     assert_equal "accepted", JSON.parse(response.body).fetch("status")
@@ -59,7 +59,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     refute_includes event.token_snapshot.to_s, token
     assert_equal 1, event.action_plans.count
 
-    post inbound_path, params: JSON.generate(payload), headers: intake_headers(token)
+    post inbound_path(token), params: JSON.generate(payload), headers: intake_headers
 
     assert_response :success
     assert_equal "duplicate", JSON.parse(response.body).fetch("status")
@@ -68,40 +68,50 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
   test "rotating a token invalidates the previous value and plaintext is one-time" do
     first_issuance = @endpoint.issue_token!
+    first_snapshot_id = first_issuance.endpoint_token.id
     first_token = first_issuance.plaintext_token
     assert_raises(RecordingStudioWebhooks::Error) { first_issuance.plaintext_token }
 
-    second_issuance = @endpoint.rotate_token!
+    second_issuance = @endpoint.rotate_token!(actor: @user)
     second_token = second_issuance.plaintext_token
 
-    assert_nil RecordingStudioWebhooks::EndpointToken.authenticate(endpoint: @endpoint, plaintext: first_token)
+    assert_nil RecordingStudioWebhooks::EndpointToken.authenticate(plaintext: first_token)
     assert_predicate(
-      RecordingStudioWebhooks::EndpointToken.authenticate(endpoint: @endpoint, plaintext: second_token),
+      RecordingStudioWebhooks::EndpointToken.authenticate(plaintext: second_token),
       :current?
     )
-    refute_includes @endpoint.endpoint_tokens.order(:created_at).last.attributes.values, second_token
+    revoked_snapshot = RecordingStudioWebhooks::EndpointToken
+      .where(endpoint_id: @endpoint.id, digest: first_issuance.endpoint_token.digest)
+      .where.not(revoked_at: nil)
+      .order(:created_at)
+      .last
+    assert_predicate revoked_snapshot, :present?
+    assert_equal @user.id.to_s, revoked_snapshot.revoked_by_actor_id
+    first_token_recording = @recording.recording_for(revoked_snapshot)
+    assert_equal first_token_recording.recordable_id, revoked_snapshot.id
+    assert_equal first_snapshot_id, first_issuance.endpoint_token.id
+    assert_includes first_token_recording.events.pluck(:action), "recording_studio_webhooks.endpoint_token.issued"
+    assert_includes first_token_recording.events.pluck(:action), "recording_studio_webhooks.endpoint_token.revoked"
+    assert_equal second_token, @endpoint.endpoint_tokens.order(:created_at).last.token
   end
 
   test "public intake returns a generic unauthorized response without exposing a credential" do
-    post inbound_path,
+    post inbound_path("rswh_notavalidtoken"),
       params: JSON.generate(id: "evt_unauthorized", type: "demo.received"),
-      headers: intake_headers("not-a-valid-token")
+      headers: intake_headers
 
     assert_response :unauthorized
     assert_equal({ "status" => "unauthorized" }, JSON.parse(response.body))
     refute_includes response.body, "not-a-valid-token"
   end
 
-  test "public intake binds a credential to the endpoint recording in its route" do
-    token = @endpoint.issue_token!.plaintext_token
-    missing_recording_id = SecureRandom.uuid
-
-    post "/webhooks/inbound/demo/#{missing_recording_id}",
+  test "public intake rejects an unknown token without revealing routing details" do
+    post "/webhooks/inbound/rswh_unknowncredential",
       params: JSON.generate(id: "evt_wrong_endpoint", type: "demo.received"),
-      headers: intake_headers(token)
+      headers: intake_headers
 
-    assert_response :not_found
-    assert_equal({ "status" => "not_found" }, JSON.parse(response.body))
+    assert_response :unauthorized
+    assert_equal({ "status" => "unauthorized" }, JSON.parse(response.body))
     assert_equal 0, @endpoint.inbound_events.count
   end
 
@@ -115,7 +125,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     payload = { id: "evt_repeated", type: "demo.received" }
 
     2.times do
-      post inbound_path, params: JSON.generate(payload), headers: intake_headers(token)
+      post inbound_path(token), params: JSON.generate(payload), headers: intake_headers
       assert_response :accepted
       assert_equal "accepted", JSON.parse(response.body).fetch("status")
     end
@@ -124,6 +134,35 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_equal 2, events.count
     assert_equal ["evt_repeated", "evt_repeated"], events.pluck(:provider_event_id)
     refute_equal events.first.deduplication_key, events.second.deduplication_key
+  end
+
+  test "page.created action creates a page recording using payload title" do
+    token = @endpoint.issue_token!.plaintext_token
+    title = "Test Page From Webhook"
+    payload = {
+      id: "evt_page_created_1",
+      type: "page.created",
+      data: {
+        object: {
+          id: "obj_123",
+          status: "active",
+          title: title
+        }
+      }
+    }
+
+    post inbound_path(token), params: JSON.generate(payload), headers: intake_headers
+
+    assert_response :accepted
+    event = @endpoint.inbound_events.find_by!(provider_event_id: "evt_page_created_1")
+    plan = event.action_plans.find_by!(action_name: "demo.page_created")
+
+    result = RecordingStudioWebhooks::ExecuteActionPlan.call(plan.id)
+
+    assert_equal "action_succeeded", result.code
+    page = Page.find_by!(title: title)
+    root_recording = @endpoint.recording_studio_recording.root_recording_or_self
+    assert_predicate RecordingStudio::Recording.find_by(root_recording: root_recording, recordable: page, trashed_at: nil), :present?
   end
 
   test "endpoint rows can coexist for the same provider and recording and empty JSON objects are valid" do
@@ -248,7 +287,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     issuance = @endpoint.issue_token!
     payload = { id: "evt_queue", type: "demo.received" }
 
-    post inbound_path, params: JSON.generate(payload), headers: intake_headers(issuance.plaintext_token)
+    post inbound_path(issuance.plaintext_token), params: JSON.generate(payload), headers: intake_headers
 
     assert_response :accepted
     plan = @endpoint.inbound_events.find_by!(provider_event_id: "evt_queue").action_plans.first.reload
@@ -282,25 +321,183 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_equal 0, @endpoint.inbound_events.count
   end
 
+  test "authorized administrators can use dummy webhook tester route" do
+    sign_in @user
+    token = @endpoint.issue_token!.plaintext_token
+    title = "Tester Page"
+
+    post "/dummy_webhook_tester", params: {
+      tester: {
+        endpoint_input: "https://example.test/webhooks/inbound/#{token}",
+        headers_json: JSON.generate({ "content-type" => "application/json" }),
+        payload_json: JSON.generate(
+          {
+            id: "evt_tester_1",
+            type: "page.created",
+            data: {
+              object: {
+                id: "obj_abc",
+                status: "active",
+                title: title
+              }
+            }
+          }
+        )
+      }
+    }
+
+    assert_response :success
+    assert_includes response.body, "accepted"
+    assert_includes response.body, "action_succeeded"
+    assert_predicate Page.find_by(title: title), :present?
+  end
+
   test "authorized administrators can open admin webhooks root and provider pages" do
     sign_in @user
 
     get "/webhooks/admin"
     assert_response :success
     assert_includes response.body, "Admin Webhooks"
+    refute_includes response.body, "source: callable"
+    refute_includes response.body, "fingerprint:"
 
     get "/webhooks/admin/providers/demo"
     assert_response :success
     assert_includes response.body, "Provider definition"
   end
 
+  test "authorized administrators can filter events by token value" do
+    sign_in @user
+    first_token = @endpoint.issue_token!.plaintext_token
+
+    post inbound_path(first_token), params: JSON.generate(id: "evt_filter_token_1", type: "demo.received"), headers: intake_headers
+    assert_response :accepted
+
+    second_token = @endpoint.rotate_token!(actor: @user).plaintext_token
+    post inbound_path(second_token), params: JSON.generate(id: "evt_filter_token_2", type: "demo.received"), headers: intake_headers
+    assert_response :accepted
+
+    get "/webhooks/admin/events", params: { endpoint_token: first_token }
+
+    assert_response :success
+    assert_includes response.body, first_token
+    refute_includes response.body, second_token
+  end
+
+  test "admin webhooks endpoint health counts only current endpoint revisions" do
+    sign_in @user
+
+    get "/webhooks/admin"
+    assert_response :success
+    baseline_health = endpoint_health_counts(response.body)
+
+    disabled_endpoint = RecordingStudioWebhooks::EndpointLifecycle.update!(
+      endpoint: @endpoint,
+      attributes: { enabled: false },
+      actor: @user
+    )
+    RecordingStudioWebhooks::EndpointLifecycle.update!(
+      endpoint: disabled_endpoint,
+      attributes: { enabled: true },
+      actor: @user
+    )
+
+    get "/webhooks/admin"
+
+    assert_response :success
+    assert_equal baseline_health, endpoint_health_counts(response.body)
+  end
+
   test "authorized administrators can list endpoints with stable recording ownership" do
     sign_in @user
+    token = @endpoint.issue_token!.plaintext_token
 
     get "/webhooks/admin/endpoints"
 
     assert_response :success
     assert_includes response.body, @endpoint.label
+    assert_includes response.body, "/webhooks/inbound/#{token}"
+    refute_includes response.body, "/webhooks/inbound/rswh_..."
+  end
+
+  test "authorized administrators can disable endpoints via autosave switch" do
+    sign_in @user
+    original_endpoint = @endpoint
+
+    patch "/webhooks/admin/endpoints/#{@endpoint.id}", params: {
+      auto_save: "1",
+      endpoint: { enabled: "0" }
+    }
+
+    assert_response :redirect
+    assert_includes response.location, "/webhooks/admin/endpoints/"
+    assert_includes response.location, "/edit"
+
+    current_endpoint = RecordingStudioWebhooks::Endpoint.current.find_by!(
+      provider_name: original_endpoint.provider_name,
+      recording_studio_recording_id: original_endpoint.recording_studio_recording_id
+    )
+    refute_predicate current_endpoint, :enabled?
+  end
+
+  test "stale endpoint show URL resolves to current endpoint status" do
+    sign_in @user
+
+    stale_endpoint = @endpoint
+    disabled_endpoint = RecordingStudioWebhooks::EndpointLifecycle.update!(
+      endpoint: stale_endpoint,
+      attributes: { enabled: false },
+      actor: @user
+    )
+    RecordingStudioWebhooks::EndpointLifecycle.update!(
+      endpoint: disabled_endpoint,
+      attributes: { enabled: true },
+      actor: @user
+    )
+    current_endpoint = RecordingStudioWebhooks::Endpoint.current.find_by!(
+      provider_name: stale_endpoint.provider_name,
+      recording_studio_recording_id: stale_endpoint.recording_studio_recording_id
+    )
+
+    get "/webhooks/admin/endpoints/#{stale_endpoint.id}"
+
+    assert_response :success
+    assert_includes response.body, "/webhooks/admin/endpoints/#{current_endpoint.id}/edit"
+    refute_includes response.body, "/webhooks/admin/endpoints/#{stale_endpoint.id}/edit"
+  end
+
+  test "endpoint event inspect works after endpoint is revised" do
+    sign_in @user
+    token = @endpoint.issue_token!.plaintext_token
+
+    post inbound_path(token), params: JSON.generate(id: "evt_stale_event_1", type: "demo.received"), headers: intake_headers
+    assert_response :accepted
+    event = @endpoint.inbound_events.find_by!(provider_event_id: "evt_stale_event_1")
+
+    current_endpoint = RecordingStudioWebhooks::EndpointLifecycle.update!(
+      endpoint: @endpoint,
+      attributes: { enabled: false },
+      actor: @user
+    )
+
+    get "/webhooks/admin/endpoints/#{current_endpoint.id}/events/#{event.id}"
+
+    assert_response :success
+    assert_includes response.body, "demo.received"
+  end
+
+  test "token history shows only latest token snapshot rows" do
+    sign_in @user
+
+    first_issuance = @endpoint.issue_token!
+    first_prefix = first_issuance.endpoint_token.prefix
+    @endpoint.rotate_token!(actor: @user)
+
+    get "/webhooks/admin/endpoints/#{@endpoint.id}/tokens"
+
+    assert_response :success
+    assert_equal 1, response.body.scan(first_prefix).length
+    assert_match(/<td class=\"p-2\">[A-Z][a-z]{2} \d{2} \d{4}<\/td>/, response.body)
   end
 
   test "creating an endpoint auto-issues a token and shows one-time disclosure" do
@@ -322,10 +519,10 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :created
-    assert_includes response.body, "Copy this token now"
+    assert_includes response.body, "Webhook endpoint ready"
     assert_includes response.body, "rswh_"
     endpoint = RecordingStudioWebhooks::Endpoint.current.find_by!(provider_name: "demo", label: label)
-    assert_includes response.body, "/webhooks/inbound/demo/#{endpoint.recording_studio_recording_id}"
+    assert_includes response.body, "/webhooks/inbound/rswh_"
 
     assert_equal label, endpoint.label
     assert_equal 1, endpoint.endpoint_tokens.count
@@ -346,18 +543,17 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
   private
 
-  def inbound_path
-    "/webhooks/inbound/demo/#{@endpoint.recording_studio_recording_id}"
+  def inbound_path(token)
+    "/webhooks/inbound/#{token}"
   end
 
   def sandbox_path
     "/webhooks/admin/webhook_sandbox"
   end
 
-  def intake_headers(token)
+  def intake_headers
     {
-      "CONTENT_TYPE" => "application/json",
-      "HTTP_AUTHORIZATION" => "Bearer " + token
+      "CONTENT_TYPE" => "application/json"
     }
   end
 
@@ -369,5 +565,12 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     yield
   ensure
     singleton.define_method(:log_event!, original) if singleton && original
+  end
+
+  def endpoint_health_counts(body)
+    match = body.match(/Endpoint health.*?>(\d+)\/(\d+)<.*?enabled \/ total · (\d+) paused/m)
+    assert_predicate match, :present?
+
+    [match[1].to_i, match[2].to_i, match[3].to_i]
   end
 end

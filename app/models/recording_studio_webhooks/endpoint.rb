@@ -26,14 +26,45 @@ module RecordingStudioWebhooks
 
     def issue_token!(expires_at: nil, metadata: {}, active_at: Time.current, actor: nil)
       with_lock do
-        endpoint_tokens.where(revoked_at: nil).update_all(revoked_at: active_at, updated_at: active_at)
-        plaintext = "rswh_#{SecureRandom.urlsafe_base64(32)}"
-        token = endpoint_tokens.create!(
-          digest: TokenDigest.digest(plaintext),
-          prefix: plaintext.first(13),
-          active_at: active_at,
-          expires_at: expires_at,
-          metadata: metadata || {}
+        endpoint_tokens.current(active_at).find_each do |current_token|
+          current_token.revoke!(at: active_at, actor: actor)
+        end
+
+        configuration = RecordingStudioWebhooks.configuration
+        token_bytesize = if configuration.respond_to?(:endpoint_token_bytesize)
+                           configuration.endpoint_token_bytesize
+                         else
+                           18
+                         end
+        plaintext = "rswh_#{SecureRandom.urlsafe_base64(token_bytesize)}"
+        digest = TokenDigest.digest(plaintext)
+        prefix = plaintext.first(13)
+
+        parent_recording = recording_studio_recording
+        root_recording = parent_recording.root_recording_or_self
+        stable_recording = RecordingStudioGateway.record!(
+          root_recording: root_recording,
+          recordable_class: EndpointToken,
+          parent_recording: parent_recording,
+          actor: actor,
+          metadata: { endpoint_id: id, endpoint_token_prefix: prefix }
+        ) do |recordable|
+          recordable.endpoint_id = id
+          recordable.token = plaintext if recordable.has_attribute?(:token)
+          recordable.digest = digest
+          recordable.prefix = prefix
+          recordable.active_at = active_at
+          recordable.expires_at = expires_at
+          recordable.metadata = metadata || {}
+          recordable.revoked_at = nil
+        end
+        token = EndpointToken.find(stable_recording.recordable_id)
+
+        token.audit!(
+          action: "recording_studio_webhooks.endpoint_token.issued",
+          actor: actor,
+          metadata: { endpoint_token_id: token.id, endpoint_id: id },
+          idempotency_key: "recording_studio_webhooks:endpoint-token:#{token.id}"
         )
         audit!(
           action: "recording_studio_webhooks.endpoint_token.issued",
@@ -73,6 +104,18 @@ module RecordingStudioWebhooks
     end
 
     private
+
+      def self.ensure_registered_recordable_type!
+        return unless defined?(::RecordingStudio) && ::RecordingStudio.respond_to?(:register_recordable_type)
+
+        type_name = name
+        configured_types = Array(::RecordingStudio.configuration.recordable_types).map(&:to_s)
+        return if configured_types.include?(type_name)
+
+        ::RecordingStudio.register_recordable_type(type_name)
+      rescue StandardError
+        nil
+      end
 
     def normalize_attributes
       self.provider_name = provider_name.to_s.downcase
@@ -119,5 +162,7 @@ module RecordingStudioWebhooks
       else false
       end
     end
+
+    ensure_registered_recordable_type!
   end
 end

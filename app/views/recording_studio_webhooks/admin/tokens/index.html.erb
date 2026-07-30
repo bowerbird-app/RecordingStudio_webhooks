@@ -1,6 +1,10 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: admin_endpoint_path(@endpoint),
+  anchor_tooltip: "Close"
+) %>
+
 <%= render FlatPack::PageTitle::Component.new(
   title: "Token history",
-  subtitle: "Issue, rotate, revoke, and inspect token snapshots without exposing secrets.",
   variant: :h1
 ) %>
 
@@ -8,40 +12,34 @@
   <%= render FlatPack::Alert::Component.new(description: @form_error, style: :danger) %>
 <% end %>
 
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-  <% card.body do %>
-    <%= form_with url: admin_endpoint_tokens_path(@endpoint), scope: :endpoint_token, class: "mb-6 flex flex-wrap items-end gap-3" do |form| %>
-      <div>
-        <label class="block text-sm font-medium" for="endpoint_token_expires_at">Expiration (optional)</label>
-        <%= form.datetime_local_field :expires_at, class: "mt-1 rounded border p-2" %>
-      </div>
-      <%= render FlatPack::Button::Component.new(text: "Issue new token", style: :primary, size: :sm, type: "submit") %>
-    <% end %>
-
-    <div class="overflow-x-auto">
-      <table class="w-full text-left text-sm">
-        <thead><tr><th class="p-2">Prefix</th><th class="p-2">Issued</th><th class="p-2">Active</th><th class="p-2">Expires</th><th class="p-2">Revoked</th><th class="p-2">State</th><th class="p-2">Logs</th><th></th></tr></thead>
-        <tbody>
-          <% @tokens.each do |token| %>
-            <tr class="border-t">
-              <td class="p-2 font-mono"><%= token.prefix %>…</td>
-              <td class="p-2"><%= token.created_at %></td>
-              <td class="p-2"><%= token.active_at %></td>
-              <td class="p-2"><%= token.expires_at || "Never" %></td>
-              <td class="p-2"><%= token.revoked_at || "-" %></td>
-              <td class="p-2"><%= token.current? ? "current" : token.revoked_at? ? "revoked" : "expired" %></td>
-              <td class="p-2"><%= @events_by_token_id.fetch(token.id, 0) %> event(s)</td>
-              <td class="p-2 text-right">
-                <% if token.current? %>
-                  <%= button_to "Revoke", admin_endpoint_token_path(@endpoint, token), method: :delete, class: "text-sm underline" %>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-
-    <p class="mt-4 text-xs text-gray-600">Token snapshot logs are grouped by issued token ID. Digests and prior plaintext values are never displayed.</p>
-  <% end %>
+<%= form_with url: admin_endpoint_tokens_path(@endpoint), scope: :endpoint_token, class: "mb-6 flex flex-wrap items-end gap-3" do |_form| %>
+  <%= render FlatPack::DateTimeInput::Component.new(
+    name: "endpoint_token[expires_at]",
+    label: "Expiration (optional)"
+  ) %>
+  <%= render FlatPack::Button::Component.new(text: "Issue new token", style: :primary, size: :sm, type: "submit") %>
 <% end %>
+
+<div class="overflow-x-auto">
+  <table class="w-full text-left text-sm">
+    <thead><tr><th class="p-2">Token</th><th class="p-2">Issued</th><th class="p-2">Expires</th><th class="p-2">Revoked</th><th class="p-2">State</th><th class="p-2">Logs</th><th></th></tr></thead>
+    <tbody>
+      <% @tokens.each do |token| %>
+        <tr class="border-t">
+          <td class="p-2 font-mono"><%= token.attributes.fetch("token", nil).to_s.presence || "Unavailable" %></td>
+          <td class="p-2"><%= token.created_at.strftime("%b %d %Y") %></td>
+          <td class="p-2"><%= token.expires_at || "Never" %></td>
+          <td class="p-2"><%= token.revoked_at ? token.revoked_at.strftime("%b %d %Y") : "-" %></td>
+          <td class="p-2"><%= token.current? ? "active" : token.revoked_at? ? "revoked" : "expired" %></td>
+          <td class="p-2"><%= @events_by_token_id.fetch(token.id, 0) %> event(s)</td>
+          <td class="p-2 text-right">
+            <% if token.current? %>
+              <%= button_to "Revoke", admin_endpoint_token_path(@endpoint, token), method: :delete, class: "text-sm underline" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+

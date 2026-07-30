@@ -20,15 +20,33 @@
 
 <%= render "form" %>
 
-<% webhook_path = "/webhooks/inbound/#{ERB::Util.url_encode(@endpoint.provider_name.to_s)}/#{ERB::Util.url_encode(@endpoint.recording_studio_recording_id.to_s)}" %>
-<% webhook_url = "#{request.base_url}#{webhook_path}" %>
+<% now = Time.current %>
+<% current_token = @endpoint.endpoint_tokens
+  .select { |token| token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now) }
+  .max_by(&:active_at) %>
+<% current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence %>
+<% endpoint_url_value = if current_plaintext_token.present?
+                          "#{request.base_url}#{inbound_path(endpoint_token: current_plaintext_token)}"
+                        elsif current_token.present?
+                          "Active token present; full URL unavailable"
+                        else
+                          "Issue a token to reveal the full credential URL."
+                        end %>
+<% endpoint_url_help = if current_plaintext_token.present?
+                         "Use this full URL in your provider webhook configuration."
+                       elsif current_token.present?
+                         "This endpoint has an active legacy token with non-recoverable plaintext."
+                       else
+                         "Inbound URLs are token-based and shown when a token is issued."
+                       end %>
 
 <%= render FlatPack::TextInput::Component.new(
-  name: "endpoint_url",
+  name: "endpoint_url_hint",
   label: "Webhook URL",
-  value: webhook_url,
-  quick_copy: true,
-  help_text: "Use this URL in your provider webhook settings."
+  value: endpoint_url_value,
+  quick_copy: current_plaintext_token.present?,
+  required: false,
+  help_text: endpoint_url_help
 ) %>
 
 <%= form_with model: @endpoint, url: admin_endpoint_path(@endpoint), class: "space-y-3" do |form| %>

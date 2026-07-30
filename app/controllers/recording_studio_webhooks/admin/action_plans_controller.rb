@@ -13,7 +13,7 @@ module RecordingStudioWebhooks
       private
 
       def load_event
-        @event = @endpoint.inbound_events.find(params[:event_id])
+        @event = InboundEvent.where(endpoint_id: endpoint_revision_ids(@endpoint)).find(params[:event_id])
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"
       end

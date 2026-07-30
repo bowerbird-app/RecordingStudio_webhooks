@@ -19,6 +19,8 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   get "recording_tree" => "recording_trees#index", as: :recording_tree
+  get "dummy_webhook_tester" => "dummy_webhook_tester#show", as: :dummy_webhook_tester
+  post "dummy_webhook_tester" => "dummy_webhook_tester#create"
 
   # Defines the root path route ("/")
   root "home#index"

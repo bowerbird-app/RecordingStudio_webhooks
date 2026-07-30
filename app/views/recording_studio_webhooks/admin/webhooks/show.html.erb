@@ -1,3 +1,8 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: main_app.root_path,
+  anchor_tooltip: "Close"
+) %>
+
 <div class="flex flex-wrap items-start justify-between gap-4">
   <%= render FlatPack::PageTitle::Component.new(
     title: "Admin Webhooks",
@@ -88,7 +93,6 @@
             <li class="border-b pb-3">
               <strong><%= action.name %></strong>
               <div class="text-xs text-gray-600">provider: <%= action.provider_name || "any" %> · pattern: <%= action.event_pattern.value %></div>
-              <div class="text-xs text-gray-600">source: <%= action.source %> · fingerprint: <%= action.fingerprint.first(12) %>…</div>
             </li>
           <% end %>
         </ul>

@@ -5,55 +5,72 @@
 
 <%= render FlatPack::PageTitle::Component.new(
   title: "Inbound events",
-  subtitle: "Redacted intake logs with provider, endpoint, token, status, date, and mode filters.",
   variant: :h1
 ) %>
 
 <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
   <% card.body do %>
-    <%= form_with url: params[:endpoint_id].present? ? admin_endpoint_events_path(@endpoint) : admin_events_path, method: :get, class: "grid gap-3 md:grid-cols-4" do |form| %>
-      <div>
-        <label class="block text-sm font-medium" for="provider_name">Provider</label>
-        <select id="provider_name" name="provider_name" class="mt-1 w-full rounded border p-2 text-sm">
-          <option value="">All</option>
-          <% @providers.each do |provider| %>
-            <option value="<%= provider.name %>" <%= "selected" if @filter[:provider_name] == provider.name %>><%= provider.name %></option>
-          <% end %>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium" for="endpoint_id">Endpoint</label>
-        <select id="endpoint_id" name="endpoint_id" class="mt-1 w-full rounded border p-2 text-sm">
-          <option value="">All</option>
-          <% @endpoints.each do |endpoint| %>
-            <option value="<%= endpoint.id %>" <%= "selected" if @filter[:endpoint_id] == endpoint.id %>><%= endpoint.provider_name %> / <%= endpoint.label %></option>
-          <% end %>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium" for="endpoint_token_id">Token snapshot</label>
-        <%= form.text_field :endpoint_token_id, value: @filter[:endpoint_token_id], class: "mt-1 w-full rounded border p-2 text-sm", placeholder: "token UUID" %>
-      </div>
-      <div>
-        <label class="block text-sm font-medium" for="event_type">Event type</label>
-        <%= form.text_field :event_type, value: @filter[:event_type], class: "mt-1 w-full rounded border p-2 text-sm", placeholder: "invoice.paid" %>
-      </div>
-      <div>
-        <label class="block text-sm font-medium" for="status">Status</label>
-        <%= form.select :status, options_for_select([["All", ""], ["accepted", "accepted"], ["planned", "planned"]], @filter[:status]), {}, class: "mt-1 w-full rounded border p-2 text-sm" %>
-      </div>
-      <div>
-        <label class="block text-sm font-medium" for="execution_mode">Mode</label>
-        <%= form.select :execution_mode, options_for_select([["All", ""], ["parallel", "parallel"], ["sequential", "sequential"]], @filter[:execution_mode]), {}, class: "mt-1 w-full rounded border p-2 text-sm" %>
-      </div>
-      <div>
-        <label class="block text-sm font-medium" for="from">From</label>
-        <%= form.datetime_local_field :from, value: @filter[:from], class: "mt-1 w-full rounded border p-2 text-sm" %>
-      </div>
-      <div>
-        <label class="block text-sm font-medium" for="to">To</label>
-        <%= form.datetime_local_field :to, value: @filter[:to], class: "mt-1 w-full rounded border p-2 text-sm" %>
-      </div>
+    <%= form_with url: params[:endpoint_id].present? ? admin_endpoint_events_path(@endpoint) : admin_events_path, method: :get, class: "grid gap-3 md:grid-cols-4" do |_form| %>
+      <%= render FlatPack::Select::Component.new(
+        name: "provider_name",
+        label: "Provider",
+        options: [["All", ""]] + @providers.map { |provider| [provider.name, provider.name] },
+        value: @filter[:provider_name].to_s,
+        class: "w-full"
+      ) %>
+
+      <%= render FlatPack::Select::Component.new(
+        name: "endpoint_id",
+        label: "Endpoint",
+        options: [["All", ""]] + @endpoints.map { |endpoint| ["#{endpoint.provider_name} / #{endpoint.label}", endpoint.id] },
+        value: @filter[:endpoint_id].to_s,
+        class: "w-full"
+      ) %>
+
+      <%= render FlatPack::TextInput::Component.new(
+        name: "endpoint_token",
+        label: "Token",
+        value: (@filter[:endpoint_token].presence || @filter[:endpoint_token_id]).to_s,
+        placeholder: "rswh_..."
+      ) %>
+
+      <%= render FlatPack::TextInput::Component.new(
+        name: "event_type",
+        label: "Event type",
+        value: @filter[:event_type].to_s,
+        placeholder: "invoice.paid"
+      ) %>
+
+      <%= render FlatPack::Select::Component.new(
+        name: "status",
+        label: "Status",
+        options: [["All", ""], ["accepted", "accepted"], ["planned", "planned"]],
+        value: @filter[:status].to_s,
+        class: "w-full"
+      ) %>
+
+      <%= render FlatPack::Select::Component.new(
+        name: "execution_mode",
+        label: "Mode",
+        options: [["All", ""], ["parallel", "parallel"], ["sequential", "sequential"]],
+        value: @filter[:execution_mode].to_s,
+        class: "w-full"
+      ) %>
+
+      <%= render FlatPack::TextInput::Component.new(
+        name: "from",
+        label: "From",
+        value: @filter[:from].to_s,
+        placeholder: "YYYY-MM-DD HH:MM"
+      ) %>
+
+      <%= render FlatPack::TextInput::Component.new(
+        name: "to",
+        label: "To",
+        value: @filter[:to].to_s,
+        placeholder: "YYYY-MM-DD HH:MM"
+      ) %>
+
       <div class="md:col-span-4">
         <%= render FlatPack::Button::Component.new(text: "Apply filters", style: :primary, size: :sm, type: "submit") %>
       </div>
@@ -70,7 +87,7 @@
             <div>
               <strong><%= event.provider_name %> · <%= event.event_type %></strong><br>
               <span class="text-sm"><%= event.received_at %> · <%= event.status %> · endpoint <%= event.endpoint.label %> (<%= event.endpoint.recording_studio_recording_id %>)</span><br>
-              <span class="text-xs text-gray-600">token snapshot: <%= event.endpoint_token_id %> · attempts: <%= event.action_plans.sum(&:attempts) %></span>
+              <span class="text-xs text-gray-600">token: <%= event.endpoint_token.attributes.fetch("token", nil).to_s.presence || "Unavailable" %> · attempts: <%= event.action_plans.sum(&:attempts) %></span>
             </div>
             <%= link_to "View", admin_endpoint_event_path(event.endpoint_id, event) %>
           </li>

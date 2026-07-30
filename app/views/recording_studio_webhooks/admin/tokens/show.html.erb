@@ -1,27 +1,24 @@
 <meta name="robots" content="noindex,nofollow">
 
 <%= render FlatPack::PageTitle::Component.new(
-  title: "Copy this token now",
-  subtitle: "This token and complete URL are shown once after issuance/rotation.",
+  title: "Webhook endpoint ready",
+  subtitle: "Use this URL in your provider to start receiving inbound webhooks.",
   variant: :h1
-) %>
-
-<%= render FlatPack::Alert::Component.new(
-  description: "Treat this value as a credential. Store it in your provider and do not put it in source control.",
-  style: :warning
 ) %>
 
 <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
   <% card.body do %>
-    <p class="mb-2 text-sm font-medium">Webhook URL</p>
-    <code class="mb-4 block break-all rounded bg-black/5 p-4 text-sm"><%= @endpoint_url %></code>
-    <p class="mb-2 text-sm font-medium">Bearer token</p>
-    <code class="block break-all rounded bg-black/5 p-4 text-sm"><%= @issued_token %></code>
-    <p class="mt-3 text-xs text-gray-600">Stored token digests and previous plaintext values are never displayed.</p>
+    <%= render FlatPack::TextInput::Component.new(
+      name: "endpoint_url",
+      label: "Webhook endpoint URL",
+      value: @endpoint_url,
+      quick_copy: true,
+      help_text: "Copy and paste this full URL into your provider webhook configuration."
+    ) %>
   <% end %>
   <% card.footer do %>
     <%= render FlatPack::Button::Component.new(
-      text: "I copied the token",
+      text: "Done",
       style: :primary,
       size: :md,
       url: admin_endpoint_path(@endpoint)

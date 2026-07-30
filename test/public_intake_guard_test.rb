@@ -11,7 +11,7 @@ class PublicIntakeGuardTest < Minitest::Test
       guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true })
 
       status, _headers, body = guard.call(
-        "PATH_INFO" => "/webhooks/inbound/demo/123e4567-e89b-12d3-a456-426614174000",
+        "PATH_INFO" => "/webhooks/inbound/rswh_123e4567e89b12d3a456426614174000",
         "CONTENT_LENGTH" => "4",
         "rack.input" => StringIO.new("abcd")
       )
@@ -30,7 +30,7 @@ class PublicIntakeGuardTest < Minitest::Test
       )
 
       status, = guard.call(
-        "PATH_INFO" => "/webhooks/inbound/demo/123e4567-e89b-12d3-a456-426614174000",
+        "PATH_INFO" => "/webhooks/inbound/rswh_123e4567e89b12d3a456426614174000",
         "CONTENT_LENGTH" => "3",
         "rack.input" => StringIO.new("{}")
       )
@@ -45,7 +45,7 @@ class PublicIntakeGuardTest < Minitest::Test
     called = false
     guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true; [204, {}, []] })
 
-    status, = guard.call("PATH_INFO" => "/webhooks/inbound/demo", "CONTENT_LENGTH" => "9999999")
+    status, = guard.call("PATH_INFO" => "/webhooks/inbound/provider-only", "CONTENT_LENGTH" => "9999999")
 
     assert_equal 204, status
     assert called

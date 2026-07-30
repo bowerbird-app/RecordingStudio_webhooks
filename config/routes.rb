@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
 RecordingStudioWebhooks::Engine.routes.draw do
-  post "inbound/:provider/:endpoint_recording_id",
+  post "inbound/:endpoint_token",
     to: "public/intake#create",
     as: :inbound,
     constraints: {
-      provider: /[a-z][a-z0-9_-]*/,
-      endpoint_recording_id: /[0-9a-fA-F-]{36}/
+      endpoint_token: /rswh_[A-Za-z0-9_-]+/
     }
 
   namespace :admin do

@@ -43,17 +43,27 @@
             <% @endpoints.each do |endpoint| %>
               <tr class="border-t">
                 <td class="p-2">
-                  <% endpoint_path = "/#{endpoint.provider_name}/#{endpoint.recording_studio_recording_id}" %>
-                  <% endpoint_url = "#{request.base_url}#{inbound_path(provider: endpoint.provider_name, endpoint_recording_id: endpoint.recording_studio_recording_id)}" %>
+                  <% now = Time.current %>
+                  <% current_token = endpoint.endpoint_tokens
+                    .select { |token| token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now) }
+                    .max_by(&:active_at) %>
+                  <% current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence %>
+                  <% inbound_template_path = if current_plaintext_token.present?
+                                               "/webhooks/inbound/#{current_plaintext_token}"
+                                             else
+                                               "Active token present; full URL unavailable"
+                                             end %>
+                  <% inbound_template_url = "#{request.base_url}#{inbound_template_path}" %>
                   <div class="flex min-w-56 items-center gap-2" data-controller="flat-pack--text-input" data-flat-pack--text-input-quick-copy-enabled-value="true">
-                    <span class="font-mono text-xs"><%= endpoint_path %></span>
-                    <input type="hidden" value="<%= endpoint_url %>" data-flat-pack--text-input-target="input">
+                    <span class="font-mono text-xs"><%= inbound_template_path %></span>
+                    <input type="hidden" value="<%= current_plaintext_token.present? ? inbound_template_url : '' %>" data-flat-pack--text-input-target="input">
                     <%= render FlatPack::Button::Component.new(
                       icon: "clipboard-document",
                       icon_only: true,
                       style: :ghost,
                       size: :sm,
-                      aria: { label: "Copy full URL for #{endpoint.label}" },
+                      aria: { label: "Copy endpoint path for #{endpoint.label}" },
+                      disabled: current_plaintext_token.blank?,
                       data: {
                         action: "click->flat-pack--text-input#copyFromButton",
                         flat_pack__text_input_target: "copyButton"

@@ -11,11 +11,13 @@ module RecordingStudioWebhooks
         @endpoints = endpoint_scope.current.order(:provider_name, :label)
         @filter = event_filter_params.to_h.symbolize_keys
 
-        scope = InboundEvent.includes(:action_plans, :endpoint).where(endpoint_id: endpoint_scope.select(:id))
-        scope = scope.where(endpoint_id: @endpoint.id) if endpoint_scoped?
+        scope = InboundEvent.includes(:action_plans, :endpoint, :endpoint_token).where(endpoint_id: endpoint_scope.select(:id))
+        scope = scope.where(endpoint_id: endpoint_revision_ids(@endpoint)) if endpoint_scoped?
         scope = scope.where(provider_name: @filter[:provider_name]) if @filter[:provider_name].present?
         scope = scope.where(endpoint_id: @filter[:endpoint_id]) if @filter[:endpoint_id].present?
-        scope = scope.where(endpoint_token_id: @filter[:endpoint_token_id]) if @filter[:endpoint_token_id].present?
+        if normalized_endpoint_token.present?
+          scope = scope.joins(:endpoint_token).where(recording_studio_webhooks_endpoint_tokens: { token: normalized_endpoint_token })
+        end
         scope = scope.where(event_type: @filter[:event_type]) if @filter[:event_type].present?
         scope = scope.where(status: @filter[:status]) if @filter[:status].present?
         scope = scope.where("received_at >= ?", parsed_from_time) if parsed_from_time
@@ -41,7 +43,7 @@ module RecordingStudioWebhooks
 
       def load_event
         scope = InboundEvent.includes(:action_plans).where(endpoint_id: endpoint_scope.select(:id))
-        scope = scope.where(endpoint_id: @endpoint.id) if endpoint_scoped?
+        scope = scope.where(endpoint_id: endpoint_revision_ids(@endpoint)) if endpoint_scoped?
         @event = scope.find(params[:id])
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"
@@ -51,6 +53,7 @@ module RecordingStudioWebhooks
         params.permit(
           :provider_name,
           :endpoint_id,
+          :endpoint_token,
           :endpoint_token_id,
           :event_type,
           :status,
@@ -58,6 +61,16 @@ module RecordingStudioWebhooks
           :from,
           :to
         )
+      end
+
+      def normalized_endpoint_token
+        raw = @filter[:endpoint_token].presence || @filter[:endpoint_token_id].presence
+        return if raw.blank?
+
+        token = raw.to_s.strip.sub(%r{/$}, "")
+        token = token.split("?").first.to_s
+        token = token.split("/").last.to_s if token.include?("/")
+        token.presence
       end
 
       def parsed_from_time

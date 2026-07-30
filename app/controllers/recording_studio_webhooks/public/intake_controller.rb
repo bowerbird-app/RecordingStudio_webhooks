@@ -13,8 +13,6 @@ module RecordingStudioWebhooks
         return render_invalid_payload if raw_payload.nil?
 
         result = InboundIntake.call(
-          provider_name: route_value(:provider),
-          endpoint_recording_id: route_value(:endpoint_recording_id),
           token: bearer_token,
           raw_payload: raw_payload,
           content_type: request.content_type,
@@ -55,6 +53,9 @@ module RecordingStudioWebhooks
       end
 
       def bearer_token
+        route_token = route_value(:endpoint_token).to_s
+        return route_token if route_token.present?
+
         authorization = request.get_header("HTTP_AUTHORIZATION").to_s
         bearer = authorization.match(/\ABearer ([^\s]+)\z/i)
         return bearer[1] if bearer

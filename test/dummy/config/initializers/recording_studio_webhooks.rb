@@ -24,13 +24,7 @@ RecordingStudioWebhooks.configure do |config|
   # Do not queue demo actions from browser exploration.
   config.dispatcher = ->(_plan_id, _wait_until = nil) { true }
 
-  config.provider "demo",
-    event_type_extractor: ->(payload) { payload["type"] },
-    event_id_extractor: ->(payload) { payload["id"] }
-
-  config.action "demo.received",
-    ->(_context) { true },
-    provider: "demo",
-    event: "demo.received",
-    policy: { max_retries: 0, redaction_keys: ["action_only"] }
+  config.provider_roots = [Rails.root.join("app/webhooks/providers").to_s]
+  config.action_roots = [Rails.root.join("app/webhooks/actions").to_s]
+  config.automatic_discovery = true
 end
