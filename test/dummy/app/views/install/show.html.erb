@@ -1,0 +1,18 @@
+<div class="mx-auto flex w-full max-w-6xl flex-col gap-6">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: "Install",
+    subtitle: "How to install Recording Studio Webhooks in a host app.",
+    variant: :h1
+  ) %>
+
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold">Install steps</h2>
+    <ol class="space-y-2 text-sm leading-6 list-decimal pl-5">
+      <li>Add the gem to your host app Gemfile: <code>gem "recording_studio_webhooks"</code>.</li>
+      <li>Install dependencies: <code>bundle install</code>.</li>
+      <li>Run installer: <code>bin/rails generate recording_studio_webhooks:install</code>.</li>
+      <li>Apply database changes: <code>bin/rails db:migrate</code>.</li>
+      <li>Boot the app and open <code>/webhooks/admin</code> to verify install.</li>
+    </ol>
+  </section>
+</div>

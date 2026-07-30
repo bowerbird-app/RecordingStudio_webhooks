@@ -28,9 +28,21 @@
       ) %>
 
       <%= render FlatPack::Sidebar::Item::Component.new(
+        label: "Install",
+        href: main_app.install_path,
+        icon: :folder
+      ) %>
+
+      <%= render FlatPack::Sidebar::Item::Component.new(
+        label: "Config",
+        href: main_app.config_path,
+        icon: :cog
+      ) %>
+
+      <%= render FlatPack::Sidebar::Item::Component.new(
         label: "Sidekiq",
         href: main_app.url_for("/sidekiq"),
-        icon: :queue
+        icon: :clock
       ) %>
 
       <%= render FlatPack::Sidebar::Item::Component.new(
