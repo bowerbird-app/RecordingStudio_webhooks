@@ -16,11 +16,13 @@
       ) %>
     <% end %>
 
-    <label class="block text-sm font-medium" for="endpoint_provider_name">Provider</label>
-    <%= form.select :provider_name,
-      webhook_configuration.providers.all.map { |provider| [provider.name, provider.name] },
-      { include_blank: "Select a registered provider" },
-      class: "mt-1 block w-full rounded border p-2" %>
+    <%= render FlatPack::Select::Component.new(
+      name: "endpoint[provider_name]",
+      label: "Provider",
+      options: webhook_configuration.providers.all.map { |provider| [provider.name, provider.name] },
+      value: @endpoint.provider_name.to_s,
+      class: "w-full"
+    ) %>
 
     <%= render FlatPack::TextInput::Component.new(
       name: "endpoint[label]",
@@ -31,12 +33,6 @@
       help_text: "Human-readable name used in the admin UI."
     ) %>
 
-    <%= render FlatPack::TextInput::Component.new(
-      name: "endpoint[identity_json]",
-      label: "Safe identity JSON (optional)",
-      value: @endpoint.identity.presence && pretty_webhook_json(@endpoint.identity),
-      placeholder: "{\"environment\":\"production\"}"
-    ) %>
   <% end %>
 
   <% if @endpoint.persisted? %>

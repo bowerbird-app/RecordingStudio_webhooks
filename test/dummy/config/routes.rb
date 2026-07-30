@@ -1,6 +1,11 @@
 Rails.application.routes.draw do
   devise_for :users
 
+  require "sidekiq/web"
+  authenticate :user, ->(user) { user.email == "admin@admin.com" } do
+    mount Sidekiq::Web => "/sidekiq"
+  end
+
   # RecordingStudio engine is data/API-focused and has no browser root route.
   # Keep legacy links working by redirecting the base path to the app home.
   get "/recording_studio", to: redirect("/"), as: nil

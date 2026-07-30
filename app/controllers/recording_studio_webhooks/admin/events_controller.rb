@@ -33,6 +33,8 @@ module RecordingStudioWebhooks
       end
 
       def show
+        @events_index_params = event_filter_params.to_h.compact_blank
+        load_neighbor_events
       end
 
       private
@@ -47,6 +49,23 @@ module RecordingStudioWebhooks
         @event = scope.find(params[:id])
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"
+      end
+
+      def load_neighbor_events
+        scope = InboundEvent.where(endpoint_id: endpoint_scope.select(:id))
+        scope = scope.where(endpoint_id: endpoint_revision_ids(@endpoint)) if endpoint_scoped?
+
+        newer_condition = [
+          "received_at > :received_at OR (received_at = :received_at AND created_at > :created_at)",
+          { received_at: @event.received_at, created_at: @event.created_at }
+        ]
+        older_condition = [
+          "received_at < :received_at OR (received_at = :received_at AND created_at < :created_at)",
+          { received_at: @event.received_at, created_at: @event.created_at }
+        ]
+
+        @newer_event = scope.where(*newer_condition).order(received_at: :asc, created_at: :asc).first
+        @older_event = scope.where(*older_condition).order(received_at: :desc, created_at: :desc).first
       end
 
       def event_filter_params

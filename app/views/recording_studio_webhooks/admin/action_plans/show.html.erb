@@ -1,3 +1,8 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: admin_endpoint_event_path(@endpoint, @event),
+  anchor_tooltip: "Close"
+) %>
+
 <%= render FlatPack::PageTitle::Component.new(
   title: @action_plan.action_name,
   subtitle: "Persisted action plan and sanitized attempt history.",

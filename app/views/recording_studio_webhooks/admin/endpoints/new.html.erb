@@ -1,3 +1,8 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: admin_endpoints_path,
+  anchor_tooltip: "Close"
+) %>
+
 <%= render FlatPack::PageTitle::Component.new(
   title: "New webhook endpoint",
   subtitle: "Create a public intake address linked to a stable Recording Studio recording.",

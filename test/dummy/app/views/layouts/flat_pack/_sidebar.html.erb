@@ -28,6 +28,12 @@
       ) %>
 
       <%= render FlatPack::Sidebar::Item::Component.new(
+        label: "Sidekiq",
+        href: main_app.url_for("/sidekiq"),
+        icon: :queue
+      ) %>
+
+      <%= render FlatPack::Sidebar::Item::Component.new(
         label: "Recording tree",
         href: main_app.recording_tree_path,
         icon: :folder

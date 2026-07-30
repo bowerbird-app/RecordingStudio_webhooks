@@ -21,10 +21,9 @@ RecordingStudioWebhooks.configure do |config|
       .where("id = :root_id OR root_recording_id = :root_id", root_id: selected_root.id)
   end
 
-  # Do not queue demo actions from browser exploration.
-  config.dispatcher = ->(_plan_id, _wait_until = nil) { true }
+  config.dispatcher = :sidekiq
 
-  config.provider_roots = [Rails.root.join("app/webhooks/providers").to_s]
+  config.provider_roots = what[Rails.root.join("app/webhooks/providers").to_s]
   config.action_roots = [Rails.root.join("app/webhooks/actions").to_s]
   config.automatic_discovery = true
 end

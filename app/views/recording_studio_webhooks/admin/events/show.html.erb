@@ -1,3 +1,8 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: admin_endpoint_events_path(@endpoint, @events_index_params),
+  anchor_tooltip: "Close"
+) %>
+
 <%= render FlatPack::PageTitle::Component.new(
   title: @event.event_type,
   subtitle: "Accepted #{@event.received_at}",
