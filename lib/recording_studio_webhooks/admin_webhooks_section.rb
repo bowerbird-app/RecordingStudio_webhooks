@@ -106,9 +106,9 @@ module RecordingStudioWebhooks
                  value: ->(event, _context) { event.endpoint.label }
           column :event_type, title: "Event type"
           column :status, display: :badge
-             action :view,
-               text: "View",
-               url: ->(event) { "/webhooks/admin/endpoints/#{event.endpoint_id}/events/#{event.id}" }
+          action :view,
+                 text: "View",
+                 url: ->(event) { "/webhooks/admin/endpoints/#{event.endpoint_id}/events/#{event.id}" }
           default_columns :received_at, :provider_name, :endpoint, :event_type, :status
           default_sort :received_at, direction: :desc
           paginate per_page: 25, mode: :infinite
