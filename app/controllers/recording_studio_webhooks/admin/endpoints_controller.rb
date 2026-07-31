@@ -7,7 +7,7 @@ module RecordingStudioWebhooks
       before_action :authorize_admin_webhooks_write!, only: %i[create update]
 
       def index
-        redirect_to "/admin/screens/endpoints#{request.query_string.present? ? "?#{request.query_string}" : ""}"
+        redirect_to "/admin/screens/endpoints#{"?#{request.query_string}" if request.query_string.present?}"
       end
 
       def new

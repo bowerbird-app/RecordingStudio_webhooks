@@ -83,8 +83,8 @@ module RecordingStudioWebhooks
       return [] unless root_recording
 
       endpoint_scope = Endpoint.current
-                             .joins(:recording_studio_recording)
-                             .where(recording_studio_recordings: { root_recording_id: root_recording.id })
+                               .joins(:recording_studio_recording)
+                               .where(recording_studio_recordings: { root_recording_id: root_recording.id })
 
       last_event_at_by_endpoint_id = traffic_events(context)
                                      .group(:endpoint_id)
@@ -539,7 +539,7 @@ module RecordingStudioWebhooks
                  }
           column :name, title: "Action", sortable: false, value: ->(action, _context) { action.name }
           column :provider_name, title: "Provider", sortable: false,
-                                value: ->(action, _context) { action.provider_name.presence || "Any" }
+                                 value: ->(action, _context) { action.provider_name.presence || "Any" }
           column :event_pattern, title: "Event pattern", sortable: false,
                                  value: ->(action, _context) { action.event_pattern.value }
           column :priority, title: "Priority", sortable: false, value: ->(action, _context) { action.priority }
@@ -710,7 +710,8 @@ module RecordingStudioWebhooks
           range = 30.days.ago.beginning_of_day..Time.current.end_of_day
           relation = AdminWebhooksTrafficDefinition.action_error_relation(context)
                                                    .where(created_at: range)
-          [{ name: "Failed action plans", data: AdminWebhooksTrafficDefinition.action_plan_date_series(relation, :day) }]
+          [{ name: "Failed action plans",
+             data: AdminWebhooksTrafficDefinition.action_plan_date_series(relation, :day) }]
         end
         chart_options { { height: 220 } }
         link_to { |_context| "/admin/screens/action_attempts?status=failed" }
@@ -761,9 +762,12 @@ module RecordingStudioWebhooks
       existing_by_key = existing_usages.each_with_object({}) { |usage, memo| memo[usage.key] = usage }
 
       desired_defaults = {
-        "widgets.admin_webhooks.traffic" => { view_variant: :card, params: { preset_key: :last_30_days, group_by: :day } },
-        "widgets.admin_webhooks.action_attempts" => { view_variant: :card, params: { preset_key: :last_30_days, group_by: :day } },
-        "widgets.admin_webhooks.action_errors" => { view_variant: :card, params: { preset_key: :last_30_days, group_by: :day } },
+        "widgets.admin_webhooks.traffic" => { view_variant: :card,
+                                              params: { preset_key: :last_30_days, group_by: :day } },
+        "widgets.admin_webhooks.action_attempts" => { view_variant: :card,
+                                                      params: { preset_key: :last_30_days, group_by: :day } },
+        "widgets.admin_webhooks.action_errors" => { view_variant: :card,
+                                                    params: { preset_key: :last_30_days, group_by: :day } },
         "widgets.admin_webhooks.providers" => { view_variant: :card, params: { preset_key: :last_30_days } },
         "widgets.admin_webhooks.endpoints" => { view_variant: :card, params: { preset_key: :last_30_days } }
       }
