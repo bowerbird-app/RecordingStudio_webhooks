@@ -4,6 +4,8 @@ module RecordingStudioWebhooks
   module AdminWebhooksTrafficDefinition
     module_function
 
+    FILTERABLE_GROUPINGS = %i[hour day week month].freeze
+
     def ensure_definitions!
       return unless defined?(::RecordingStudioAdmin::Screen) && defined?(::RecordingStudioAdmin::Widget)
 
@@ -21,6 +23,14 @@ module RecordingStudioWebhooks
         .select(:id)
 
       InboundEvent.includes(:endpoint).where(endpoint_id: endpoint_ids)
+    end
+
+    def provider_filter_values
+      Endpoint.current.distinct.order(:provider_name).pluck(:provider_name)
+    end
+
+    def endpoint_filter_values
+      Endpoint.distinct.order(:label).pluck(:label)
     end
 
     def date_series(relation, frequency)
@@ -61,14 +71,16 @@ module RecordingStudioWebhooks
 
         query { |context| AdminWebhooksTrafficDefinition.traffic_events(context) }
         filter :date_range, field: :received_at, default: :last_30_days
-        filter :group_by, values: %i[hour day week month], default: :day
+        filter :group_by, values: FILTERABLE_GROUPINGS, default: :day
         filter :provider,
-               options: -> { RecordingStudioWebhooks.providers.all.map(&:name) },
-               apply: ->(relation, value, _context) { relation.where(provider_name: value) }
+               options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
+           apply: ->(relation, value, _context) { relation.where(provider_name: value) }
         filter :endpoint,
-               param: :endpoint_id,
-               apply: ->(relation, value, _context) { relation.where(endpoint_id: value) }
-        filter_presentation :modal, inline_count: 2
+               options: -> { AdminWebhooksTrafficDefinition.endpoint_filter_values },
+           apply: lambda { |relation, value, _context|
+             relation.joins(:endpoint).where(recording_studio_webhooks_endpoints: { label: value })
+           }
+         filter_presentation :inline
 
         chart do
           title "Webhook traffic"

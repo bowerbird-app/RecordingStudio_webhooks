@@ -390,7 +390,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     get "/admin/screens/webhook_traffic", params: {
       provider: "demo",
-      endpoint_id: @endpoint.id,
+      endpoint: @endpoint.label,
       group_by: "week"
     }
 
@@ -401,11 +401,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Provider"
     assert_includes response.body, "Endpoint"
 
-    get "/admin/screens/webhook_traffic/chart", params: { provider: "demo", endpoint_id: @endpoint.id, group_by: "week" }
+    get "/admin/screens/webhook_traffic/chart", params: { provider: "demo", endpoint: @endpoint.label, group_by: "week" }
     assert_response :success
     assert_includes response.body, "Inbound events"
 
-    get "/admin/screens/webhook_traffic/table", params: { provider: "demo", endpoint_id: @endpoint.id }
+    get "/admin/screens/webhook_traffic/table", params: { provider: "demo", endpoint: @endpoint.label }
     assert_response :success
     assert_includes response.body, "demo.received"
   end

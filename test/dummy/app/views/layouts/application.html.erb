@@ -30,6 +30,7 @@
     <% if tailwind_asset %>
       <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <% end %>
+    <%= turbo_include_tags %>
     <%= javascript_importmap_tags %>
   </head>
 
