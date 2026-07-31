@@ -376,7 +376,9 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Admin Webhooks"
     assert_includes response.body, "Webhook traffic"
     assert_includes response.body, "Providers"
+    assert_includes response.body, "Endpoints"
     assert_includes response.body, "Action attempts"
+    assert_includes response.body, "Action errors"
     assert_includes response.body, 'href="/admin/screens/providers"'
 
     get "/admin/webhooks/providers/demo"
@@ -386,6 +388,15 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, 'href="/admin/screens/endpoints?provider=demo"'
     assert_includes response.body, "Incoming events"
     assert_includes response.body, "Received at"
+
+    get "/admin/screens/actions", params: { provider: "demo" }
+    assert_response :success
+    assert_includes response.body, "Registered actions"
+    assert_includes response.body, "Event pattern"
+
+    get "/admin/screens/actions/table", params: { provider: "demo" }
+    assert_response :success
+    assert_includes response.body, "Registered actions"
   end
 
   test "authorized administrators can inspect providers screen with filters and table" do
@@ -507,9 +518,17 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     get "/admin/webhooks/endpoints"
 
+    assert_redirected_to "/admin/screens/endpoints"
+
+    follow_redirect!
+
     assert_response :success
-    assert_includes response.body, @endpoint.label
-    assert_includes response.body, "/webhooks/inbound/#{token}"
+    assert_includes response.body, "Endpoints"
+
+    get "/admin/screens/endpoints/table", params: { provider: @endpoint.provider_name }
+    assert_response :success
+    assert_includes response.body, "Endpoints"
+    assert_match %r{/webhooks/inbound/rswh_[A-Za-z0-9_-]+}, response.body
     refute_includes response.body, "/webhooks/inbound/rswh_..."
   end
 

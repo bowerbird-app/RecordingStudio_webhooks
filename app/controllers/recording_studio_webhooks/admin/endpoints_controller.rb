@@ -7,12 +7,7 @@ module RecordingStudioWebhooks
       before_action :authorize_admin_webhooks_write!, only: %i[create update]
 
       def index
-        @providers = webhook_configuration.providers.all.sort_by(&:name)
-        @selected_provider = params[:provider].to_s.presence
-
-        scope = endpoint_scope.current.includes(:recording_studio_recording, :endpoint_tokens).order(created_at: :desc)
-        scope = scope.where(provider_name: @selected_provider) if @selected_provider.present?
-        @endpoints = scope
+        redirect_to "/admin/screens/endpoints#{request.query_string.present? ? "?#{request.query_string}" : ""}"
       end
 
       def new

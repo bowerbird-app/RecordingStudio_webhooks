@@ -31,7 +31,6 @@
             <li class="border-b pb-3">
               <strong><%= action.name %></strong>
               <div class="text-xs text-gray-600">pattern: <%= action.event_pattern.value %> · source: <%= action.source %></div>
-              <pre class="mt-2 overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(action.policy_overrides) %></pre>
             </li>
           <% end %>
         </ul>
