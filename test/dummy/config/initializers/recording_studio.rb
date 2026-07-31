@@ -10,6 +10,7 @@ RecordingStudio.configure do |config|
     "RecordingStudioWebhooks::EndpointToken"
   ]
   config.recordable_types = (Array(config.recordable_types) + required_recordable_types).uniq
+  config.enable_capability :accessible, on: "Workspace"
 
   # Require each configured ActiveRecord type to call recording_studio_recordable.
   config.require_recordable_declarations = true

@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   get "/recording_studio", to: redirect("/"), as: nil
   mount RecordingStudio::Engine, at: "/recording_studio"
   mount RecordingStudioRootSwitchable::Engine, at: "/recording_studio_root_switchable"
+  recording_studio_admin_for :webhooks, at: "/admin", root_section: :admin_webhooks
   mount RecordingStudioWebhooks::Engine, at: "/webhooks", as: "recording_studio_webhooks"
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

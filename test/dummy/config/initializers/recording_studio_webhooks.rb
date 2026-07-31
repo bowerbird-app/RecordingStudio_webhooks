@@ -4,32 +4,22 @@ RecordingStudioWebhooks.configure do |config|
   # The dummy app has a deliberately narrow admin rule. Production hosts must
   # supply their own authorization and recording scope.
   config.admin_authorizer = lambda do |context|
-    next false unless defined?(::RecordingStudioAccessible)
-
     actor = context.actor
-    next false unless actor
+    root = context.controller.current_root_recording
+    next false unless actor && root
 
-    selected_root = context.controller.current_root_recording
-    next false unless selected_root
-
-    required_role = context.permission.to_sym == :admin ? :admin : :view
-
-    ::RecordingStudioAccessible.authorized?(
-      actor: actor,
-      recording: selected_root,
-      role: required_role
-    )
+    role = context.permission.to_sym == :admin ? :admin : :view
+    RecordingStudioAccessible.authorized?(actor: actor, recording: root, role: role)
   rescue StandardError
     false
   end
 
   config.admin_recording_scope = lambda do |context|
-    selected_root = context.controller.current_root_recording
-    return RecordingStudio::Recording.none unless selected_root
+    root = context.controller.current_root_recording
+    next RecordingStudio::Recording.none unless root
 
-    RecordingStudio::Recording
-      .where(trashed_at: nil)
-      .where("id = :root_id OR root_recording_id = :root_id", root_id: selected_root.id)
+    RecordingStudio::Recording.where(trashed_at: nil)
+      .where("id = :root_id OR root_recording_id = :root_id", root_id: root.id)
   end
 
   config.dispatcher = :sidekiq
