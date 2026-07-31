@@ -108,7 +108,7 @@ module RecordingStudioWebhooks
           column :status, display: :badge
           action :view,
                  text: "View",
-               url: ->(event) { "/admin/webhooks/endpoints/#{event.endpoint_id}/events/#{event.id}" }
+                 url: ->(event) { "/admin/webhooks/endpoints/#{event.endpoint_id}/events/#{event.id}" }
           default_columns :received_at, :provider_name, :endpoint, :event_type, :status
           default_sort :received_at, direction: :desc
           paginate per_page: 25, mode: :infinite
