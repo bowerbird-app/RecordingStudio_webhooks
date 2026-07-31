@@ -109,6 +109,86 @@ seed_inbound_event = lambda do |endpoint:, token:, event_id:, event_type:, paylo
   event
 end
 
+seed_action_attempts = lambda do |event:, seed_index:, seed_total:, month_start:, month_span_seconds:|
+  plans = event.action_plans.order(:execution_position).to_a
+  return if plans.empty?
+
+  pattern = [1, 1, 2, 1, 3, 2, 1, 4, 2, 1].freeze
+  progress = seed_total <= 1 ? 0.0 : seed_index.to_f / (seed_total - 1)
+  curved_progress = progress**1.35
+  wave = Math.sin((seed_index + 1) * 1.7) * 0.08
+  spread_ratio = [[curved_progress + wave, 0.0].max, 1.0].min
+  base_time = month_start + (month_span_seconds * spread_ratio).seconds
+  action_name_bases = if event.provider_name == "stripe"
+                        %w[stripe.invoice_paid stripe.charge_settled]
+                      else
+                        %w[demo.received demo.created demo.updated]
+                      end
+
+  plans.each do |plan|
+    position_offset = [plan.execution_position.to_i, 1].max - 1
+    action_batch_index = (seed_index / 3)
+    base_action_name = action_name_bases[(action_batch_index + position_offset) % action_name_bases.length]
+    action_name = plans.length > 1 ? "#{base_action_name}.#{position_offset + 1}" : base_action_name
+    attempts = [pattern[(seed_index + plan.execution_position) % pattern.length], 5].min
+    status = if attempts >= 4 && ((seed_index + plan.execution_position) % 11).zero?
+               "failed"
+             elsif attempts >= 3 && ((seed_index + plan.execution_position) % 7).zero?
+               "retrying"
+             else
+               "succeeded"
+             end
+
+    created_at = base_time + (position_offset * 7).minutes
+    started_at = created_at + 2.minutes
+    completed_at = status == "succeeded" || status == "failed" ? started_at + (attempts * 45).seconds : nil
+    next_attempt_at = status == "retrying" ? started_at + 30.minutes : nil
+
+    attempt_history = []
+    attempts.times do |attempt_index|
+      attempt_number = attempt_index + 1
+      started_marker = started_at + (attempt_index * 45).seconds
+      attempt_history << {
+        "status" => "running",
+        "at" => started_marker.iso8601,
+        "attempt" => attempt_number
+      }
+
+      next if attempt_number == attempts
+
+      attempt_history << {
+        "status" => "retrying",
+        "at" => (started_marker + 20.seconds).iso8601,
+        "attempt" => attempt_number,
+        "error" => "action_execution_failed"
+      }
+    end
+
+    final_marker = completed_at || next_attempt_at || (started_at + (attempts * 45).seconds)
+    attempt_history << {
+      "status" => status,
+      "at" => final_marker.iso8601,
+      "attempt" => attempts,
+      "error" => (status == "failed" ? "action_execution_failed" : nil)
+    }.compact
+
+    plan.class.where(id: plan.id).update_all(
+      action_name: action_name,
+      attempts: attempts,
+      status: status,
+      created_at: created_at,
+      updated_at: final_marker,
+      queued_at: created_at + 1.minute,
+      started_at: started_at,
+      completed_at: completed_at,
+      next_attempt_at: next_attempt_at,
+      last_error: (status == "failed" ? "action_execution_failed" : nil),
+      action_snapshot: plan.action_snapshot.is_a?(Hash) ? plan.action_snapshot.merge("name" => action_name) : { "name" => action_name },
+      attempt_history: attempt_history
+    )
+  end
+end
+
 # Create the admin user
 user = User.find_or_create_by!(email: "admin@admin.com") do |u|
   u.password = "Password"
@@ -175,8 +255,8 @@ begin
     end
 
     events_to_seed = 200
-    month_start = Time.current.beginning_of_month
-    month_end = [Time.current.end_of_day, Time.current.end_of_month.end_of_day].min
+    month_start = Time.current.utc.beginning_of_month
+    month_end = [Time.current.utc.end_of_day, Time.current.utc.end_of_month.end_of_day].min
     month_span_seconds = [(month_end - month_start).to_i, 1].max
 
     demo_event_types = %w[demo.received demo.created demo.updated].freeze
@@ -214,7 +294,7 @@ begin
         }
       end
 
-      seed_inbound_event.call(
+      event = seed_inbound_event.call(
         endpoint: endpoint,
         token: endpoint_tokens.fetch(endpoint),
         event_id: payload[:id],
@@ -222,6 +302,14 @@ begin
         payload: payload,
         request_id: format("seed-monthly-%03d", index + 1),
         received_at: received_at
+      )
+
+      seed_action_attempts.call(
+        event: event,
+        seed_index: index,
+        seed_total: events_to_seed,
+        month_start: month_start,
+        month_span_seconds: month_span_seconds
       )
     end
   end
@@ -250,9 +338,15 @@ if RecordingStudioWebhooks::Endpoint.table_exists?
     .where(recording_studio_recordings: { root_recording_id: root_recording.id })
     .where("provider_event_id LIKE ?", "seed_monthly_%")
     .count
+  monthly_seed_attempts = RecordingStudioWebhooks::ActionPlan
+    .joins(inbound_event: { endpoint: :recording_studio_recording })
+    .where(recording_studio_recordings: { root_recording_id: root_recording.id })
+    .where("recording_studio_webhooks_inbound_events.provider_event_id LIKE ?", "seed_monthly_%")
+    .sum(:attempts)
 
   puts "Seeded: #{endpoint_count} current webhook endpoints for Studio Workspace"
   puts "Seeded: #{token_count} active endpoint tokens"
   puts "Seeded: #{event_count} inbound webhook events across multiple endpoints"
   puts "Seeded: #{monthly_seed_count} monthly chart events"
+  puts "Seeded: #{monthly_seed_attempts} monthly action attempts"
 end

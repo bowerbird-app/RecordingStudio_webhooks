@@ -376,6 +376,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Admin Webhooks"
     assert_includes response.body, "Webhook traffic"
     assert_includes response.body, "Providers"
+    assert_includes response.body, "Action attempts"
     assert_includes response.body, 'href="/admin/screens/providers"'
 
     get "/admin/webhooks/providers/demo"
@@ -436,6 +437,50 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     get "/admin/screens/webhook_traffic/table", params: { provider: "demo", endpoint: @endpoint.label }
     assert_response :success
     assert_includes response.body, "Inbound events"
+  end
+
+  test "authorized administrators can inspect action attempts screen with chart and table" do
+    token = @endpoint.issue_token!.plaintext_token
+    post inbound_path(token), params: JSON.generate(id: "evt_attempts_1", type: "demo.received"), headers: intake_headers
+    assert_response :accepted
+    event = @endpoint.inbound_events.find_by!(provider_event_id: "evt_attempts_1")
+    plan = event.action_plans.order(:execution_position).first
+    assert_not_nil plan
+
+    sign_in @user
+    get "/admin/screens/action_attempts", params: {
+      provider: "demo",
+      endpoint: @endpoint.label,
+      action_name: plan.action_name,
+      status: plan.status,
+      group_by: "week"
+    }
+
+    assert_response :success
+    assert_includes response.body, "Action attempts"
+    assert_includes response.body, "Date range"
+    assert_includes response.body, "Group by"
+    assert_includes response.body, "Provider"
+    assert_includes response.body, "Endpoint"
+
+    get "/admin/screens/action_attempts/chart", params: {
+      provider: "demo",
+      endpoint: @endpoint.label,
+      action_name: plan.action_name,
+      status: plan.status,
+      group_by: "week"
+    }
+    assert_response :success
+    assert_includes response.body, "Action plans"
+
+    get "/admin/screens/action_attempts/table", params: {
+      provider: "demo",
+      endpoint: @endpoint.label,
+      action_name: plan.action_name,
+      status: plan.status
+    }
+    assert_response :success
+    assert_includes response.body, "Action plans"
   end
 
   test "authorized administrators can filter events by token value" do
