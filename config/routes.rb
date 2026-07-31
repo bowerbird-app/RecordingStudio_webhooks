@@ -8,7 +8,7 @@ RecordingStudioWebhooks::Engine.routes.draw do
       endpoint_token: /rswh_[A-Za-z0-9_-]+/
     }
 
-  namespace :admin do
+  scope module: :admin, as: :admin do
     root to: "webhooks#show"
 
     resource :webhooks, only: :show, controller: :webhooks

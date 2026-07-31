@@ -88,7 +88,7 @@
     "endpoint = RecordingStudioWebhooks::Endpoint.find(endpoint_id)",
     "issuance = endpoint.issue_token!(actor: Current.actor)",
     "plaintext_token = issuance.plaintext_token",
-    "webhook_url = \"\#{request.base_url}\#{recording_studio_webhooks.inbound_path(endpoint_token: plaintext_token)}\"",
+    "webhook_url = \"\#{request.base_url}\#{recording_studio_webhooks_inbound_path(endpoint_token: plaintext_token)}\"",
     "",
     "# token plaintext is shown once at issuance time"
   ].join("\n") %>

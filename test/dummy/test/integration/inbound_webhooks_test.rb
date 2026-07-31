@@ -368,7 +368,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
   test "authorized administrators can open admin webhooks root and provider pages" do
     sign_in @user
 
-    get "/webhooks/admin"
+    get "/admin/webhooks"
     assert_redirected_to "/admin/sections/admin_webhooks"
 
     follow_redirect!
@@ -376,7 +376,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Admin Webhooks"
     assert_includes response.body, "Webhook traffic"
 
-    get "/webhooks/admin/providers/demo"
+    get "/admin/webhooks/providers/demo"
     assert_response :success
     assert_includes response.body, "Provider-linked actions and endpoints."
   end
@@ -385,8 +385,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     token = @endpoint.issue_token!.plaintext_token
     post inbound_path(token), params: JSON.generate(id: "evt_traffic_1", type: "demo.received"), headers: intake_headers
     assert_response :accepted
+    assert_equal 1, @endpoint.inbound_events.where(provider_event_id: "evt_traffic_1").count
 
     sign_in @user
+    get "/admin/sections/admin_webhooks"
+    assert_response :success
 
     get "/admin/screens/webhook_traffic", params: {
       provider: "demo",
@@ -407,7 +410,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     get "/admin/screens/webhook_traffic/table", params: { provider: "demo", endpoint: @endpoint.label }
     assert_response :success
-    assert_includes response.body, "demo.received"
+    assert_includes response.body, "Inbound events"
   end
 
   test "authorized administrators can filter events by token value" do
@@ -421,7 +424,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     post inbound_path(second_token), params: JSON.generate(id: "evt_filter_token_2", type: "demo.received"), headers: intake_headers
     assert_response :accepted
 
-    get "/webhooks/admin/events", params: { endpoint_token: first_token }
+    get "/admin/webhooks/events", params: { endpoint_token: first_token }
 
     assert_response :success
     assert_includes response.body, first_token
@@ -432,7 +435,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     sign_in @user
     token = @endpoint.issue_token!.plaintext_token
 
-    get "/webhooks/admin/endpoints"
+    get "/admin/webhooks/endpoints"
 
     assert_response :success
     assert_includes response.body, @endpoint.label
@@ -444,13 +447,13 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     sign_in @user
     original_endpoint = @endpoint
 
-    patch "/webhooks/admin/endpoints/#{@endpoint.id}", params: {
+    patch "/admin/webhooks/endpoints/#{@endpoint.id}", params: {
       auto_save: "1",
       endpoint: { enabled: "0" }
     }
 
     assert_response :redirect
-    assert_includes response.location, "/webhooks/admin/endpoints/"
+    assert_includes response.location, "/admin/webhooks/endpoints/"
     assert_includes response.location, "/edit"
 
     current_endpoint = RecordingStudioWebhooks::Endpoint.current.find_by!(
@@ -479,11 +482,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
       recording_studio_recording_id: stale_endpoint.recording_studio_recording_id
     )
 
-    get "/webhooks/admin/endpoints/#{stale_endpoint.id}"
+    get "/admin/webhooks/endpoints/#{stale_endpoint.id}"
 
     assert_response :success
-    assert_includes response.body, "/webhooks/admin/endpoints/#{current_endpoint.id}/edit"
-    refute_includes response.body, "/webhooks/admin/endpoints/#{stale_endpoint.id}/edit"
+    assert_includes response.body, "/admin/webhooks/endpoints/#{current_endpoint.id}/edit"
+    refute_includes response.body, "/admin/webhooks/endpoints/#{stale_endpoint.id}/edit"
   end
 
   test "endpoint event inspect works after endpoint is revised" do
@@ -500,7 +503,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
       actor: @user
     )
 
-    get "/webhooks/admin/endpoints/#{current_endpoint.id}/events/#{event.id}"
+    get "/admin/webhooks/endpoints/#{current_endpoint.id}/events/#{event.id}"
 
     assert_response :success
     assert_includes response.body, "demo.received"
@@ -513,7 +516,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     first_prefix = first_issuance.endpoint_token.prefix
     @endpoint.rotate_token!(actor: @user)
 
-    get "/webhooks/admin/endpoints/#{@endpoint.id}/tokens"
+    get "/admin/webhooks/endpoints/#{@endpoint.id}/tokens"
 
     assert_response :success
     assert_equal 1, response.body.scan(first_prefix).length
@@ -526,7 +529,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     other_workspace = Workspace.create!(name: "Auto Token Workspace #{SecureRandom.hex(4)}")
     other_recording = RecordingStudio.root_recording_for(other_workspace)
 
-    post "/webhooks/admin/endpoints", params: {
+    post "/admin/webhooks/endpoints", params: {
       endpoint: {
         recording_studio_recording_id: other_recording.id,
         label: label,
@@ -554,7 +557,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     original_authorizer = configuration.admin_authorizer
     configuration.admin_authorizer = nil
 
-    get "/webhooks/admin/endpoints"
+    get "/admin/webhooks/endpoints"
 
     assert_response :not_found
   ensure
@@ -568,7 +571,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
   end
 
   def sandbox_path
-    "/webhooks/admin/webhook_sandbox"
+    "/admin/webhooks/webhook_sandbox"
   end
 
   def intake_headers

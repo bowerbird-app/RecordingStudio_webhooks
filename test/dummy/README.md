@@ -18,7 +18,7 @@ demo never executes actions or sends network requests.
 Useful routes:
 
 - `/` — dummy overview;
-- `/webhooks/admin/endpoints` — engine administration;
+- `/admin/webhooks/endpoints` — engine administration;
 - `/webhooks/inbound/:endpoint_token` — public JSON intake;
 - `/users/sign_in` — Devise sign-in; and
 - `/up` — Rails health check.
