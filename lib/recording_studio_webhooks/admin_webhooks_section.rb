@@ -19,8 +19,8 @@ module RecordingStudioWebhooks
       return InboundEvent.none unless root_recording
 
       endpoint_ids = Endpoint.joins(:recording_studio_recording)
-        .where(recording_studio_recordings: { root_recording_id: root_recording.id })
-        .select(:id)
+                             .where(recording_studio_recordings: { root_recording_id: root_recording.id })
+                             .select(:id)
 
       InboundEvent.includes(:endpoint).where(endpoint_id: endpoint_ids)
     end
@@ -53,7 +53,7 @@ module RecordingStudioWebhooks
 
       case frequency
       when :hour then value.strftime("%-l%P").strip
-      when :week then "Week of #{value.strftime("%b %-d")}" 
+      when :week then "Week of #{value.strftime('%b %-d')}"
       when :month then value.strftime("%b")
       else value.strftime("%b %-d")
       end
@@ -74,25 +74,25 @@ module RecordingStudioWebhooks
         filter :group_by, values: FILTERABLE_GROUPINGS, default: :day
         filter :provider,
                options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
-           apply: ->(relation, value, _context) { relation.where(provider_name: value) }
+               apply: ->(relation, value, _context) { relation.where(provider_name: value) }
         filter :endpoint,
                options: -> { AdminWebhooksTrafficDefinition.endpoint_filter_values },
-           apply: lambda { |relation, value, _context|
-             relation.joins(:endpoint).where(recording_studio_webhooks_endpoints: { label: value })
-           }
-         filter_presentation :inline
+               apply: lambda { |relation, value, _context|
+                 relation.joins(:endpoint).where(recording_studio_webhooks_endpoints: { label: value })
+               }
+        filter_presentation :inline
 
         chart do
           title "Webhook traffic"
           type :area
           series do |context|
-            [ {
+            [{
               name: "Inbound events",
               data: AdminWebhooksTrafficDefinition.date_series(
                 context.query_result.relation,
                 context.filter_value(:group_by) || :day
               )
-            } ]
+            }]
           end
         end
 
@@ -106,6 +106,9 @@ module RecordingStudioWebhooks
                  value: ->(event, _context) { event.endpoint.label }
           column :event_type, title: "Event type"
           column :status, display: :badge
+             action :view,
+               text: "View",
+               url: ->(event) { "/webhooks/admin/endpoints/#{event.endpoint_id}/events/#{event.id}" }
           default_columns :received_at, :provider_name, :endpoint, :event_type, :status
           default_sort :received_at, direction: :desc
           paginate per_page: 25, mode: :infinite
@@ -130,8 +133,8 @@ module RecordingStudioWebhooks
         chart_type :area
         series do |context|
           relation = AdminWebhooksTrafficDefinition.traffic_events(context)
-            .where(received_at: 30.days.ago..Time.current)
-          [ { name: "Inbound events", data: AdminWebhooksTrafficDefinition.date_series(relation, :day) } ]
+                                                   .where(received_at: 30.days.ago..Time.current)
+          [{ name: "Inbound events", data: AdminWebhooksTrafficDefinition.date_series(relation, :day) }]
         end
         chart_options { { height: 220 } }
         link_to { |context| context.admin_screen_path("webhook_traffic") }
@@ -159,7 +162,7 @@ module RecordingStudioWebhooks
              text: "View traffic",
              url: ->(context) { context.admin_screen_path("webhook_traffic") }
         widget "widgets.admin_webhooks.traffic",
-            view_variant: :card,
+               view_variant: :card,
                params: { preset_key: :last_30_days, group_by: :day }
       end
 
