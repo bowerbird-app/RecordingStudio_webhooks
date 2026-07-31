@@ -10,6 +10,7 @@ module RecordingStudioWebhooks
       return unless defined?(::RecordingStudioAdmin::Screen) && defined?(::RecordingStudioAdmin::Widget)
 
       ensure_screen_class!
+      ensure_provider_screen_class!
       ensure_widget_definition!
       [RecordingStudioWebhooks::AdminWebhooksTrafficScreen, RecordingStudioWebhooks::AdminWebhooksTrafficWidget]
     end
@@ -27,6 +28,72 @@ module RecordingStudioWebhooks
 
     def provider_filter_values
       Endpoint.current.distinct.order(:provider_name).pluck(:provider_name)
+    end
+
+    def provider_widget_rows(context)
+      root_recording = context.root_recording
+      return [] unless root_recording
+
+      endpoint_scope = Endpoint.current
+                               .joins(:recording_studio_recording)
+                               .where(recording_studio_recordings: { root_recording_id: root_recording.id })
+      events_scope = traffic_events(context).where(received_at: 30.days.ago..Time.current)
+
+      endpoint_counts = endpoint_scope.group(:provider_name).count
+      enabled_counts = endpoint_scope.where(enabled: true).group(:provider_name).count
+      event_counts = events_scope.group(:provider_name).count
+      last_event_at = events_scope.group(:provider_name).maximum(:received_at)
+
+      (endpoint_counts.keys | event_counts.keys).sort.map do |provider_name|
+        {
+          provider: provider_name,
+          endpoints: endpoint_counts.fetch(provider_name, 0),
+          enabled: enabled_counts.fetch(provider_name, 0),
+          events_30d: event_counts.fetch(provider_name, 0),
+          last_event: last_event_at[provider_name]&.in_time_zone&.strftime("%b %-d, %Y %H:%M") || "No recent events",
+          provider_url: "/admin/webhooks/providers/#{provider_name}"
+        }
+      end
+    end
+
+    def provider_widget_items(context)
+      provider_widget_rows(context).map do |row|
+        endpoints_count = row[:endpoints].to_i
+        {
+          text: row.fetch(:provider, "Unknown"),
+          href: row[:provider_url],
+          trailing: "#{endpoints_count} #{endpoints_count == 1 ? 'endpoint' : 'endpoints'}"
+        }
+      end
+    end
+
+    def provider_widget_link(context)
+      "/admin/screens/providers"
+    end
+
+    def provider_screen_relation(context)
+      root_recording = context.root_recording
+      return InboundEvent.none unless root_recording
+
+      endpoint_ids = Endpoint.joins(:recording_studio_recording)
+                             .where(recording_studio_recordings: { root_recording_id: root_recording.id })
+                             .select(:id)
+
+      InboundEvent
+        .where(endpoint_id: endpoint_ids)
+        .joins(:endpoint)
+        .group("recording_studio_webhooks_inbound_events.provider_name")
+        .select(
+          <<~SQL.squish
+            recording_studio_webhooks_inbound_events.provider_name AS provider_name,
+            COUNT(recording_studio_webhooks_inbound_events.id) AS events_count,
+            COUNT(DISTINCT recording_studio_webhooks_endpoints.id) AS endpoints_count,
+            COUNT(DISTINCT CASE
+              WHEN recording_studio_webhooks_endpoints.enabled THEN recording_studio_webhooks_endpoints.id
+            END) AS enabled_endpoints_count,
+            MAX(recording_studio_webhooks_inbound_events.received_at) AS last_event_at
+          SQL
+        )
     end
 
     def endpoint_filter_values
@@ -118,6 +185,57 @@ module RecordingStudioWebhooks
       RecordingStudioWebhooks.const_set(:AdminWebhooksTrafficScreen, screen_class)
     end
 
+    def ensure_provider_screen_class!
+      if RecordingStudioWebhooks.const_defined?(:AdminWebhooksProvidersScreen, false)
+        return RecordingStudioWebhooks.const_get(:AdminWebhooksProvidersScreen)
+      end
+
+      screen_class = Class.new(::RecordingStudioAdmin::Screen) do
+        key "providers"
+        title "Providers"
+        subtitle "Provider performance across webhook endpoints and inbound traffic."
+        blast_radius :root
+
+        query { |context| AdminWebhooksTrafficDefinition.provider_screen_relation(context) }
+        filter :endpoint,
+               options: -> { AdminWebhooksTrafficDefinition.endpoint_filter_values },
+               apply: lambda { |relation, value, _context|
+                 relation.where(recording_studio_webhooks_endpoints: { label: value })
+               }
+        filter_presentation :inline
+
+        table do
+          title "Provider performance"
+          filter :search,
+                 apply: lambda { |relation, value, _context|
+                   next relation unless value.present?
+
+                   relation.where(
+                     "recording_studio_webhooks_inbound_events.provider_name ILIKE :q",
+                     q: "%#{ActiveRecord::Base.sanitize_sql_like(value)}%"
+                   )
+                 }
+          column :provider_name, title: "Provider"
+          column :endpoints_count, title: "Endpoints"
+          column :enabled_endpoints_count, title: "Enabled endpoints"
+          column :events_count, title: "Inbound events"
+          column :last_event_at,
+                 title: "Latest event",
+                 value: lambda { |row, _context|
+                   row.last_event_at&.in_time_zone&.strftime("%b %-d, %Y %H:%M") || "No recent events"
+                 }
+          action :view_provider,
+                 text: "View provider",
+                 url: ->(row) { "/admin/webhooks/providers/#{row.provider_name}" }
+          default_columns :provider_name, :endpoints_count, :enabled_endpoints_count, :events_count, :last_event_at
+          default_sort :events_count, direction: :desc
+          paginate per_page: 25, mode: :infinite
+        end
+      end
+
+      RecordingStudioWebhooks.const_set(:AdminWebhooksProvidersScreen, screen_class)
+    end
+
     def ensure_widget_definition!
       return if RecordingStudioWebhooks.const_defined?(:AdminWebhooksTrafficWidget, false)
 
@@ -142,6 +260,32 @@ module RecordingStudioWebhooks
 
       RecordingStudioWebhooks.const_set(:AdminWebhooksTrafficWidget, widget)
     end
+
+    def ensure_provider_widget_definition!
+      if RecordingStudioWebhooks.const_defined?(:AdminWebhooksProvidersWidget, false)
+        return RecordingStudioWebhooks.const_get(:AdminWebhooksProvidersWidget)
+      end
+
+      widget = ::RecordingStudioAdmin::Widget.new("widgets.admin_webhooks.providers") do
+        type :list
+        title "Providers"
+        description "Provider health across endpoints and recent inbound traffic."
+        list_options divider: true, hover: true, compact_preview: :text_summary
+        hide_change
+        hide_metric
+        items do |context|
+          AdminWebhooksTrafficDefinition.provider_widget_items(context)
+        end
+        rows do |context|
+          AdminWebhooksTrafficDefinition.provider_widget_rows(context)
+        end
+        link_to do |context|
+          AdminWebhooksTrafficDefinition.provider_widget_link(context)
+        end
+      end
+
+      RecordingStudioWebhooks.const_set(:AdminWebhooksProvidersWidget, widget)
+    end
   end
 
   module AdminWebhooksSectionDefinition
@@ -151,7 +295,11 @@ module RecordingStudioWebhooks
       return nil unless defined?(::RecordingStudioAdmin::Section)
 
       AdminWebhooksTrafficDefinition.ensure_definitions!
-      return RecordingStudioWebhooks::AdminWebhooksSection if section_class_defined?
+      AdminWebhooksTrafficDefinition.ensure_provider_widget_definition!
+      if section_class_defined?
+        ensure_section_widget_usages!(RecordingStudioWebhooks::AdminWebhooksSection)
+        return RecordingStudioWebhooks::AdminWebhooksSection
+      end
 
       section_class = Class.new(::RecordingStudioAdmin::Section) do
         key "admin_webhooks"
@@ -161,10 +309,9 @@ module RecordingStudioWebhooks
         link :webhook_traffic,
              text: "View traffic",
              url: ->(context) { context.admin_screen_path("webhook_traffic") }
-        widget "widgets.admin_webhooks.traffic",
-               view_variant: :card,
-               params: { preset_key: :last_30_days, group_by: :day }
       end
+
+      ensure_section_widget_usages!(section_class)
 
       RecordingStudioWebhooks.const_set(:AdminWebhooksSection, section_class)
     end
@@ -172,6 +319,22 @@ module RecordingStudioWebhooks
     def section_class_defined?
       RecordingStudioWebhooks.const_defined?(:AdminWebhooksSection, false) &&
         RecordingStudioWebhooks.const_get(:AdminWebhooksSection).is_a?(Class)
+    end
+
+    def ensure_section_widget_usages!(section_class)
+      existing_widget_keys = section_class.widget_usages.map(&:key)
+
+      unless existing_widget_keys.include?("widgets.admin_webhooks.traffic")
+        section_class.widget "widgets.admin_webhooks.traffic",
+                             view_variant: :card,
+                             params: { preset_key: :last_30_days, group_by: :day }
+      end
+
+      return if existing_widget_keys.include?("widgets.admin_webhooks.providers")
+
+      section_class.widget "widgets.admin_webhooks.providers",
+                           view_variant: :card,
+                           params: { preset_key: :last_30_days }
     end
   end
 end

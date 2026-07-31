@@ -375,10 +375,35 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Admin Webhooks"
     assert_includes response.body, "Webhook traffic"
+    assert_includes response.body, "Providers"
+    assert_includes response.body, 'href="/admin/screens/providers"'
 
     get "/admin/webhooks/providers/demo"
     assert_response :success
     assert_includes response.body, "Provider-linked actions and endpoints."
+    assert_includes response.body, 'href="/admin/screens/actions?provider=demo"'
+    assert_includes response.body, 'href="/admin/screens/endpoints?provider=demo"'
+    assert_includes response.body, "Incoming events"
+    assert_includes response.body, "Received at"
+  end
+
+  test "authorized administrators can inspect providers screen with filters and table" do
+    token = @endpoint.issue_token!.plaintext_token
+    post inbound_path(token), params: JSON.generate(id: "evt_provider_screen_1", type: "demo.received"), headers: intake_headers
+    assert_response :accepted
+
+    sign_in @user
+    get "/admin/screens/providers", params: { endpoint: @endpoint.label }
+
+    assert_response :success
+    assert_includes response.body, "Providers"
+    assert_includes response.body, "Endpoint"
+    assert_includes response.body, "Provider performance"
+    assert_includes response.body, "Latest event"
+
+    get "/admin/screens/providers/table", params: { endpoint: @endpoint.label }
+    assert_response :success
+    assert_includes response.body, "Provider"
   end
 
   test "authorized administrators can inspect native webhook traffic with filters, chart, and table" do

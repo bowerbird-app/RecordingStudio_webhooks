@@ -21,12 +21,19 @@ module RecordingStudioWebhooks
             .merge(@provider.policy_overrides)
         )
         @matching_actions = webhook_configuration.actions.all
-          .select { |action| action.provider_name.nil? || action.provider_name == @provider.name }
-          .sort_by(&:sort_key)
-        @endpoints = endpoint_scope
-          .where(provider_name: @provider.name)
-          .includes(:endpoint_tokens)
-          .order(created_at: :desc)
+                                                 .select { |action| action.provider_name.nil? || action.provider_name == @provider.name }
+                                                 .sort_by(&:sort_key)
+        provider_endpoints = endpoint_scope.where(provider_name: @provider.name)
+
+        @endpoints = provider_endpoints
+                     .includes(:endpoint_tokens)
+                     .order(created_at: :desc)
+
+        @incoming_events = InboundEvent
+                           .includes(:endpoint)
+                           .where(endpoint_id: provider_endpoints.select(:id))
+                           .order(received_at: :desc)
+                           .limit(50)
       end
     end
   end

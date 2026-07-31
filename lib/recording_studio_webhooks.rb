@@ -5,7 +5,6 @@ require "json"
 require "date"
 require "openssl"
 require "securerandom"
-require "set"
 
 require "recording_studio_webhooks/version"
 require "recording_studio_webhooks/errors"
@@ -45,12 +44,12 @@ module RecordingStudioWebhooks
 
     def actions = configuration.actions
 
-    def register_provider(name, implementation = nil, **options, &)
-      providers.register(name, implementation, **options, &)
+    def register_provider(name, implementation = nil, **, &)
+      providers.register(name, implementation, **, &)
     end
 
-    def register_action(name, implementation = nil, **options, &)
-      actions.register(name, implementation, **options, &)
+    def register_action(name, implementation = nil, **, &)
+      actions.register(name, implementation, **, &)
     end
 
     # A serializable, intentionally non-secret description of the current setup.

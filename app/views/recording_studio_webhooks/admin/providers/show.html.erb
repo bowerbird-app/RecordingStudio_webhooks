@@ -14,12 +14,20 @@
 <div class="grid gap-6 lg:grid-cols-2">
   <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
     <% card.header do %>
-      <%= render FlatPack::PageTitle::Component.new(title: "Actions", variant: :h3, class: "mb-0 pb-0") %>
+      <div class="flex items-center justify-between gap-3">
+        <%= render FlatPack::PageTitle::Component.new(title: "Actions", variant: :h3, class: "mb-0 pb-0") %>
+        <%= render FlatPack::Button::Component.new(
+          text: "View all",
+          url: "/admin/screens/actions?provider=#{ERB::Util.url_encode(@provider.name)}",
+          style: :secondary,
+          size: :sm
+        ) %>
+      </div>
     <% end %>
     <% card.body do %>
       <% if @matching_actions.any? %>
         <ul class="space-y-3 text-sm">
-          <% @matching_actions.each do |action| %>
+          <% @matching_actions.first(5).each do |action| %>
             <li class="border-b pb-3">
               <strong><%= action.name %></strong>
               <div class="text-xs text-gray-600">pattern: <%= action.event_pattern.value %> · source: <%= action.source %></div>
@@ -35,12 +43,20 @@
 
   <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
     <% card.header do %>
-      <%= render FlatPack::PageTitle::Component.new(title: "Endpoints", variant: :h3, class: "mb-0 pb-0") %>
+      <div class="flex items-center justify-between gap-3">
+        <%= render FlatPack::PageTitle::Component.new(title: "Endpoints", variant: :h3, class: "mb-0 pb-0") %>
+        <%= render FlatPack::Button::Component.new(
+          text: "View all",
+          url: "/admin/screens/endpoints?provider=#{ERB::Util.url_encode(@provider.name)}",
+          style: :secondary,
+          size: :sm
+        ) %>
+      </div>
     <% end %>
     <% card.body do %>
       <% if @endpoints.any? %>
         <ul class="space-y-3 text-sm">
-          <% @endpoints.each do |endpoint| %>
+          <% @endpoints.first(5).each do |endpoint| %>
             <li class="flex items-center justify-between gap-3 border-b pb-3">
               <span><strong><%= endpoint.label %></strong> · recording <%= endpoint.recording_studio_recording_id %></span>
               <%= link_to "Open", admin_endpoint_path(endpoint) %>
@@ -49,6 +65,25 @@
         </ul>
       <% else %>
         <p class="text-sm">No endpoints exist for this provider.</p>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <%= render FlatPack::Card::Component.new(style: :default, class: "lg:col-span-2") do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Incoming events", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <% if @incoming_events.any? %>
+        <%= render FlatPack::Table::Component.new(data: @incoming_events, class: "text-sm") do |table| %>
+          <% table.column(title: "Received at", html: ->(event) { event.received_at&.in_time_zone&.strftime("%b %-d, %Y %H:%M") || "-" }) %>
+          <% table.column(title: "Event type", html: ->(event) { event.event_type.to_s }) %>
+          <% table.column(title: "Status", html: ->(event) { event.status.to_s }) %>
+          <% table.column(title: "Endpoint", html: ->(event) { event.endpoint&.label.to_s }) %>
+          <% table.column(title: "", html: ->(event) { link_to("View", admin_endpoint_event_path(event.endpoint_id, event)) }) %>
+        <% end %>
+      <% else %>
+        <p class="text-sm">No incoming events for this provider yet.</p>
       <% end %>
     <% end %>
   <% end %>
