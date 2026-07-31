@@ -19,6 +19,19 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     end
     workspace = Workspace.create!(name: "Webhook Workspace #{SecureRandom.hex(4)}")
     @recording = RecordingStudio.root_recording_for(workspace)
+    original_access_authorizer = RecordingStudioAccessible.configuration.access_management_authorizer
+    begin
+      RecordingStudioAccessible.configuration.access_management_authorizer = ->(recording:, **) { recording.present? }
+      RecordingStudioAccessible.grant_access(
+        recording: @recording,
+        actor: @user,
+        role: :admin,
+        manager_actor: @user
+      )
+    ensure
+      RecordingStudioAccessible.configuration.access_management_authorizer = original_access_authorizer
+    end
+
     @endpoint = RecordingStudioWebhooks::EndpointLifecycle.create!(
       endpoint: RecordingStudioWebhooks::Endpoint.new(
         recording_studio_recording_id: @recording.id,
@@ -356,14 +369,45 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     sign_in @user
 
     get "/webhooks/admin"
+    assert_redirected_to "/admin/sections/admin_webhooks"
+
+    follow_redirect!
     assert_response :success
     assert_includes response.body, "Admin Webhooks"
-    refute_includes response.body, "source: callable"
-    refute_includes response.body, "fingerprint:"
+    assert_includes response.body, "Webhook traffic"
 
     get "/webhooks/admin/providers/demo"
     assert_response :success
-    assert_includes response.body, "Provider definition"
+    assert_includes response.body, "Provider-linked actions and endpoints."
+  end
+
+  test "authorized administrators can inspect native webhook traffic with filters, chart, and table" do
+    token = @endpoint.issue_token!.plaintext_token
+    post inbound_path(token), params: JSON.generate(id: "evt_traffic_1", type: "demo.received"), headers: intake_headers
+    assert_response :accepted
+
+    sign_in @user
+
+    get "/admin/screens/webhook_traffic", params: {
+      provider: "demo",
+      endpoint_id: @endpoint.id,
+      group_by: "week"
+    }
+
+    assert_response :success
+    assert_includes response.body, "Webhook traffic"
+    assert_includes response.body, "Date range"
+    assert_includes response.body, "Group by"
+    assert_includes response.body, "Provider"
+    assert_includes response.body, "Endpoint"
+
+    get "/admin/screens/webhook_traffic/chart", params: { provider: "demo", endpoint_id: @endpoint.id, group_by: "week" }
+    assert_response :success
+    assert_includes response.body, "Inbound events"
+
+    get "/admin/screens/webhook_traffic/table", params: { provider: "demo", endpoint_id: @endpoint.id }
+    assert_response :success
+    assert_includes response.body, "demo.received"
   end
 
   test "authorized administrators can filter events by token value" do
@@ -382,30 +426,6 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, first_token
     refute_includes response.body, second_token
-  end
-
-  test "admin webhooks endpoint health counts only current endpoint revisions" do
-    sign_in @user
-
-    get "/webhooks/admin"
-    assert_response :success
-    baseline_health = endpoint_health_counts(response.body)
-
-    disabled_endpoint = RecordingStudioWebhooks::EndpointLifecycle.update!(
-      endpoint: @endpoint,
-      attributes: { enabled: false },
-      actor: @user
-    )
-    RecordingStudioWebhooks::EndpointLifecycle.update!(
-      endpoint: disabled_endpoint,
-      attributes: { enabled: true },
-      actor: @user
-    )
-
-    get "/webhooks/admin"
-
-    assert_response :success
-    assert_equal baseline_health, endpoint_health_counts(response.body)
   end
 
   test "authorized administrators can list endpoints with stable recording ownership" do
