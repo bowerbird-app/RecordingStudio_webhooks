@@ -365,7 +365,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_predicate Page.find_by(title: title), :present?
   end
 
-  test "authorized administrators can open admin webhooks root and provider pages" do
+  test "authorized administrators can open admin webhooks root and provider screens" do
     sign_in @user
 
     get "/admin/webhooks"
@@ -377,17 +377,16 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Webhook traffic"
     assert_includes response.body, "Providers"
     assert_includes response.body, "Endpoints"
+    assert_includes response.body, "Actions"
     assert_includes response.body, "Action attempts"
     assert_includes response.body, "Action errors"
+    assert_includes response.body, 'href="/admin/screens/actions"'
     assert_includes response.body, 'href="/admin/screens/providers"'
 
-    get "/admin/webhooks/providers/demo"
+    get "/admin/screens/providers", params: { provider: "demo" }
     assert_response :success
-    assert_includes response.body, "Provider-linked actions and endpoints."
-    assert_includes response.body, 'href="/admin/screens/actions?provider=demo"'
-    assert_includes response.body, 'href="/admin/screens/endpoints?provider=demo"'
-    assert_includes response.body, "Incoming events"
-    assert_includes response.body, "Received at"
+    assert_includes response.body, "Provider performance"
+    assert_includes response.body, "Provider"
 
     get "/admin/screens/actions", params: { provider: "demo" }
     assert_response :success
@@ -397,6 +396,10 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     get "/admin/screens/actions/table", params: { provider: "demo" }
     assert_response :success
     assert_includes response.body, "Registered actions"
+    assert_includes response.body, "View"
+    has_direct_action_plan_link = response.body.include?("/admin/webhooks/actionsc/")
+    has_fallback_screen_link = response.body.include?("/admin/screens/action_attempts?")
+    assert has_direct_action_plan_link || has_fallback_screen_link
   end
 
   test "authorized administrators can inspect providers screen with filters and table" do
@@ -412,10 +415,22 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Endpoint"
     assert_includes response.body, "Provider performance"
     assert_includes response.body, "Latest event"
+    assert_includes response.body, "Actions"
 
-    get "/admin/screens/providers/table", params: { endpoint: @endpoint.label }
+    get "/admin/screens/providers/table"
     assert_response :success
     assert_includes response.body, "Provider"
+    assert_includes response.body, 'href="/admin/screens/endpoints?provider=demo"'
+    assert_includes response.body, 'href="/admin/screens/webhook_traffic?provider=demo"'
+    assert_includes response.body, 'href="/admin/screens/actions?provider=demo"'
+    assert_includes response.body, 'data-turbo-frame="_top"'
+    demo_actions_count = RecordingStudioWebhooks.configuration.actions.all.count do |action|
+      action.provider_name.nil? || action.provider_name == "demo"
+    end
+    assert_match(
+      %r{<a[^>]*href="/admin/screens/actions\?provider=demo"[^>]*>#{demo_actions_count}</a>},
+      response.body
+    )
   end
 
   test "authorized administrators can inspect native webhook traffic with filters, chart, and table" do
@@ -524,6 +539,8 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, "Endpoints"
+    assert_includes response.body, "New endpoint"
+    assert_includes response.body, 'href="/admin/webhooks/endpoints/new"'
 
     get "/admin/screens/endpoints/table", params: { provider: @endpoint.provider_name }
     assert_response :success
@@ -574,8 +591,10 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     get "/admin/webhooks/endpoints/#{stale_endpoint.id}"
 
     assert_response :success
-    assert_includes response.body, "/admin/webhooks/endpoints/#{current_endpoint.id}/edit"
-    refute_includes response.body, "/admin/webhooks/endpoints/#{stale_endpoint.id}/edit"
+    assert_includes response.body, "Active webhook URL"
+    assert_includes response.body, "name=\"endpoint[enabled]\""
+    assert_includes response.body, "/admin/webhooks/endpoints/#{current_endpoint.id}"
+    refute_includes response.body, "/admin/webhooks/endpoints/#{stale_endpoint.id}"
   end
 
   test "endpoint event inspect works after endpoint is revised" do
@@ -612,7 +631,83 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_match(/<td class=\"p-2\">[A-Z][a-z]{2} \d{2} \d{4}<\/td>/, response.body)
   end
 
-  test "creating an endpoint auto-issues a token and shows one-time disclosure" do
+  test "authorized administrators can inspect tokens screen with provider and endpoint filters" do
+    sign_in @user
+    @endpoint.issue_token!
+
+    get "/admin/screens/tokens", params: { provider: @endpoint.provider_name, endpoint: @endpoint.label }
+
+    assert_response :success
+    assert_includes response.body, "Tokens"
+    assert_includes response.body, "Provider"
+    assert_includes response.body, "Endpoint"
+    assert_includes response.body, "New token"
+    assert_includes response.body, 'href="/admin/webhooks/tokens/new"'
+
+    get "/admin/screens/tokens/table", params: { provider: @endpoint.provider_name, endpoint: @endpoint.label }
+
+    assert_response :success
+    assert_includes response.body, "Recent tokens"
+    assert_includes response.body, "Token"
+    assert_includes response.body, "Status"
+  end
+
+  test "authorized administrators can issue a token from global token page and return to tokens screen" do
+    sign_in @user
+
+    get "/admin/webhooks/tokens/new"
+
+    assert_response :success
+    assert_includes response.body, "Issue token"
+    assert_includes response.body, "Create token"
+    assert_includes response.body, @endpoint.label
+
+    assert_difference -> { RecordingStudioWebhooks::EndpointToken.count }, 1 do
+      post "/admin/webhooks/tokens", params: {
+        token_issuance: {
+          endpoint_id: @endpoint.id,
+          expires_at: 2.days.from_now.iso8601
+        }
+      }
+    end
+
+    assert_redirected_to "/admin/screens/tokens"
+    follow_redirect!
+    assert_response :success
+    assert_includes response.body, "Tokens"
+  end
+
+  test "token issuance page filters endpoint dropdown by selected provider" do
+    sign_in @user
+
+    other_endpoint = RecordingStudioWebhooks::EndpointLifecycle.create!(
+      endpoint: RecordingStudioWebhooks::Endpoint.new(
+        recording_studio_recording_id: @recording.id,
+        label: "Stripe endpoint",
+        provider_name: "stripe",
+        identity: { "test" => true },
+        metadata: {},
+        policy_overrides: {}
+      ),
+      actor: @user
+    )
+
+    get "/admin/webhooks/tokens/new", params: { provider: @endpoint.provider_name }
+
+    assert_response :success
+    assert_includes response.body, "Provider"
+    assert_includes response.body, @endpoint.label
+    assert_includes response.body, "value=\"#{@endpoint.id}\""
+    refute_includes response.body, "value=\"#{other_endpoint.id}\""
+
+    get "/admin/webhooks/tokens/new", params: { provider: "stripe" }
+
+    assert_response :success
+    assert_includes response.body, "value=\"#{other_endpoint.id}\""
+    refute_includes response.body, "value=\"#{@endpoint.id}\""
+  end
+
+  test "creating an endpoint auto-issues a token and redirects to endpoint show" do
     sign_in @user
     label = "Auto token endpoint"
     other_workspace = Workspace.create!(name: "Auto Token Workspace #{SecureRandom.hex(4)}")
@@ -630,11 +725,13 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_response :created
-    assert_includes response.body, "Webhook endpoint ready"
-    assert_includes response.body, "rswh_"
+    assert_response :redirect
+    assert_match %r{/admin/webhooks/endpoints/.+}, response.location
+
+    follow_redirect!
+    assert_response :success
+    assert_includes response.body, "Active webhook URL"
     endpoint = RecordingStudioWebhooks::Endpoint.current.find_by!(provider_name: "demo", label: label)
-    assert_includes response.body, "/webhooks/inbound/rswh_"
 
     assert_equal label, endpoint.label
     assert_equal 1, endpoint.endpoint_tokens.count
