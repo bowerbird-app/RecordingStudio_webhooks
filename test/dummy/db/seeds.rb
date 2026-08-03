@@ -109,12 +109,11 @@ seed_inbound_event = lambda do |endpoint:, token:, event_id:, event_type:, paylo
   event
 end
 
-seed_monthly_spread_time = lambda do |index:, total:, month_start:, month_span_seconds:, exponent:, wave_frequency:, wave_scale:, wave_phase: 0.0|
-  progress = total <= 1 ? 0.0 : index.to_f / (total - 1)
-  curved_progress = progress**exponent
-  wave = Math.sin((index + 1 + wave_phase) * wave_frequency) * wave_scale
-  spread_ratio = [[curved_progress + wave, 0.0].max, 1.0].min
-  month_start + (month_span_seconds * spread_ratio).seconds
+evenly_distributed_time = lambda do |index:, total:, range_start:, range_span_seconds:|
+  return range_start if total <= 1
+
+  offset_seconds = (range_span_seconds * index.to_f / (total - 1)).round
+  range_start + offset_seconds.seconds
 end
 
 apply_plan_state = lambda do |plan:, status:, created_at:, attempts:, action_name:, error_code: nil|
@@ -229,7 +228,7 @@ begin
     seeded_endpoints << ensure_endpoint.call(
       root_recording,
       provider_name: "demo",
-      label: "Demo endpoint B",
+      label: "Demonstration Hyperextended Observability Aggregation EndpointBeta",
       identity: { "environment" => "dummy", "channel" => "b" },
       metadata: { "owner" => "demo", "tier" => "staging" },
       actor: user
@@ -251,9 +250,9 @@ begin
     failed_target_count = 100
     non_failed_target_count = 300
     total_monthly_seeds = failed_target_count + non_failed_target_count
-    month_start = Time.current.utc.beginning_of_month
-    month_end = [Time.current.utc.end_of_day, Time.current.utc.end_of_month.end_of_day].min
-    month_span_seconds = [(month_end - month_start).to_i, 1].max
+    range_start = Time.current.utc.prev_month.beginning_of_month
+    range_end = Time.current.utc.end_of_day
+    range_span_seconds = [(range_end - range_start).to_i, 1].max
 
     monthly_event_scope = RecordingStudioWebhooks::InboundEvent
       .joins(endpoint: :recording_studio_recording)
@@ -270,15 +269,11 @@ begin
 
     failed_target_count.times do |index|
       endpoint = demo_endpoints[index % demo_endpoints.length]
-      received_at = seed_monthly_spread_time.call(
+      received_at = evenly_distributed_time.call(
         index: index,
         total: failed_target_count,
-        month_start: month_start,
-        month_span_seconds: month_span_seconds,
-        exponent: 1.43,
-        wave_frequency: 1.33,
-        wave_scale: 0.09,
-        wave_phase: 2.0
+        range_start: range_start,
+        range_span_seconds: range_span_seconds
       )
       event_id = format("seed_monthly_failed_%03d", index + 1)
       payload = {
@@ -317,15 +312,11 @@ begin
     non_failed_statuses = %w[succeeded retrying queued running pending skipped cancelled].freeze
     non_failed_target_count.times do |index|
       endpoint = demo_endpoints[(index + 1) % demo_endpoints.length]
-      received_at = seed_monthly_spread_time.call(
+      received_at = evenly_distributed_time.call(
         index: index,
         total: non_failed_target_count,
-        month_start: month_start,
-        month_span_seconds: month_span_seconds,
-        exponent: 1.21,
-        wave_frequency: 1.71,
-        wave_scale: 0.11,
-        wave_phase: 7.0
+        range_start: range_start,
+        range_span_seconds: range_span_seconds
       )
       event_id = format("seed_monthly_nonfailed_%03d", index + 1)
       event_type = "demo.received"
