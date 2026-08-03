@@ -1,55 +1,21 @@
 <%= render FlatPack::PageNav::Component.new(
   anchor_url: "#{main_app.recording_studio_admin_webhooks_path}/sections/admin_webhooks",
   anchor_tooltip: "Close"
-) do |component| %>
-  <% component.right_slot do %>
-    <%= render FlatPack::Button::Component.new(
-      text: "Tokens",
-      style: :secondary,
-      size: :sm,
-      url: admin_endpoint_tokens_path(@endpoint),
-      aria: { label: "Tokens" }
-    ) %>
-  <% end %>
-<% end %>
+) %>
 
 <%= render FlatPack::PageTitle::Component.new(
   title: "Edit #{@endpoint.label}",
   variant: :h1
 ) %>
 
-<%= render "form" %>
-
-<% now = Time.current %>
-<% current_token = @endpoint.endpoint_tokens
-  .select { |token| token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now) }
-  .max_by(&:active_at) %>
-<% current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence %>
-<% endpoint_url_value = if current_plaintext_token.present?
-                          "#{request.base_url}#{main_app.recording_studio_webhooks_inbound_path(endpoint_token: current_plaintext_token)}"
-                        elsif current_token.present?
-                          "Active token present; full URL unavailable"
-                        else
-                          "Issue a token to reveal the full credential URL."
-                        end %>
-<% endpoint_url_help = if current_plaintext_token.present?
-                         "Use this full URL in your provider webhook configuration."
-                       elsif current_token.present?
-                         "This endpoint has an active legacy token with non-recoverable plaintext."
-                       else
-                         "Inbound URLs are token-based and shown when a token is issued."
-                       end %>
-
-<%= render FlatPack::TextInput::Component.new(
-  name: "endpoint_url_hint",
-  label: "Webhook URL",
-  value: endpoint_url_value,
-  quick_copy: current_plaintext_token.present?,
-  required: false,
-  help_text: endpoint_url_help
-) %>
-
 <%= form_with model: @endpoint, url: admin_endpoint_path(@endpoint), class: "space-y-3" do |form| %>
+  <% if @form_error.present? || @endpoint.errors.any? %>
+    <%= render FlatPack::Alert::Component.new(
+      description: @form_error.presence || @endpoint.errors.full_messages.to_sentence,
+      style: :danger
+    ) %>
+  <% end %>
+
   <%= hidden_field_tag :auto_save, "1" %>
   <%= render FlatPack::TextInput::Component.new(
     name: "endpoint[label]",

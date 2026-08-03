@@ -30,7 +30,7 @@
                 <td class="p-2"><%= provider.name %></td>
                 <td class="p-2"><%= provider.source %></td>
                 <td class="p-2"><%= @provider_endpoint_counts.fetch(provider.name, 0) %></td>
-                <td class="p-2 text-right"><%= link_to "Open", admin_provider_path(provider.name) %></td>
+                <td class="p-2 text-right"><%= link_to "Open", "/admin/screens/providers?#{ { provider: provider.name }.to_query }" %></td>
               </tr>
             <% end %>
           </tbody>

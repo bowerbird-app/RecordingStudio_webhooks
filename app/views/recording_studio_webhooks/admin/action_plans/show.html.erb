@@ -9,15 +9,70 @@
   variant: :h1
 ) %>
 
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-  <% card.body do %>
-    <dl class="grid gap-3 text-sm sm:grid-cols-2">
-      <div><dt class="font-medium">Status</dt><dd><%= @action_plan.status %></dd></div>
-      <div><dt class="font-medium">Attempts</dt><dd><%= @action_plan.attempts %></dd></div>
-      <div><dt class="font-medium">Execution mode</dt><dd><%= @action_plan.policy.execution_mode %></dd></div>
-      <div><dt class="font-medium">Next attempt</dt><dd><%= @action_plan.next_attempt_at || "None" %></dd></div>
-    </dl>
-    <h2 class="mt-6 text-base font-semibold">Attempt history</h2>
-    <pre class="mt-2 overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@action_plan.attempt_history) %></pre>
-  <% end %>
-<% end %>
+<div class="grid gap-6">
+  <section class="space-y-3">
+    <div class="grid gap-4 text-sm sm:grid-cols-2">
+      <div class="space-y-1">
+        <p class="font-medium text-(--surface-muted-content-color)">Status</p>
+        <%= render FlatPack::Badge::Component.new(
+          text: @action_plan.status.to_s.humanize,
+          style: webhook_status_style(@action_plan.status),
+          size: :sm
+        ) %>
+      </div>
+      <div class="space-y-1">
+        <p class="font-medium text-(--surface-muted-content-color)">Attempts</p>
+        <p><%= @action_plan.attempts %></p>
+      </div>
+      <div class="space-y-1">
+        <p class="font-medium text-(--surface-muted-content-color)">Execution mode</p>
+        <p><%= @action_plan.policy.execution_mode %></p>
+      </div>
+      <div class="space-y-1">
+        <p class="font-medium text-(--surface-muted-content-color)">Next attempt</p>
+        <p><%= @action_plan.next_attempt_at&.in_time_zone&.strftime("%b %-d, %Y %H:%M") || "None" %></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="space-y-3">
+    <%= render FlatPack::PageTitle::Component.new(title: "Attempt history", variant: :h3, class: "mb-0 pb-0") %>
+    <% attempt_rows = Array(@action_plan.attempt_history).each_with_index.map do |entry, index|
+         data = entry.is_a?(Hash) ? entry : {}
+         {
+           attempt: data["attempt"].presence || (index + 1),
+           status: data["status"].to_s,
+           at: data["at"].to_s,
+           error: data["error"].to_s
+         }
+       end %>
+
+    <% if attempt_rows.any? %>
+      <%= render FlatPack::Table::Component.new(data: attempt_rows, class: "text-sm") do |table| %>
+        <% table.column(title: "Attempt", html: ->(row) { row[:attempt].to_s }) %>
+        <% table.column(title: "Status", html: lambda { |row|
+             render FlatPack::Badge::Component.new(
+               text: row[:status].to_s.humanize,
+               style: webhook_status_style(row[:status]),
+               size: :sm
+             )
+           }) %>
+        <% table.column(title: "Recorded at", html: lambda { |row|
+             value = row[:at].to_s
+             next "-" if value.blank?
+
+             parsed = Time.zone.parse(value)
+             parsed ? parsed.strftime("%b %-d, %Y %H:%M") : value
+           }) %>
+        <% table.column(title: "Error", html: ->(row) { row[:error].presence || "-" }) %>
+      <% end %>
+    <% else %>
+      <p class="text-sm text-(--surface-muted-content-color)">No attempt history recorded yet.</p>
+    <% end %>
+  </section>
+
+  <section class="space-y-3">
+    <%= render FlatPack::PageTitle::Component.new(title: "Payload", variant: :h3, class: "mb-0 pb-0") %>
+    <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@event&.payload) %></pre>
+  </section>
+</div>

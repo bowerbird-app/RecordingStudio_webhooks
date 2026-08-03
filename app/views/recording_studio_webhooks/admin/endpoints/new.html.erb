@@ -9,8 +9,4 @@
   variant: :h1
 ) %>
 
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-  <% card.body do %>
-    <%= render "form" %>
-  <% end %>
-<% end %>
+<%= render "form" %>

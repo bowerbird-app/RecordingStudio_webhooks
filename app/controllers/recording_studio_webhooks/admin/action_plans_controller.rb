@@ -3,8 +3,8 @@
 module RecordingStudioWebhooks
   module Admin
     class ActionPlansController < BaseController
-      before_action :load_endpoint
-      before_action :load_event
+      before_action :load_endpoint, if: -> { params[:endpoint_id].present? }
+      before_action :load_event, if: -> { params[:event_id].present? }
       before_action :load_action_plan
 
       def show
@@ -19,7 +19,13 @@ module RecordingStudioWebhooks
       end
 
       def load_action_plan
-        @action_plan = @event.action_plans.find(params[:id])
+        @action_plan = if @event
+                         @event.action_plans.find(params[:id])
+                       else
+                         ActionPlan.includes(inbound_event: :endpoint).find(params[:id])
+                       end
+        @event ||= @action_plan.inbound_event
+        @endpoint ||= @event.endpoint
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"
       end

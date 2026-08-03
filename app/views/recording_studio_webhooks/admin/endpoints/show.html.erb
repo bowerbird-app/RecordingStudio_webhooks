@@ -1,98 +1,57 @@
-<div class="flex flex-wrap items-center justify-between gap-4">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: @endpoint.label,
-    variant: :h1
-  ) %>
-  <div class="flex gap-2">
-    <%= render FlatPack::Button::Component.new(
-      text: "Provider",
-      style: :secondary,
-      size: :sm,
-      url: admin_provider_path(@endpoint.provider_name)
-    ) %>
-    <%= render FlatPack::Button::Component.new(
-      text: "Edit",
-      style: :secondary,
-      size: :sm,
-      url: edit_admin_endpoint_path(@endpoint)
-    ) %>
-    <%= render FlatPack::Button::Component.new(
-      text: "Webhook Sandbox",
-      style: :secondary,
-      size: :sm,
-      url: admin_webhook_sandbox_path(endpoint_id: @endpoint.id, provider_name: @endpoint.provider_name)
-    ) %>
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: "#{main_app.recording_studio_admin_webhooks_path}/sections/admin_webhooks",
+  anchor_tooltip: "Close"
+) %>
+
+<%= render FlatPack::PageTitle::Component.new(
+  title: @endpoint.label,
+  variant: :h1
+) %>
+
+<%= form_with model: @endpoint, url: admin_endpoint_path(@endpoint), class: "mb-4" do |form| %>
+  <%= hidden_field_tag "endpoint[enabled]", "0" %>
+  <div class="flex items-center">
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input
+        type="checkbox"
+        name="endpoint[enabled]"
+        value="1"
+        class="sr-only peer"
+        <%= "checked" if @endpoint.enabled? %>
+        onchange="this.form.requestSubmit()"
+      >
+      <div
+        class="pointer-events-none rounded-full transition-colors duration-200 h-6 w-11 bg-[var(--switch-track-background-color)] peer-checked:bg-[var(--switch-track-checked-background-color)] peer-focus-visible:ring-2 peer-focus-visible:ring-inset peer-focus-visible:ring-[var(--switch-focus-ring-color)] peer-focus-visible:ring-offset-2"
+        role="switch"
+        aria-checked="<%= @endpoint.enabled? %>"
+      ></div>
+      <div class="pointer-events-none absolute left-0.5 top-0 rounded-full bg-[var(--switch-thumb-background-color)] shadow-[var(--switch-thumb-shadow)] transition-transform duration-200 translate-y-0.5 w-5 h-5 peer-checked:translate-x-5"></div>
+    </label>
+    <span class="ml-3 text-sm font-medium text-[var(--switch-label-color)]">Accept inbound events</span>
   </div>
-</div>
-
-<div class="grid gap-6 lg:grid-cols-2">
-  <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-    <% card.header do %>
-      <%= render FlatPack::PageTitle::Component.new(title: "Token lifecycle", variant: :h3, class: "mb-0 pb-0") %>
-    <% end %>
-    <% card.body do %>
-      <%= form_with url: admin_endpoint_tokens_path(@endpoint), scope: :endpoint_token, class: "space-y-3" do |_form| %>
-        <%= render FlatPack::DateTimeInput::Component.new(
-          name: "endpoint_token[expires_at]",
-          label: "Expiration (optional)"
-        ) %>
-        <%= render FlatPack::Button::Component.new(text: "Issue new token", style: :primary, size: :sm, type: "submit") %>
-      <% end %>
-      <p class="mt-4 text-sm"><%= link_to "View token history", admin_endpoint_tokens_path(@endpoint) %></p>
-    <% end %>
-  <% end %>
-
-  <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
-    <% card.header do %>
-      <%= render FlatPack::PageTitle::Component.new(title: "Endpoint status", variant: :h3, class: "mb-0 pb-0") %>
-    <% end %>
-    <% card.body do %>
-      <% now = Time.current %>
-      <% current_token = @tokens
-        .select { |token| token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now) }
-        .max_by(&:active_at) %>
-      <% current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence %>
-      <% endpoint_url_value = if current_plaintext_token.present?
-                                "#{request.base_url}#{main_app.recording_studio_webhooks_inbound_path(endpoint_token: current_plaintext_token)}"
-                              else
-                                "No active token URL available"
-                              end %>
-      <% endpoint_url_help = if current_plaintext_token.present?
-                               "Copy and paste this full URL into your provider webhook configuration."
-                             else
-                               "Issue a token to generate the active webhook URL."
-                             end %>
-
-      <%= render FlatPack::TextInput::Component.new(
-        name: "endpoint_url_status",
-        label: "Active webhook URL",
-        value: endpoint_url_value,
-        quick_copy: current_plaintext_token.present?,
-        required: false,
-        help_text: endpoint_url_help
-      ) %>
-      <p class="mt-4 text-sm">Payload limit: <strong><%= webhook_configuration.max_payload_bytes %></strong> bytes</p>
-    <% end %>
-  <% end %>
-</div>
-
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-  <% card.header do %>
-    <%= render FlatPack::PageTitle::Component.new(title: "Recent inbound events", variant: :h3, class: "mb-0 pb-0") %>
-  <% end %>
-  <% card.body do %>
-    <% if @events.any? %>
-      <ul class="space-y-3 text-sm">
-        <% @events.each do |event| %>
-          <li class="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-            <span><strong><%= event.event_type %></strong> · <%= event.received_at %></span>
-            <span><%= event.action_plans.size %> action plan(s) · <%= link_to "View", admin_endpoint_event_path(@endpoint, event) %></span>
-          </li>
-        <% end %>
-      </ul>
-      <p class="mt-4 text-sm"><%= link_to "All inbound events", admin_endpoint_events_path(@endpoint) %></p>
-    <% else %>
-      <p class="text-sm">No inbound events have been accepted.</p>
-    <% end %>
-  <% end %>
 <% end %>
+
+<% now = Time.current %>
+<% current_token = @tokens
+  .select { |token| token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now) }
+  .max_by(&:active_at) %>
+<% current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence %>
+<% endpoint_url_value = if current_plaintext_token.present?
+                          "#{request.base_url}#{main_app.recording_studio_webhooks_inbound_path(endpoint_token: current_plaintext_token)}"
+                        else
+                          "No active token URL available"
+                        end %>
+<% endpoint_url_help = if current_plaintext_token.present?
+                         "Copy and paste this full URL into your provider webhook configuration."
+                       else
+                         "Issue a token to generate the active webhook URL."
+                       end %>
+
+<%= render FlatPack::TextInput::Component.new(
+  name: "endpoint_url_status",
+  label: "Active webhook URL",
+  value: endpoint_url_value,
+  quick_copy: current_plaintext_token.present?,
+  required: false,
+  help_text: endpoint_url_help
+) %>

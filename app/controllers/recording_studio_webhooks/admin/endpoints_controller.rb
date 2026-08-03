@@ -19,17 +19,12 @@ module RecordingStudioWebhooks
         @endpoint.recording_studio_recording_id = selected_recording.id
 
         if @form_error.nil? && registered_provider?
-          issuance = nil
           Endpoint.transaction do
             @endpoint = EndpointLifecycle.create!(endpoint: @endpoint, actor: current_admin_actor)
-            issuance = @endpoint.issue_token!(actor: current_admin_actor)
+            @endpoint.issue_token!(actor: current_admin_actor)
           end
 
-          @issued_token = issuance.plaintext_token
-          @endpoint_url = "#{request.base_url}#{main_app.recording_studio_webhooks_inbound_path(endpoint_token: @issued_token)}"
-          response.headers["Cache-Control"] = "no-store, max-age=0"
-          response.headers["Pragma"] = "no-cache"
-          render "recording_studio_webhooks/admin/tokens/show", status: :created
+          redirect_to admin_endpoint_path(@endpoint), notice: "Endpoint created."
         else
           @form_error ||= "Choose a registered provider." unless registered_provider?
           render :new, status: :unprocessable_entity
