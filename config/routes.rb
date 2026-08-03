@@ -12,10 +12,14 @@ RecordingStudioWebhooks::Engine.routes.draw do
     root to: "webhooks#show"
 
     resource :webhooks, only: :show, controller: :webhooks
-    resources :providers, only: %i[index show], param: :name
+    resources :providers, only: %i[index], param: :name
     resources :events, only: :index
+    get "tokens/new", to: "token_issuances#new", as: :new_token_issuance
+    post "tokens", to: "token_issuances#create", as: :token_issuances
     get "webhook_sandbox", to: "sandboxes#show", as: :webhook_sandbox
     post "webhook_sandbox", to: "sandboxes#create"
+    get "actionsc/:id", to: "action_plans#show", as: :action_plan_short
+    get "actions/:id", to: "action_plans#show", as: :action_plan
 
     resources :endpoints, only: %i[index new create show edit update] do
       resources :tokens, only: %i[index create destroy]

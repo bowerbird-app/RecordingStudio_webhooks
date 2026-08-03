@@ -7,7 +7,7 @@
     <% recording_studio_page_nav_right do %>
       <%= render FlatPack::ButtonGroup::Component.new do |group| %>
         <% @screen.buttons.each do |button| %>
-          <% group.button(render(FlatPack::Button::Component.new(text: button.text, href: button.url, style: button.style))) %>
+          <% group.button(render(FlatPack::Button::Component.new(text: button.text, url: button.url, style: button.style))) %>
         <% end %>
       <% end %>
     <% end %>

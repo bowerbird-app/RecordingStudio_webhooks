@@ -1,0 +1,55 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: "/admin/screens/tokens",
+  anchor_tooltip: "Close"
+) %>
+
+<%= render FlatPack::PageTitle::Component.new(
+  title: "Issue token",
+  subtitle: "Create a new token for a selected endpoint.",
+  variant: :h1
+) %>
+
+<% if @form_error.present? %>
+  <%= render FlatPack::Alert::Component.new(description: @form_error, style: :danger) %>
+<% end %>
+
+<%= form_with url: admin_new_token_issuance_path,
+              method: :get,
+              local: true,
+              class: "space-y-4",
+              data: { controller: "auto-submit" } do |_form| %>
+  <%= render FlatPack::Select::Component.new(
+    name: "provider",
+    label: "Provider",
+    options: @providers.map { |provider_name| [provider_name, provider_name] },
+    value: @selected_provider.to_s,
+    class: "w-full",
+    data: { action: "change->auto-submit#submit" }
+  ) %>
+<% end %>
+
+<%= form_with url: admin_token_issuances_path, scope: :token_issuance, class: "space-y-4" do |_form| %>
+  <%= hidden_field_tag "token_issuance[provider_name]", @selected_provider.to_s %>
+
+  <%= render FlatPack::Select::Component.new(
+    name: "token_issuance[endpoint_id]",
+    label: "Endpoint",
+    options: @endpoints.map { |endpoint| [endpoint.label.to_s, endpoint.id] },
+    value: params.dig(:token_issuance, :endpoint_id).to_s,
+    class: "w-full"
+  ) %>
+
+  <%= render FlatPack::DateTimeInput::Component.new(
+    name: "token_issuance[expires_at]",
+    label: "Expiration (optional)",
+    value: params.dig(:token_issuance, :expires_at).to_s
+  ) %>
+
+  <%= render FlatPack::Button::Component.new(
+    text: "Create token",
+    style: :primary,
+    size: :md,
+    type: "submit",
+    disabled: @endpoints.empty?
+  ) %>
+<% end %>

@@ -11,15 +11,11 @@
     hover: (compact_card ? :subtle : nil),
     clickable: compact_card_href.present?,
     href: compact_card_href,
+    data: { turbo_frame: "_top" },
     class: (compact_card ? "w-full min-h-28 max-h-28" : "w-full")
   ) do |card| %>
     <% card.body do %>
-      <% change_tone = RecordingStudioAdmin::WidgetChangeSemantics.tone(change: widget.change, good_when: widget.change_good_when) %>
-      <% change_text_style = case change_tone
-                             when :success then "color: var(--color-success-background-color);"
-                             when :danger then "color: var(--color-danger-background-color);"
-                             else "color: var(--surface-muted-content-color);"
-                             end %>
+      <% change_text_class = presenter.change_text_class %>
       <% period_label = presenter.period_label %>
       <% compact_period_label = presenter.compact_period_label %>
       <% unit_label = presenter.unit_label %>
@@ -86,7 +82,7 @@
             <% if (widget.show_change && widget.change.present?) || compact_period_label.present? %>
               <p class="flex items-center gap-2 text-left">
                 <% if widget.show_change && widget.change.present? %>
-                  <span class="text-sm font-semibold" style="<%= change_text_style %>"><%= widget.change %></span>
+                  <span class="text-sm font-semibold <%= change_text_class %>"><%= widget.change %></span>
                 <% end %>
                 <% if compact_period_label.present? %>
                   <span class="text-sm font-semibold text-(--surface-muted-content-color)"><%= compact_period_label %></span>
@@ -154,7 +150,7 @@
                   <% if (widget.show_change && widget.change.present?) || period_label.present? %>
                     <p class="flex items-center gap-2">
                       <% if widget.show_change && widget.change.present? %>
-                        <span class="text-sm font-semibold" style="<%= change_text_style %>"><%= widget.change %></span>
+                        <span class="text-sm font-semibold <%= change_text_class %>"><%= widget.change %></span>
                       <% end %>
                       <% if period_label.present? %>
                         <span class="text-sm font-semibold text-(--surface-muted-content-color)"><%= period_label %></span>
@@ -167,7 +163,7 @@
               <% if widget_href.present? %>
                 <div class="shrink-0">
                   <%= render FlatPack::Tooltip::Component.new(text: "Open #{widget_link_label}") do %>
-                    <%= render FlatPack::Button::Component.new(text: "More", url: widget_href, style: :secondary, size: :sm) %>
+                    <%= render FlatPack::Button::Component.new(text: "More", url: widget_href, style: :secondary, size: :sm, data: { turbo_frame: "_top" }) %>
                   <% end %>
                 </div>
               <% end %>
