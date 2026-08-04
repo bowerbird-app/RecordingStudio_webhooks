@@ -3,7 +3,7 @@
        title: @screen.title,
        page_nav_anchor_url: page_nav_anchor_url(default: RecordingStudioAdmin.configuration.default_mount_path)
      ) %>
-  <% if @screen.buttons.any? %>
+  <% if @screen.buttons.any? && @screen.key != "endpoints" %>
     <% recording_studio_page_nav_right do %>
       <%= render FlatPack::ButtonGroup::Component.new do |group| %>
         <% @screen.buttons.each do |button| %>
@@ -14,7 +14,17 @@
   <% end %>
   <%= render "recording_studio_admin/shared/page_nav" unless recording_studio_admin_default_layout? %>
 
-  <%= render FlatPack::PageTitle::Component.new(title: @screen.title, subtitle: @screen.subtitle) %>
+  <%= render FlatPack::PageTitle::Component.new(title: @screen.title, subtitle: @screen.subtitle) do |page_title| %>
+    <% if @screen.key == "endpoints" && @screen.buttons.any? %>
+      <% page_title.slot do %>
+        <%= render FlatPack::ButtonGroup::Component.new do |group| %>
+          <% @screen.buttons.each do |button| %>
+            <% group.button(render(FlatPack::Button::Component.new(text: button.text, url: button.url, style: button.style))) %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
 
   <% if @screen.widgets.any? %>
     <% if RecordingStudioAdmin.configuration.async_widgets.enabled %>

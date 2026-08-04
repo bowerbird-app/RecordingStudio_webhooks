@@ -21,7 +21,7 @@ RecordingStudioWebhooks::Engine.routes.draw do
     get "actionsc/:id", to: "action_plans#show", as: :action_plan_short
     get "actions/:id", to: "action_plans#show", as: :action_plan
 
-    resources :endpoints, only: %i[index new create show edit update] do
+    resources :endpoints, only: %i[index new create edit update] do
       resources :tokens, only: %i[create destroy]
       resources :events, only: %i[index show] do
         resources :action_plans, only: :show

@@ -112,7 +112,7 @@ module RecordingStudioWebhooks
         events_count = row[:events_30d].to_i
         {
           text: row.fetch(:label, "Unknown endpoint"),
-          href: "/admin/webhooks/endpoints/#{row[:endpoint_id]}",
+          href: "/admin/webhooks/endpoints/#{row[:endpoint_id]}/edit",
           trailing: "#{events_count} #{events_count == 1 ? 'event' : 'events'}"
         }
       end
@@ -125,6 +125,7 @@ module RecordingStudioWebhooks
     def action_widget_rows(context)
       range = trailing_4_week_range(Time.current)
       counts = action_plan_relation(context)
+               .where(status: "succeeded")
                .where(created_at: range)
                .group(:action_name)
                .count
@@ -136,7 +137,7 @@ module RecordingStudioWebhooks
         .map do |name, total|
           {
             action_name: name,
-            attempts_4w: total,
+            successful_count_4w: total,
             action_url: "/admin/screens/action_attempts?#{{ action_name: name }.to_query}"
           }
         end
@@ -144,11 +145,11 @@ module RecordingStudioWebhooks
 
     def action_widget_items(context)
       action_widget_rows(context).map do |row|
-        attempts_count = row[:attempts_4w].to_i
+        successful_count = row[:successful_count_4w].to_i
         {
           text: row.fetch(:action_name, "Unknown action"),
           href: row[:action_url],
-          trailing: "#{attempts_count} #{attempts_count == 1 ? 'attempt' : 'attempts'}"
+          trailing: successful_count.to_s
         }
       end
     end
@@ -282,6 +283,10 @@ module RecordingStudioWebhooks
       ActionPlan::STATUSES
     end
 
+    def endpoint_status_filter_values
+      %w[enabled disabled]
+    end
+
     def inbound_event_status_badge_style(status)
       case status.to_s
       when "received", "processed", "accepted", "succeeded"
@@ -310,6 +315,68 @@ module RecordingStudioWebhooks
 
     def enabled_status_badge_style(enabled)
       enabled ? :success : :default
+    end
+
+    def endpoint_status_switch(endpoint, context)
+      view = context.view_context
+      return endpoint.enabled? ? "Enabled" : "Disabled" unless view
+
+      return_to = if view.respond_to?(:request) && view.request
+                    view.request.fullpath
+                  else
+                    "/admin/screens/endpoints"
+                  end
+
+      view.form_with(url: "/admin/webhooks/endpoints/#{endpoint.id}", method: :patch, local: true,
+                     class: "inline-flex items-center") do
+        view.safe_join([
+                         view.hidden_field_tag(:auto_save, "1"),
+                         view.hidden_field_tag(:return_to, return_to),
+                         view.hidden_field_tag("endpoint[enabled]", "0"),
+                         view.tag.label(class: "relative inline-flex items-center cursor-pointer") do
+                           view.safe_join([
+                                            view.tag.input(
+                                              type: "checkbox",
+                                              name: "endpoint[enabled]",
+                                              value: "1",
+                                              class: "sr-only peer",
+                                              checked: endpoint.enabled?,
+                                              onchange: "this.form.requestSubmit()",
+                                              aria: { label: "Toggle endpoint status for #{endpoint.label}" }
+                                            ),
+                                            view.tag.div(
+                                              class: "pointer-events-none rounded-full transition-colors duration-200 h-6 w-11 bg-[var(--switch-track-background-color)] peer-checked:bg-[var(--switch-track-checked-background-color)] peer-focus-visible:ring-2 peer-focus-visible:ring-inset peer-focus-visible:ring-[var(--switch-focus-ring-color)] peer-focus-visible:ring-offset-2",
+                                              role: "switch",
+                                              aria: { checked: endpoint.enabled? }
+                                            ),
+                                            view.tag.div(
+                                              class: "pointer-events-none absolute left-0.5 top-0 rounded-full bg-[var(--switch-thumb-background-color)] shadow-[var(--switch-thumb-shadow)] transition-transform duration-200 translate-y-0.5 w-5 h-5 peer-checked:translate-x-5"
+                                            )
+                                          ])
+                         end
+                       ])
+      end
+    end
+
+    def endpoint_inbound_path(endpoint)
+      now = Time.current
+      current_token = endpoint.endpoint_tokens
+                              .select do |token|
+        token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now)
+      end
+                              .max_by(&:active_at)
+      current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence
+      current_plaintext_token.present? ? "/webhooks/inbound/#{current_plaintext_token}" : "Active token present; full URL unavailable"
+    end
+
+    def endpoint_inbound_url(endpoint, context)
+      inbound_path = endpoint_inbound_path(endpoint)
+      return nil unless inbound_path.start_with?("/webhooks/inbound/")
+
+      base_url = context.view_context&.request&.base_url.to_s
+      return nil if base_url.empty?
+
+      "#{base_url}#{inbound_path}"
     end
 
     def endpoint_token_state(token)
@@ -627,20 +694,25 @@ module RecordingStudioWebhooks
                apply: lambda { |relation, value, _context|
                  relation.where(provider_name: value)
                }
+        filter :status,
+               values: -> { AdminWebhooksTrafficDefinition.endpoint_status_filter_values },
+               apply: lambda { |relation, value, _context|
+                 enabled = value.to_s == "enabled"
+                 relation.where(enabled: enabled)
+               }
         filter_presentation :inline
 
         table do
           title "Endpoints"
-          column :endpoint_path,
-                 title: "URL",
-                 sortable: false,
-                 value: lambda { |endpoint, _context|
-                   now = Time.current
-                   current_token = endpoint.endpoint_tokens
-                                           .select { |token| token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now) }
-                                           .max_by(&:active_at)
-                   current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence
-                   current_plaintext_token.present? ? "/webhooks/inbound/#{current_plaintext_token}" : "Active token present; full URL unavailable"
+          filter :search,
+                 apply: lambda { |relation, value, _context|
+                   next relation unless value.present?
+
+                   query = "%#{ActiveRecord::Base.sanitize_sql_like(value)}%"
+                   relation.where(
+                     "recording_studio_webhooks_endpoints.label ILIKE :q OR recording_studio_webhooks_endpoints.provider_name ILIKE :q",
+                     q: query
+                   )
                  }
           column :label,
                  value: lambda { |endpoint, _context|
@@ -649,28 +721,35 @@ module RecordingStudioWebhooks
                  tooltip: lambda { |endpoint, _context|
                    AdminWebhooksTrafficDefinition.endpoint_label_tooltip(endpoint.label)
                  }
+          column :endpoint_path,
+                 title: "URL",
+                 sortable: false,
+                 value: lambda { |endpoint, _context|
+                   AdminWebhooksTrafficDefinition.endpoint_inbound_path(endpoint)
+                 }
           column :provider_name, title: "Provider"
           column :enabled,
                  title: "Status",
-                 display: :badge,
-                 value: ->(endpoint, _context) { endpoint.enabled? ? "enabled" : "disabled" },
-                 display_options: lambda { |endpoint, _context, value|
-                   {
-                     text: value.to_s.humanize,
-                     style: AdminWebhooksTrafficDefinition.enabled_status_badge_style(endpoint.enabled?),
-                     size: :sm
-                   }
-                 }
-          action :view,
-                 text: "View",
-                 url: ->(endpoint) { "/admin/webhooks/endpoints/#{endpoint.id}" }
+               sortable: false,
+               value: ->(endpoint, context) { AdminWebhooksTrafficDefinition.endpoint_status_switch(endpoint, context) }
           action :edit,
                  text: "Edit",
                  url: ->(endpoint) { "/admin/webhooks/endpoints/#{endpoint.id}/edit" }
+             action :copy_url,
+               text: "Copy URL",
+                   url: lambda { |endpoint, context|
+                     copy_value = AdminWebhooksTrafficDefinition.endpoint_inbound_url(endpoint, context)
+                     next "#" if copy_value.blank?
+
+                     current_path = context.view_context&.request&.fullpath.to_s
+                     current_path = "/admin/screens/endpoints" if current_path.blank?
+                     "#{current_path}#copy-url=#{CGI.escape(copy_value)}"
+                   },
+                   visible_if: ->(endpoint, context) { AdminWebhooksTrafficDefinition.endpoint_inbound_url(endpoint, context).present? }
              action :tokens,
                text: "Tokens",
                url: ->(endpoint) { "/admin/screens/tokens?#{ { provider: endpoint.provider_name, endpoint: endpoint.label }.to_query }" }
-          default_columns :endpoint_path, :label, :provider_name, :enabled
+          default_columns :label, :endpoint_path, :provider_name, :enabled
           default_sort :created_at, direction: :desc
           paginate per_page: 25, mode: :infinite
         end
@@ -722,7 +801,7 @@ module RecordingStudioWebhooks
                apply: lambda { |relation, value, _context|
                  relation.where(recording_studio_webhooks_action_plans: { status: value })
                }
-        filter_presentation :inline
+        filter_presentation :modal, inline_count: 2
 
         summary do
           label "Action plans"
@@ -902,7 +981,7 @@ module RecordingStudioWebhooks
                  }
           action :view_endpoint,
                  text: "View endpoint",
-                 url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}" }
+               url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}/edit" }
           action :revoke,
                  text: "Revoke",
                  url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}/tokens/#{token.id}" },
