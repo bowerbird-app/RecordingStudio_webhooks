@@ -50,5 +50,19 @@ module RecordingStudioWebhooks
         target.prepend(patch) unless target.ancestors.include?(patch)
       end
     end
+
+    initializer "recording_studio_webhooks.prepend_admin_view_overrides" do
+      config.to_prepare do
+        view_path = RecordingStudioWebhooks::Engine.root.join("app/views").to_s
+
+        if defined?(RecordingStudioAdmin::ScreensController)
+          RecordingStudioAdmin::ScreensController.prepend_view_path(view_path)
+        end
+
+        if defined?(RecordingStudioAdmin::ScreenWidgetsController)
+          RecordingStudioAdmin::ScreenWidgetsController.prepend_view_path(view_path)
+        end
+      end
+    end
   end
 end
