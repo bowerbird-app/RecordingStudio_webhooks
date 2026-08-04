@@ -572,6 +572,16 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
       %r{href="/admin/screens/tokens\?endpoint=[^"&]+(?:&amp;|&)provider=#{escaped_provider}"},
       response.body
     )
+    assert_match %r{href="/admin/screens/endpoints(?:/table)?(?:\?[^\"]*)?#copy-url=https?%3A%2F%2F[^\"]+"}, response.body
+  end
+
+  test "endpoints screen supports status and search filters" do
+    sign_in @user
+
+    get "/admin/screens/endpoints"
+    assert_response :success
+    assert_match %r{name="status"}, response.body
+    assert_match %r{name="search"}, response.body
   end
 
   test "authorized administrators can disable endpoints via autosave switch" do
@@ -594,7 +604,19 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     refute_predicate current_endpoint, :enabled?
   end
 
-  test "stale endpoint show URL resolves to current endpoint status" do
+  test "endpoint autosave can return to endpoints screen" do
+    sign_in @user
+
+    patch "/admin/webhooks/endpoints/#{@endpoint.id}", params: {
+      auto_save: "1",
+      return_to: "/admin/screens/endpoints?provider=demo",
+      endpoint: { enabled: "0" }
+    }
+
+    assert_redirected_to "/admin/screens/endpoints?provider=demo"
+  end
+
+  test "stale endpoint edit URL resolves to current endpoint status" do
     sign_in @user
 
     stale_endpoint = @endpoint
@@ -613,13 +635,29 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
       recording_studio_recording_id: stale_endpoint.recording_studio_recording_id
     )
 
-    get "/admin/webhooks/endpoints/#{stale_endpoint.id}"
+    get "/admin/webhooks/endpoints/#{stale_endpoint.id}/edit"
 
     assert_response :success
     assert_includes response.body, "Active webhook URL"
     assert_includes response.body, "name=\"endpoint[enabled]\""
-    assert_includes response.body, "/admin/webhooks/endpoints/#{current_endpoint.id}"
-    refute_includes response.body, "/admin/webhooks/endpoints/#{stale_endpoint.id}"
+    assert_includes response.body, "action=\"/admin/webhooks/endpoints/#{current_endpoint.id}\""
+    refute_includes response.body, "action=\"/admin/webhooks/endpoints/#{stale_endpoint.id}\""
+  end
+
+  test "endpoint show route is not available" do
+    sign_in @user
+
+    get "/admin/webhooks/endpoints/#{@endpoint.id}"
+
+    assert_response :not_found
+  end
+
+  test "endpoint copy_url route is not available" do
+    sign_in @user
+
+    get "/admin/webhooks/endpoints/#{@endpoint.id}/copy_url"
+
+    assert_response :not_found
   end
 
   test "endpoint event inspect works after endpoint is revised" do
@@ -743,7 +781,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "value=\"#{@endpoint.id}\""
   end
 
-  test "creating an endpoint auto-issues a token and redirects to endpoint show" do
+  test "creating an endpoint auto-issues a token and redirects to endpoint edit" do
     sign_in @user
     label = "Auto token endpoint"
     other_workspace = Workspace.create!(name: "Auto Token Workspace #{SecureRandom.hex(4)}")
@@ -762,7 +800,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :redirect
-    assert_match %r{/admin/webhooks/endpoints/.+}, response.location
+    assert_match %r{/admin/webhooks/endpoints/.+/edit}, response.location
 
     follow_redirect!
     assert_response :success

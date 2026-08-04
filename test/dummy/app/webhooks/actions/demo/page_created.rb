@@ -12,7 +12,7 @@ module Webhooks
           register(
             "demo.page_created",
             provider: "demo",
-            event: "page.created",
+            event: "page.created",        
             policy: { max_retries: 0 }
           )
         end
