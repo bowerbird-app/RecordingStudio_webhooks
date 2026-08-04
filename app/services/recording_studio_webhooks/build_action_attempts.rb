@@ -28,12 +28,16 @@ module RecordingStudioWebhooks
           token_snapshot: inbound_event.token_snapshot,
           policy_snapshot: action_resolution.to_h,
           action_snapshot: action.snapshot,
-          attempt_history: action_resolution.enabled? ? [] : [{
-            "status" => "skipped",
-            "at" => Time.current.iso8601,
-            "attempt" => 0,
-            "error" => "action_disabled"
-          }]
+          attempt_history: if action_resolution.enabled?
+                             []
+                           else
+                             [{
+                               "status" => "skipped",
+                               "at" => Time.current.iso8601,
+                               "attempt" => 0,
+                               "error" => "action_disabled"
+                             }]
+                           end
         )
       end
     end
