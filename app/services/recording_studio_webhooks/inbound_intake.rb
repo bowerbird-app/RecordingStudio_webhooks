@@ -278,7 +278,7 @@ module RecordingStudioWebhooks
 
     def persist_and_dispatch!(provider:, endpoint:, endpoint_token:, event_type:, provider_event_id:, deduplication_key:, payload:, payload_digest:, provenance:, resolution:)
       event = nil
-      plans = []
+      attempts = []
 
       InboundEvent.transaction do
         event = InboundEvent.create!(
@@ -297,8 +297,8 @@ module RecordingStudioWebhooks
           received_at: Time.current,
           status: "accepted"
         )
-        plans = ActionPlanner.call(inbound_event: event, provider: provider, resolution: resolution)
-        event.update!(status: "planned") if plans.any?
+        attempts = BuildActionAttempts.call(inbound_event: event, provider: provider, resolution: resolution)
+        event.update!(status: "planned") if attempts.any?
         endpoint.audit!(
           action: "recording_studio_webhooks.incoming.accepted",
           metadata: {
@@ -311,8 +311,8 @@ module RecordingStudioWebhooks
         )
       end
 
-      plans.each { |plan| DispatchActionPlan.call(plan.id) }
-      Result.new(status: 202, code: "accepted", record: event, details: { action_plan_count: plans.count })
+      attempts.each { |attempt| DispatchActionAttempt.call(attempt.id) }
+      Result.new(status: 202, code: "accepted", record: event, details: { action_attempt_count: attempts.count })
     rescue ActiveRecord::RecordNotUnique
       existing = InboundEvent.find_by(endpoint_id: endpoint.id, deduplication_key: deduplication_key)
       return Result.new(status: 200, code: "duplicate", record: existing) if existing

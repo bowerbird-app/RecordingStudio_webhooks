@@ -34,12 +34,12 @@
   <% end %>
   <% card.body do %>
     <ul class="space-y-3">
-      <% @event.action_plans.order(:execution_position).each do |plan| %>
+      <% @event.action_attempts.order(:execution_position).each do |attempt| %>
         <li class="flex items-center justify-between gap-3 border-b pb-3">
-          <span><strong><%= plan.action_name %></strong> · <%= plan.attempts %> attempt(s)</span>
+          <span><strong><%= attempt.action_name %></strong> · <%= attempt.attempts %> attempt(s)</span>
           <span>
-            <%= render FlatPack::Badge::Component.new(text: plan.status, style: webhook_status_style(plan.status), size: :sm) %>
-            <%= link_to "View", admin_action_plan_short_path(id: plan.id) %>
+            <%= render FlatPack::Badge::Component.new(text: attempt.status, style: webhook_status_style(attempt.status), size: :sm) %>
+            <%= link_to "View", admin_action_attempt_short_path(id: attempt.id) %>
           </span>
         </li>
       <% end %>

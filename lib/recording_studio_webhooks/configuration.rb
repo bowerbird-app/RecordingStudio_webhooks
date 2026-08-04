@@ -76,7 +76,7 @@ module RecordingStudioWebhooks
       @queue_name = queue.freeze
     end
 
-    # Accepts :sidekiq, :active_job, or a callable receiving an action-plan UUID.
+    # Accepts :sidekiq, :active_job, or a callable receiving an action-attempt UUID.
     def dispatcher=(value)
       unless %i[sidekiq active_job].include?(value) || value.respond_to?(:call)
         raise ConfigurationError, "dispatcher must be :sidekiq, :active_job, or callable"

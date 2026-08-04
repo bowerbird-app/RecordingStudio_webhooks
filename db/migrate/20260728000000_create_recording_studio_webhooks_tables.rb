@@ -64,7 +64,7 @@ module RecordingStudioWebhooks
       add_index :recording_studio_webhooks_inbound_events, :endpoint_token_id,
         name: "index_rsw_events_on_endpoint_token_id"
 
-      create_table :recording_studio_webhooks_action_plans, id: :uuid do |t|
+      create_table :recording_studio_webhooks_action_attempts, id: :uuid do |t|
         t.references :inbound_event, type: :uuid, null: false,
           foreign_key: { to_table: :recording_studio_webhooks_inbound_events }, index: false
         t.string :action_name, null: false
@@ -83,14 +83,14 @@ module RecordingStudioWebhooks
         t.jsonb :attempt_history, null: false, default: []
         t.timestamps
       end
-      add_index :recording_studio_webhooks_action_plans, %i[inbound_event_id action_name],
-        unique: true, name: "index_rsw_plans_on_event_and_action"
-      add_index :recording_studio_webhooks_action_plans, %i[status next_attempt_at],
-        name: "index_rsw_plans_on_status_and_next_attempt"
-      add_index :recording_studio_webhooks_action_plans, %i[inbound_event_id execution_position],
-        unique: true, name: "index_rsw_plans_on_event_and_position"
-      add_index :recording_studio_webhooks_action_plans, :inbound_event_id,
-        name: "index_rsw_plans_on_event_id"
+      add_index :recording_studio_webhooks_action_attempts, %i[inbound_event_id action_name],
+        unique: true, name: "index_rsw_attempts_on_event_and_action"
+      add_index :recording_studio_webhooks_action_attempts, %i[status next_attempt_at],
+        name: "index_rsw_attempts_on_status_and_next_attempt"
+      add_index :recording_studio_webhooks_action_attempts, %i[inbound_event_id execution_position],
+        unique: true, name: "index_rsw_attempts_on_event_and_position"
+      add_index :recording_studio_webhooks_action_attempts, :inbound_event_id,
+        name: "index_rsw_attempts_on_event_id"
     end
   end
 end

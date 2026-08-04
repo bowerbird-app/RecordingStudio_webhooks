@@ -78,7 +78,7 @@ module RecordingStudioWebhooks
       end
 
       # Action policy sits below endpoint policy. An action can select its own
-      # execution mode; sequential plans coordinate by persisted position.
+      # execution mode; sequential attempts coordinate by persisted position.
       def resolve_action(event_resolution:, action:, required_redaction_keys:)
         action_override = Policy.normalize_override(action.policy_overrides)
         slots = event_resolution.slots.map do |slot|

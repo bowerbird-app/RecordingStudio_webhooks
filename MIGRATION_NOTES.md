@@ -9,7 +9,7 @@ bin/rails db:migrate
 ```
 
 The generated migration creates exactly four PostgreSQL UUID tables:
-endpoints, endpoint tokens, inbound events, and action plans. It has a foreign
+endpoints, endpoint tokens, inbound events, and action attempts. It has a foreign
 key to `recording_studio_recordings`, so it must run after Recording Studio's
 migrations.
 

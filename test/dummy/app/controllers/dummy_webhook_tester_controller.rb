@@ -29,8 +29,8 @@ class DummyWebhookTesterController < ApplicationController
 
     action_results = []
     if intake_result.code == "accepted" && intake_result.record.present?
-      intake_result.record.action_plans.order(:execution_position).each do |plan|
-        action_results << RecordingStudioWebhooks::ExecuteActionPlan.call(plan.id)
+      intake_result.record.action_attempts.order(:execution_position).each do |attempt|
+        action_results << RecordingStudioWebhooks::ExecuteActionAttempt.call(attempt.id)
       end
     end
 
@@ -39,7 +39,7 @@ class DummyWebhookTesterController < ApplicationController
       code: intake_result.code,
       event_id: intake_result.record&.id,
       provider_event_id: payload_hash["id"],
-      plans: action_results.map { |result| { code: result.code, status: result.status } }
+      attempts: action_results.map { |result| { code: result.code, status: result.status } }
     }
     render :show
   rescue JSON::ParserError

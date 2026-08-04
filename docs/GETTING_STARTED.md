@@ -21,7 +21,7 @@ Endpoint token                    # The engine finds the configured endpoint.
         |
 Provider verification             # Your provider code accepts or rejects the request.
         |
-Event and action plan             # The engine saves redacted immutable records.
+Event and action attempt             # The engine saves redacted immutable records.
         |
 Background action                 # A worker runs your local Ruby code.
 ```
@@ -33,7 +33,7 @@ Add the gem, generate its setup files, and apply its migration.
 ```bash
 bundle add recording_studio_webhooks                         # Add the engine to the host application.
 bin/rails generate recording_studio_webhooks:install         # Generate initializer, mount route, and migration.
-bin/rails db:migrate                                         # Create endpoint, token, event, and action-plan tables.
+bin/rails db:migrate                                         # Create endpoint, token, event, and action-attempt tables.
 ```
 
 The default mount path is `/recording_studio_webhooks`. Use a shorter path when needed:
@@ -100,11 +100,11 @@ Leaving `admin_authorizer` unset keeps the admin interface unavailable.
 
 ## Queueing and Tokens
 
-Sidekiq is the default dispatcher. Workers receive an action-plan UUID only, not raw payloads, request headers, or endpoint tokens.
+Sidekiq is the default dispatcher. Workers receive an action-attempt UUID only, not raw payloads, request headers, or endpoint tokens.
 
 ```ruby
 RecordingStudioWebhooks.configure do |config|                # Reopen the configuration block if needed.
-  config.dispatcher = :sidekiq                               # Queue action plans directly in Sidekiq.
+  config.dispatcher = :sidekiq                               # Queue action attempts directly in Sidekiq.
   config.queue_name = "recording_studio_webhooks"             # Use a queue the worker will listen to.
 
   config.token_digest_secret = Rails.application.credentials.dig( # Read the token HMAC key from encrypted credentials.
@@ -115,15 +115,15 @@ end                                                            # Finish queue an
 ```
 
 ```bash
-bundle exec sidekiq -q recording_studio_webhooks -q default  # Process webhooks plans and ordinary default jobs.
+bundle exec sidekiq -q recording_studio_webhooks -q default  # Process webhooks attempts and ordinary default jobs.
 ```
 
-A custom dispatcher can receive the persisted plan ID:
+A custom dispatcher can receive the persisted attempt ID:
 
 ```ruby
-config.dispatcher = lambda do |action_plan_id|               # Receive the UUID of an already-persisted plan.
-  ExternalQueue.publish(action_plan_id)                       # Publish only that ID to the host queue system.
-end                                                            # The queue worker must execute the same plan later.
+config.dispatcher = lambda do |action_attempt_id|               # Receive the UUID of an already-persisted attempt.
+  ExternalQueue.publish(action_attempt_id)                       # Publish only that ID to the host queue system.
+end                                                            # The queue worker must execute the same attempt later.
 ```
 
 ## Provider Definitions
@@ -215,7 +215,7 @@ module Webhooks                                               # Use the host nam
   module Actions                                              # Group all action definitions.
     module Stripe                                             # Group Stripe-specific actions.
       class PaymentIntentSucceededAction < RecordingStudioWebhooks::Action # Use the optional action helper.
-        def self.call(context)                                # The engine calls this when the plan executes.
+        def self.call(context)                                # The engine calls this when the attempt executes.
           event = context.inbound_event                       # Read the saved, redacted event.
           PaymentIntents.sync_from_webhook(event)             # Perform the application's local work.
           true                                                # Finish successfully.
@@ -223,7 +223,7 @@ module Webhooks                                               # Use the host nam
 
         def self.register!                                    # Define explicit boot-time registration.
           register(                                           # Add the action to the engine registry.
-            "stripe.payment_intent_succeeded",               # Use a unique action name for logs and plans.
+            "stripe.payment_intent_succeeded",               # Use a unique action name for logs and attempts.
             provider: "stripe",                              # Match only events from this provider.
             event: "payment_intent.succeeded",               # Match this exact provider event type.
             policy: { max_retries: 2 }                        # Retry twice after an initial failure.
@@ -263,12 +263,12 @@ Global default policy                                         # Lowest priority:
 ```ruby
 RecordingStudioWebhooks.configure do |config|                # Set the default when nothing more specific applies.
   config.default_policy = {                                  # Define baseline execution behavior.
-    enabled: true,                                           # Plan and execute matching actions.
+    enabled: true,                                           # Attempt and execute matching actions.
     execution_mode: :independent,                            # Allow matching actions to run separately.
     max_retries: 3,                                          # Retry up to three times after the first failure.
     retry_backoff: 30,                                       # Start retries after 30 seconds.
     max_retry_backoff: 600,                                  # Cap exponential retry delay at ten minutes.
-    deduplicate: true                                        # Avoid creating duplicate plans for the same event.
+    deduplicate: true                                        # Avoid creating duplicate attempts for the same event.
   }                                                          # Finish policy values.
 end                                                            # Finish policy configuration.
 ```
@@ -289,7 +289,7 @@ curl --request POST \
 # Use a representative payload; production requests need a valid provider signature.
 ```
 
-Responses are intentionally generic: `accepted`, `duplicate`, `unauthorized`, `not_found`, `invalid`, or `unavailable`. Use the webhooks admin event and action-plan screens to follow accepted work.
+Responses are intentionally generic: `accepted`, `duplicate`, `unauthorized`, `not_found`, `invalid`, or `unavailable`. Use the webhooks admin event and action-attempt screens to follow accepted work.
 
 ## Operations
 
@@ -298,7 +298,7 @@ These tasks provide safe diagnostics and recovery. They do not print plaintext t
 ```bash
 bin/rails recording_studio_webhooks:status                   # Display safe registry and persistence status.
 bin/rails recording_studio_webhooks:doctor                   # Check deployment and configuration readiness.
-bin/rails recording_studio_webhooks:dispatch_due             # Recover pending plans after outages or restarts.
+bin/rails recording_studio_webhooks:dispatch_due             # Recover pending attempts after outages or restarts.
 ```
 
 Schedule `dispatch_due` with the host scheduler. The engine does not delete records automatically, so define retention that meets the host's audit and privacy requirements.
@@ -311,7 +311,7 @@ Schedule `dispatch_due` with the host scheduler. The engine does not delete reco
 [ ] admin_recording_scope stays narrow.                       # Users see only recordings they may manage.
 [ ] Provider signatures are verified.                         # Knowing a URL alone cannot authenticate a request.
 [ ] Provider secrets stay outside source control.             # Use credentials or environment variables.
-[ ] A worker listens to the configured queue.                 # Accepted plans can execute.
-[ ] dispatch_due is scheduled.                                # Recoverable plans are retried after outages.
+[ ] A worker listens to the configured queue.                 # Accepted attempts can execute.
+[ ] dispatch_due is scheduled.                                # Recoverable attempts are retried after outages.
 [ ] Retention and monitoring are defined.                     # Stored history meets operational and privacy requirements.
 ```

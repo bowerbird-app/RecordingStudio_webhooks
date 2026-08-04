@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module RecordingStudioWebhooks
-  class ActionPlan < ApplicationRecord
+  class ActionAttempt < ApplicationRecord
     STATUSES = %w[pending queued running retrying succeeded failed skipped cancelled].freeze
     TERMINAL_STATUSES = %w[succeeded failed skipped cancelled].freeze
     SNAPSHOT_ATTRIBUTES = %w[endpoint_snapshot token_snapshot policy_snapshot action_snapshot].freeze
@@ -30,8 +30,8 @@ module RecordingStudioWebhooks
     def ready_to_execute?
       return true unless sequential?
 
-      inbound_event.action_plans.where("execution_position < ?", execution_position).to_a.none? do |plan|
-        plan.sequential? && !plan.terminal?
+      inbound_event.action_attempts.where("execution_position < ?", execution_position).to_a.none? do |attempt|
+        attempt.sequential? && !attempt.terminal?
       end
     end
 
@@ -58,7 +58,10 @@ module RecordingStudioWebhooks
     end
 
     def succeed!(at: Time.current) = transition!("succeeded", at: at, completed_at: at, last_error: nil)
-    def skip!(reason, at: Time.current) = transition!("skipped", at: at, completed_at: at, last_error: sanitized_error(reason))
+
+    def skip!(reason, at: Time.current)
+      transition!("skipped", at: at, completed_at: at, last_error: sanitized_error(reason))
+    end
 
     def fail_and_schedule_retry!(at: Time.current)
       with_lock do
@@ -106,7 +109,7 @@ module RecordingStudioWebhooks
       immutable = SNAPSHOT_ATTRIBUTES + %w[inbound_event_id action_name execution_position]
       return unless immutable.any? { |attribute| will_save_change_to_attribute?(attribute) }
 
-      raise ActiveRecord::ReadOnlyRecord, "action plan identity and snapshots are immutable"
+      raise ActiveRecord::ReadOnlyRecord, "action attempt identity and snapshots are immutable"
     end
 
     def ensure_attempt_history_is_append_only
@@ -115,7 +118,7 @@ module RecordingStudioWebhooks
       previous, current = attempt_history_change_to_be_saved
       return if Array(current).first(Array(previous).length) == Array(previous)
 
-      raise ActiveRecord::ReadOnlyRecord, "action plan attempt history is append-only"
+      raise ActiveRecord::ReadOnlyRecord, "action attempt attempt history is append-only"
     end
 
     def safe_snapshots

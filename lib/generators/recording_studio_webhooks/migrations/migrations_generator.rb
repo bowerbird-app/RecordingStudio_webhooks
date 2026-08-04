@@ -13,9 +13,9 @@ module RecordingStudioWebhooks
       desc "Copies the four Recording Studio Webhooks UUID tables into the host application."
 
       class_option :skip_existing,
-        type: :boolean,
-        default: true,
-        desc: "Do not create a second copy of the engine migration"
+                   type: :boolean,
+                   default: true,
+                   desc: "Do not create a second copy of the engine migration"
 
       def copy_migration
         if options[:skip_existing] && migration_exists?
@@ -24,7 +24,7 @@ module RecordingStudioWebhooks
         end
 
         migration_template "create_recording_studio_webhooks_tables.rb.tt",
-          "db/migrate/create_recording_studio_webhooks_tables.rb"
+                           "db/migrate/create_recording_studio_webhooks_tables.rb"
       end
 
       private

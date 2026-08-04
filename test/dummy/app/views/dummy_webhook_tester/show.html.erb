@@ -56,12 +56,12 @@
         <li>Inbound event id: <strong><%= @result.fetch(:event_id) || "n/a" %></strong></li>
       </ul>
 
-      <% plans = @result.fetch(:plans, []) %>
-      <% if plans.any? %>
-        <p class="mt-4 text-sm font-medium">Executed plans</p>
+      <% attempts = @result.fetch(:attempts, []) %>
+      <% if attempts.any? %>
+        <p class="mt-4 text-sm font-medium">Executed attempts</p>
         <ul class="mt-2 space-y-2 text-sm">
-          <% plans.each_with_index do |plan, index| %>
-            <li>Plan <%= index + 1 %>: <strong><%= plan.fetch(:code) %></strong> (status <%= plan.fetch(:status) %>)</li>
+          <% attempts.each_with_index do |attempt, index| %>
+            <li>Attempt <%= index + 1 %>: <strong><%= attempt.fetch(:code) %></strong> (status <%= attempt.fetch(:status) %>)</li>
           <% end %>
         </ul>
       <% end %>

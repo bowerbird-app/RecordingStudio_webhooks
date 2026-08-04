@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module RecordingStudioWebhooks
-  class ActionPlanner
+  class BuildActionAttempts
     def self.call(...) = new(...).call
 
     def initialize(inbound_event:, provider:, resolution:)
@@ -17,7 +17,7 @@ module RecordingStudioWebhooks
           action: action,
           required_redaction_keys: RecordingStudioWebhooks.configuration.secret_redaction_keys
         )
-        inbound_event.action_plans.create!(
+        inbound_event.action_attempts.create!(
           action_name: action.name,
           execution_position: position,
           status: action_resolution.enabled? ? "pending" : "skipped",

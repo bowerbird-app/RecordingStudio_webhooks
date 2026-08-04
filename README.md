@@ -94,7 +94,7 @@ never infers constants from paths.
 
 ## Policies
 
-Every intake and action plan receives an immutable policy snapshot. Precedence
+Every intake and action attempt receives an immutable policy snapshot. Precedence
 is, from highest to lowest:
 
 1. endpoint override;
@@ -147,13 +147,13 @@ The engine owns exactly four UUID-primary-key tables:
 1. `recording_studio_webhooks_endpoints`;
 2. `recording_studio_webhooks_endpoint_tokens`;
 3. `recording_studio_webhooks_inbound_events`; and
-4. `recording_studio_webhooks_action_plans`.
+4. `recording_studio_webhooks_action_attempts`.
 
 Endpoints reference `recording_studio_recordings`, not a mutable host
 recordable. Endpoint identity and recording linkage are immutable after
 creation. Token records contain only a digest, short prefix, lifecycle times,
-and safe metadata. Inbound events and action plans hold immutable JSON
-snapshots. Attempt state is append-only JSON history on the plan so the engine
+and safe metadata. Inbound events and action attempts hold immutable JSON
+snapshots. Attempt state is append-only JSON history on the attempt so the engine
 keeps the four-table boundary.
 
 Issuing or rotating a token revokes every previous unrevoked token under a row
@@ -162,24 +162,24 @@ once and is never serialized, logged, or stored.
 
 ## Execution and retries
 
-Action plans store action name, execution position, policy, sanitized errors,
-and attempts. Independent plans can run independently. Sequential plans wait
-for preceding sequential plans to reach a terminal state. Failed handlers use
+Action attempts store action name, execution position, policy, sanitized errors,
+and attempts. Independent attempts can run independently. Sequential attempts wait
+for preceding sequential attempts to reach a terminal state. Failed handlers use
 bounded exponential backoff and are retried only up to their policy limit.
 
-The default dispatcher pushes only an action-plan UUID to Sidekiq. To use a
+The default dispatcher pushes only an action-attempt UUID to Sidekiq. To use a
 different dispatcher:
 
 ```ruby
 RecordingStudioWebhooks.configure do |config|
   config.dispatcher = :active_job
 
-  # Or receive only a plan ID and optional schedule:
-  # config.dispatcher = ->(plan_id, wait_until = nil) { MyQueue.push(plan_id, wait_until) }
+  # Or receive only a attempt ID and optional schedule:
+  # config.dispatcher = ->(attempt_id, wait_until = nil) { MyQueue.push(attempt_id, wait_until) }
 end
 ```
 
-Actions receive an immutable context containing the action plan, inbound event,
+Actions receive an immutable context containing the action attempt, inbound event,
 endpoint, redacted payload, and safe provenance. They never receive an
 endpoint token or a provider secret.
 
@@ -189,7 +189,7 @@ The admin interface is under `/admin` inside the engine mount. It provides:
 
 - Recording-scoped endpoints;
 - current/rotated/revoked token history;
-- redacted events and their action plans/attempt history; and
+- redacted events and their action attempts/attempt history; and
 - a sandbox that matches and redacts a manually supplied sample without
   persisting the sample or executing an action.
 
@@ -208,7 +208,7 @@ bin/rails recording_studio_webhooks:dispatch_due
 Recording Studio availability, explicit admin authorization, registry setup,
 all four tables, and Sidekiq availability when it is the selected dispatcher.
 Schedule `dispatch_due` to reconcile temporary queue failures and process
-crashes after a plan is persisted but before it is enqueued.
+crashes after a attempt is persisted but before it is enqueued.
 
 See [configuration](docs/CONFIGURATION.md),
 [architecture](docs/ARCHITECTURE.md), [operations](docs/OPERATIONS.md), and

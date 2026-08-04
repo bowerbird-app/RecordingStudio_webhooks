@@ -20,7 +20,7 @@ module RecordingStudioWebhooks
     end
 
     def action_error_relation(context)
-      action_plan_relation(context).where(recording_studio_webhooks_action_plans: { status: "failed" })
+      action_attempt_relation(context).where(recording_studio_webhooks_action_attempts: { status: "failed" })
     end
 
     def traffic_events(context)
@@ -124,7 +124,7 @@ module RecordingStudioWebhooks
 
     def action_widget_rows(context)
       range = trailing_4_week_range(Time.current)
-      counts = action_plan_relation(context)
+      counts = action_attempt_relation(context)
                .where(status: "succeeded")
                .where(created_at: range)
                .group(:action_name)
@@ -239,15 +239,15 @@ module RecordingStudioWebhooks
               )
     end
 
-    def action_plan_relation(context)
+    def action_attempt_relation(context)
       root_recording = context.root_recording
-      return ActionPlan.none unless root_recording
+      return ActionAttempt.none unless root_recording
 
       endpoint_ids = Endpoint.joins(:recording_studio_recording)
                              .where(recording_studio_recordings: { root_recording_id: root_recording.id })
                              .select(:id)
 
-      ActionPlan
+      ActionAttempt
         .joins(:inbound_event)
         .where(recording_studio_webhooks_inbound_events: { endpoint_id: endpoint_ids })
         .includes(inbound_event: :endpoint)
@@ -268,7 +268,7 @@ module RecordingStudioWebhooks
     end
 
     def action_filter_values
-      observed_actions = ActionPlan.distinct.order(:action_name).pluck(:action_name).compact
+      observed_actions = ActionAttempt.distinct.order(:action_name).pluck(:action_name).compact
       registered_actions = registered_action_rows.map(&:name).map(&:to_s).reject(&:empty?)
       action_names = (observed_actions + registered_actions).uniq.sort
 
@@ -282,7 +282,7 @@ module RecordingStudioWebhooks
     end
 
     def action_status_filter_values
-      ActionPlan::STATUSES
+      ActionAttempt::STATUSES
     end
 
     def endpoint_status_filter_values
@@ -302,7 +302,7 @@ module RecordingStudioWebhooks
       end
     end
 
-    def action_plan_status_badge_style(status)
+    def action_attempt_status_badge_style(status)
       case status.to_s
       when "planned", "accepted", "succeeded"
         :success
@@ -553,13 +553,13 @@ module RecordingStudioWebhooks
       end
     end
 
-    def action_plan_date_series(relation, frequency)
+    def action_attempt_date_series(relation, frequency)
       bucket = frequency.to_sym
       expression = case bucket
-                   when :hour then "DATE_TRUNC('hour', recording_studio_webhooks_action_plans.created_at)"
-                   when :week then "DATE_TRUNC('week', recording_studio_webhooks_action_plans.created_at)"
-                   when :month then "DATE_TRUNC('month', recording_studio_webhooks_action_plans.created_at)"
-                   else "DATE(recording_studio_webhooks_action_plans.created_at)"
+                   when :hour then "DATE_TRUNC('hour', recording_studio_webhooks_action_attempts.created_at)"
+                   when :week then "DATE_TRUNC('week', recording_studio_webhooks_action_attempts.created_at)"
+                   when :month then "DATE_TRUNC('month', recording_studio_webhooks_action_attempts.created_at)"
+                   else "DATE(recording_studio_webhooks_action_attempts.created_at)"
                    end
       grouped = Arel.sql(expression)
 
@@ -848,10 +848,10 @@ module RecordingStudioWebhooks
         key "action_attempts"
         icon :chart_bar
         title "Action attempts"
-        subtitle "Inspect action execution attempts for webhook plans in the current workspace."
+        subtitle "Inspect action execution attempts for webhook attempts in the current workspace."
         blast_radius :root
 
-        query { |context| AdminWebhooksTrafficDefinition.action_plan_relation(context) }
+        query { |context| AdminWebhooksTrafficDefinition.action_attempt_relation(context) }
         filter :date_range, field: :created_at, default: :last_4_weeks
         filter :group_by, values: FILTERABLE_GROUPINGS, default: :day
         filter :provider,
@@ -874,18 +874,18 @@ module RecordingStudioWebhooks
                  when "", ACTION_FILTER_ALL
                    relation
                  else
-                   relation.where(recording_studio_webhooks_action_plans: { action_name: selected })
+                   relation.where(recording_studio_webhooks_action_attempts: { action_name: selected })
                  end
                }
         filter :status,
                options: -> { AdminWebhooksTrafficDefinition.action_status_filter_values },
                apply: lambda { |relation, value, _context|
-                 relation.where(recording_studio_webhooks_action_plans: { status: value })
+                 relation.where(recording_studio_webhooks_action_attempts: { status: value })
                }
         filter_presentation :modal, inline_count: 2
 
         summary do
-          label "Action plans"
+          label "Action attempts"
           change_good_when do |context|
             %w[failed cancelled].include?(context.filter_value(:status).to_s) ? :down : :up
           end
@@ -896,8 +896,8 @@ module RecordingStudioWebhooks
           type :area
           series do |context|
             [{
-              name: "Action plans",
-              data: AdminWebhooksTrafficDefinition.action_plan_date_series(
+              name: "Action attempts",
+              data: AdminWebhooksTrafficDefinition.action_attempt_date_series(
                 context.query_result.relation,
                 context.filter_value(:group_by) || :day
               )
@@ -906,36 +906,36 @@ module RecordingStudioWebhooks
         end
 
         table do
-          title "Action plans"
+          title "Action attempts"
           column :created_at
           column :action_name, title: "Action"
           column :attempts, title: "Attempts"
           column :status,
                  display: :badge,
-                 display_options: lambda { |_plan, _context, value|
+                 display_options: lambda { |_attempt, _context, value|
                    {
                      text: value.to_s.humanize,
-                     style: AdminWebhooksTrafficDefinition.action_plan_status_badge_style(value),
+                     style: AdminWebhooksTrafficDefinition.action_attempt_status_badge_style(value),
                      size: :sm
                    }
                  }
           column :provider,
                  title: "Provider",
                  sortable: false,
-                 value: ->(plan, _context) { plan.inbound_event.provider_name }
+                 value: ->(attempt, _context) { attempt.inbound_event.provider_name }
           column :endpoint,
                  title: "Endpoint",
                  sortable: false,
-                 value: lambda { |plan, _context|
-                   AdminWebhooksTrafficDefinition.truncated_endpoint_label(plan.inbound_event.endpoint.label)
+                 value: lambda { |attempt, _context|
+                   AdminWebhooksTrafficDefinition.truncated_endpoint_label(attempt.inbound_event.endpoint.label)
                  },
-                 tooltip: lambda { |plan, _context|
-                   AdminWebhooksTrafficDefinition.endpoint_label_tooltip(plan.inbound_event.endpoint.label)
+                 tooltip: lambda { |attempt, _context|
+                   AdminWebhooksTrafficDefinition.endpoint_label_tooltip(attempt.inbound_event.endpoint.label)
                  }
           action :view,
                  text: "View",
-                 url: lambda { |plan|
-                   "/admin/webhooks/actionsc/#{plan.id}"
+                 url: lambda { |attempt|
+                   "/admin/webhooks/action_attempts/#{attempt.id}"
                  }
           default_columns :created_at, :action_name, :attempts, :status, :provider, :endpoint
           default_sort :created_at, direction: :desc
@@ -1191,13 +1191,13 @@ module RecordingStudioWebhooks
         metadata { { period_label: "Last 4 weeks" } }
         value do |context|
           range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
-          AdminWebhooksTrafficDefinition.action_plan_relation(context)
+          AdminWebhooksTrafficDefinition.action_attempt_relation(context)
                                         .where(created_at: range)
                                         .count
         end
         change do |context|
           reference_time = Time.current
-          relation = AdminWebhooksTrafficDefinition.action_plan_relation(context)
+          relation = AdminWebhooksTrafficDefinition.action_attempt_relation(context)
           current_count = relation.where(created_at: AdminWebhooksTrafficDefinition.trailing_4_week_range(reference_time)).count
           previous_count = relation.where(created_at: AdminWebhooksTrafficDefinition.previous_trailing_4_week_range(reference_time)).count
           AdminWebhooksTrafficDefinition.percent_change_label(current_count: current_count,
@@ -1206,9 +1206,9 @@ module RecordingStudioWebhooks
         chart_type :area
         series do |context|
           range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
-          relation = AdminWebhooksTrafficDefinition.action_plan_relation(context)
+          relation = AdminWebhooksTrafficDefinition.action_attempt_relation(context)
                                                    .where(created_at: range)
-          [{ name: "Action plans", data: AdminWebhooksTrafficDefinition.action_plan_date_series(relation, :week) }]
+          [{ name: "Action attempts", data: AdminWebhooksTrafficDefinition.action_attempt_date_series(relation, :week) }]
         end
         chart_options do
           {
@@ -1260,8 +1260,8 @@ module RecordingStudioWebhooks
           range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
           relation = AdminWebhooksTrafficDefinition.action_error_relation(context)
                                                    .where(created_at: range)
-          [{ name: "Failed action plans",
-             data: AdminWebhooksTrafficDefinition.action_plan_date_series(relation, :week) }]
+          [{ name: "Failed action attempts",
+             data: AdminWebhooksTrafficDefinition.action_attempt_date_series(relation, :week) }]
         end
         chart_options do
           {

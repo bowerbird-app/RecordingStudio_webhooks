@@ -7,7 +7,7 @@ namespace :recording_studio_webhooks do
       endpoints: RecordingStudioWebhooks::Endpoint.table_exists?,
       endpoint_tokens: RecordingStudioWebhooks::EndpointToken.table_exists?,
       inbound_events: RecordingStudioWebhooks::InboundEvent.table_exists?,
-      action_plans: RecordingStudioWebhooks::ActionPlan.table_exists?
+      action_attempts: RecordingStudioWebhooks::ActionAttempt.table_exists?
     }
 
     report = RecordingStudioWebhooks.report.merge(
@@ -26,7 +26,7 @@ namespace :recording_studio_webhooks do
       RecordingStudioWebhooks::Endpoint,
       RecordingStudioWebhooks::EndpointToken,
       RecordingStudioWebhooks::InboundEvent,
-      RecordingStudioWebhooks::ActionPlan
+      RecordingStudioWebhooks::ActionAttempt
     ]
 
     checks << [ "RecordingStudio::Recording is loaded", defined?(::RecordingStudio::Recording).present? ]
@@ -45,9 +45,9 @@ namespace :recording_studio_webhooks do
     abort "Recording Studio Webhooks doctor could not inspect the database."
   end
 
-  desc "Reconcile pending, retryable, and stale queued action plans"
+  desc "Reconcile pending, retryable, and stale queued action attempts"
   task dispatch_due: :environment do
-    results = RecordingStudioWebhooks::RecoverActionPlans.call
-    puts "Reconciled #{results.count} action plan(s)."
+    results = RecordingStudioWebhooks::RecoverActionAttempts.call
+    puts "Reconciled #{results.count} action attempt(s)."
   end
 end

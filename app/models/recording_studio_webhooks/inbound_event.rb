@@ -7,7 +7,7 @@ module RecordingStudioWebhooks
 
     belongs_to :endpoint
     belongs_to :endpoint_token
-    has_many :action_plans, dependent: :restrict_with_exception
+    has_many :action_attempts, dependent: :restrict_with_exception
 
     validates :provider_name, format: { with: ProviderDefinition::NAME }
     validates :event_type, :payload_digest, :deduplication_key, :received_at, presence: true

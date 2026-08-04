@@ -11,7 +11,7 @@ module RecordingStudioWebhooks
         @endpoints = endpoint_scope.current.order(:provider_name, :label)
         @filter = event_filter_params.to_h.symbolize_keys
 
-        scope = InboundEvent.includes(:action_plans, :endpoint, :endpoint_token).where(endpoint_id: endpoint_scope.select(:id))
+        scope = InboundEvent.includes(:action_attempts, :endpoint, :endpoint_token).where(endpoint_id: endpoint_scope.select(:id))
         scope = scope.where(endpoint_id: endpoint_revision_ids(@endpoint)) if endpoint_scoped?
         scope = scope.where(provider_name: @filter[:provider_name]) if @filter[:provider_name].present?
         scope = scope.where(endpoint_id: @filter[:endpoint_id]) if @filter[:endpoint_id].present?
@@ -24,8 +24,8 @@ module RecordingStudioWebhooks
         scope = scope.where("received_at <= ?", parsed_to_time) if parsed_to_time
 
         if @filter[:execution_mode].present?
-          scope = scope.joins(:action_plans)
-            .where("recording_studio_webhooks_action_plans.policy_snapshot ->> 'execution_mode' = ?", @filter[:execution_mode])
+          scope = scope.joins(:action_attempts)
+            .where("recording_studio_webhooks_action_attempts.policy_snapshot ->> 'execution_mode' = ?", @filter[:execution_mode])
             .distinct
         end
 
@@ -44,7 +44,7 @@ module RecordingStudioWebhooks
       end
 
       def load_event
-        scope = InboundEvent.includes(:action_plans).where(endpoint_id: endpoint_scope.select(:id))
+        scope = InboundEvent.includes(:action_attempts).where(endpoint_id: endpoint_scope.select(:id))
         scope = scope.where(endpoint_id: endpoint_revision_ids(@endpoint)) if endpoint_scoped?
         @event = scope.find(params[:id])
       rescue ActiveRecord::RecordNotFound

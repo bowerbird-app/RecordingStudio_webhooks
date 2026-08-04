@@ -4,8 +4,8 @@
 ) %>
 
 <%= render FlatPack::PageTitle::Component.new(
-  title: @action_plan.action_name,
-  subtitle: "Persisted action plan and sanitized attempt history.",
+  title: @action_attempt.action_name,
+  subtitle: "Persisted action attempt and sanitized attempt history.",
   variant: :h1
 ) %>
 
@@ -17,17 +17,17 @@
            label: "Status",
            value: render(
              FlatPack::Badge::Component.new(
-               text: @action_plan.status.to_s.humanize,
-               style: webhook_status_style(@action_plan.status),
+               text: @action_attempt.status.to_s.humanize,
+               style: webhook_status_style(@action_attempt.status),
                size: :sm
              )
            )
          },
-         { label: "Attempts", value: @action_plan.attempts.to_s },
-         { label: "Execution mode", value: @action_plan.policy.execution_mode.to_s },
+         { label: "Attempts", value: @action_attempt.attempts.to_s },
+         { label: "Execution mode", value: @action_attempt.policy.execution_mode.to_s },
          {
            label: "Next attempt",
-           value: @action_plan.next_attempt_at&.in_time_zone&.strftime("%b %-d, %Y %H:%M") || "None"
+           value: @action_attempt.next_attempt_at&.in_time_zone&.strftime("%b %-d, %Y %H:%M") || "None"
          }
        ] %>
     <%= render FlatPack::Table::Component.new(data: detail_rows, class: "text-sm") do |table| %>
@@ -38,7 +38,7 @@
 
   <section class="space-y-3">
     <%= render FlatPack::PageTitle::Component.new(title: "Attempt history", variant: :h3, class: "mb-0 pb-0") %>
-    <% attempt_rows = Array(@action_plan.attempt_history).each_with_index.map do |entry, index|
+    <% attempt_rows = Array(@action_attempt.attempt_history).each_with_index.map do |entry, index|
          data = entry.is_a?(Hash) ? entry : {}
          {
            attempt: data["attempt"].presence || (index + 1),

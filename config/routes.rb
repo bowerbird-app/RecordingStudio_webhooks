@@ -18,13 +18,13 @@ RecordingStudioWebhooks::Engine.routes.draw do
     post "tokens", to: "token_issuances#create", as: :token_issuances
     get "webhook_sandbox", to: "sandboxes#show", as: :webhook_sandbox
     post "webhook_sandbox", to: "sandboxes#create"
-    get "actionsc/:id", to: "action_plans#show", as: :action_plan_short
-    get "actions/:id", to: "action_plans#show", as: :action_plan
+    get "action_attempts/:id", to: "action_attempts#show", as: :action_attempt_short
+    get "attempts/:id", to: "action_attempts#show", as: :action_attempt
 
     resources :endpoints, only: %i[index new create edit update] do
       resources :tokens, only: %i[create destroy]
       resources :events, only: %i[index show] do
-        resources :action_plans, only: :show
+        resources :action_attempts, only: :show
       end
       resource :sandbox, only: :show
     end

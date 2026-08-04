@@ -116,7 +116,7 @@ evenly_distributed_time = lambda do |index:, total:, range_start:, range_span_se
   range_start + offset_seconds.seconds
 end
 
-apply_plan_state = lambda do |plan:, status:, created_at:, attempts:, action_name:, error_code: nil|
+apply_attempt_state = lambda do |attempt:, status:, created_at:, attempts:, action_name:, error_code: nil|
   started_at = created_at + 2.minutes
   queued_at = created_at + 1.minute
   completed_at = nil
@@ -164,7 +164,7 @@ apply_plan_state = lambda do |plan:, status:, created_at:, attempts:, action_nam
     "error" => last_error
   }.compact
 
-  plan.class.where(id: plan.id).update_all(
+  attempt.class.where(id: attempt.id).update_all(
     action_name: action_name,
     status: status,
     attempts: attempts,
@@ -175,7 +175,7 @@ apply_plan_state = lambda do |plan:, status:, created_at:, attempts:, action_nam
     completed_at: completed_at,
     next_attempt_at: next_attempt_at,
     last_error: last_error,
-    action_snapshot: plan.action_snapshot.is_a?(Hash) ? plan.action_snapshot.merge("name" => action_name) : { "name" => action_name },
+    action_snapshot: attempt.action_snapshot.is_a?(Hash) ? attempt.action_snapshot.merge("name" => action_name) : { "name" => action_name },
     attempt_history: attempt_history
   )
 end
@@ -198,7 +198,7 @@ Current.actor = user
 previous_access_authorizer = RecordingStudioAccessible.configuration.access_management_authorizer
 RecordingStudioAccessible.configuration.access_management_authorizer = ->(recording:, **) { recording.present? }
 previous_dispatcher = RecordingStudioWebhooks.configuration.dispatcher
-RecordingStudioWebhooks.configuration.dispatcher = ->(_plan_id, wait_until: nil) { true }
+RecordingStudioWebhooks.configuration.dispatcher = ->(_attempt_id, wait_until: nil) { true }
 
 begin
   # Create the root recording
@@ -261,7 +261,7 @@ begin
       .where("recording_studio_webhooks_inbound_events.provider_event_id LIKE ?", "seed_monthly_%")
     monthly_event_ids = monthly_event_scope.pluck(:id)
     unless monthly_event_ids.empty?
-      RecordingStudioWebhooks::ActionPlan.where(inbound_event_id: monthly_event_ids).delete_all
+      RecordingStudioWebhooks::ActionAttempt.where(inbound_event_id: monthly_event_ids).delete_all
       RecordingStudioWebhooks::InboundEvent.where(id: monthly_event_ids).delete_all
     end
 
@@ -297,16 +297,16 @@ begin
         request_id: format("seed-monthly-failed-%03d", index + 1),
         received_at: received_at
       )
-      plan = event.action_plans.order(:execution_position).first
-      raise "Failed seed event missing action plan: #{event_id}" unless plan
-      raise "Seed event produced unregistered action: #{plan.action_name}" unless registered_action_names.include?(plan.action_name)
+      attempt = event.action_attempts.order(:execution_position).first
+      raise "Failed seed event missing action attempt: #{event_id}" unless attempt
+      raise "Seed event produced unregistered action: #{attempt.action_name}" unless registered_action_names.include?(attempt.action_name)
 
-      apply_plan_state.call(
-        plan: plan,
+      apply_attempt_state.call(
+        attempt: attempt,
         status: "failed",
         created_at: received_at + 20.seconds,
         attempts: 3 + (index % 2),
-        action_name: plan.action_name,
+        action_name: attempt.action_name,
         error_code: "action_execution_failed"
       )
     end
@@ -342,9 +342,9 @@ begin
         request_id: format("seed-monthly-nonfailed-%03d", index + 1),
         received_at: received_at
       )
-      plan = event.action_plans.order(:execution_position).first
-      raise "Non-failed seed event missing action plan: #{event_id}" unless plan
-      raise "Seed event produced unregistered action: #{plan.action_name}" unless registered_action_names.include?(plan.action_name)
+      attempt = event.action_attempts.order(:execution_position).first
+      raise "Non-failed seed event missing action attempt: #{event_id}" unless attempt
+      raise "Seed event produced unregistered action: #{attempt.action_name}" unless registered_action_names.include?(attempt.action_name)
 
       status = non_failed_statuses[(index / 9 + index) % non_failed_statuses.length]
       attempts = case status
@@ -354,25 +354,25 @@ begin
                  when "retrying" then 2
                  else 1 + ((index % 4).zero? ? 1 : 0)
                  end
-      apply_plan_state.call(
-        plan: plan,
+      apply_attempt_state.call(
+        attempt: attempt,
         status: status,
         created_at: received_at + 20.seconds,
         attempts: attempts,
-        action_name: plan.action_name
+        action_name: attempt.action_name
       )
     end
 
-    monthly_plan_scope = RecordingStudioWebhooks::ActionPlan
+    monthly_attempt_scope = RecordingStudioWebhooks::ActionAttempt
       .joins(inbound_event: { endpoint: :recording_studio_recording })
       .where(recording_studio_recordings: { root_recording_id: root_recording.id })
       .where("recording_studio_webhooks_inbound_events.provider_event_id LIKE ?", "seed_monthly_%")
-    failed_seed_count = monthly_plan_scope.where(status: "failed").count
-    non_failed_seed_count = monthly_plan_scope.where.not(status: "failed").count
+    failed_seed_count = monthly_attempt_scope.where(status: "failed").count
+    non_failed_seed_count = monthly_attempt_scope.where.not(status: "failed").count
 
     puts "Seeded: #{total_monthly_seeds} monthly events"
-    puts "Seeded: #{failed_seed_count} monthly failed action plans"
-    puts "Seeded: #{non_failed_seed_count} monthly non-failed action plans"
+    puts "Seeded: #{failed_seed_count} monthly failed action attempts"
+    puts "Seeded: #{non_failed_seed_count} monthly non-failed action attempts"
   end
 ensure
   RecordingStudioWebhooks.configuration.dispatcher = previous_dispatcher
@@ -400,18 +400,18 @@ if RecordingStudioWebhooks::Endpoint.table_exists?
     .where(recording_studio_recordings: { root_recording_id: root_recording.id })
     .where("provider_event_id LIKE ?", "seed_monthly_%")
     .count
-  monthly_seed_attempts = RecordingStudioWebhooks::ActionPlan
+  monthly_seed_attempts = RecordingStudioWebhooks::ActionAttempt
     .joins(inbound_event: { endpoint: :recording_studio_recording })
     .where(recording_studio_recordings: { root_recording_id: root_recording.id })
     .where("recording_studio_webhooks_inbound_events.provider_event_id LIKE ?", "seed_monthly_%")
     .sum(:attempts)
-  monthly_failed_plans = RecordingStudioWebhooks::ActionPlan
+  monthly_failed_attempts = RecordingStudioWebhooks::ActionAttempt
     .joins(inbound_event: { endpoint: :recording_studio_recording })
     .where(recording_studio_recordings: { root_recording_id: root_recording.id })
     .where("recording_studio_webhooks_inbound_events.provider_event_id LIKE ?", "seed_monthly_%")
     .where(status: "failed")
     .count
-  monthly_non_failed_plans = RecordingStudioWebhooks::ActionPlan
+  monthly_non_failed_attempts = RecordingStudioWebhooks::ActionAttempt
     .joins(inbound_event: { endpoint: :recording_studio_recording })
     .where(recording_studio_recordings: { root_recording_id: root_recording.id })
     .where("recording_studio_webhooks_inbound_events.provider_event_id LIKE ?", "seed_monthly_%")
@@ -423,6 +423,6 @@ if RecordingStudioWebhooks::Endpoint.table_exists?
   puts "Seeded: #{event_count} inbound webhook events across multiple endpoints"
   puts "Seeded: #{monthly_seed_count} monthly chart events"
   puts "Seeded: #{monthly_seed_attempts} monthly action attempts"
-  puts "Seeded: #{monthly_failed_plans} monthly failed action plans"
-  puts "Seeded: #{monthly_non_failed_plans} monthly non-failed action plans"
+  puts "Seeded: #{monthly_failed_attempts} monthly failed action attempts"
+  puts "Seeded: #{monthly_non_failed_attempts} monthly non-failed action attempts"
 end

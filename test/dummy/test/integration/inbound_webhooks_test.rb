@@ -70,7 +70,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_equal "[FILTERED]", event.payload.fetch("action_only")
     assert_equal "Ada", event.payload.fetch("name")
     refute_includes event.token_snapshot.to_s, token
-    assert_equal 1, event.action_plans.count
+    assert_equal 1, event.action_attempts.count
 
     post inbound_path(token), params: JSON.generate(payload), headers: intake_headers
 
@@ -168,9 +168,9 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     assert_response :accepted
     event = @endpoint.inbound_events.find_by!(provider_event_id: "evt_page_created_1")
-    plan = event.action_plans.find_by!(action_name: "demo.page_created")
+    attempt = event.action_attempts.find_by!(action_name: "demo.page_created")
 
-    result = RecordingStudioWebhooks::ExecuteActionPlan.call(plan.id)
+    result = RecordingStudioWebhooks::ExecuteActionAttempt.call(attempt.id)
 
     assert_equal "action_succeeded", result.code
     page = Page.find_by!(title: title)
@@ -293,25 +293,25 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_equal original_enabled, @endpoint.reload.enabled?
   end
 
-  test "temporary dispatcher failures keep an accepted action plan recoverable" do
+  test "temporary dispatcher failures keep an accepted action attempt recoverable" do
     configuration = RecordingStudioWebhooks.configuration
     original_dispatcher = configuration.dispatcher
-    configuration.dispatcher = ->(_plan_id, _wait_until = nil) { raise "queue unavailable" }
+    configuration.dispatcher = ->(_attempt_id, _wait_until = nil) { raise "queue unavailable" }
     issuance = @endpoint.issue_token!
     payload = { id: "evt_queue", type: "demo.received" }
 
     post inbound_path(issuance.plaintext_token), params: JSON.generate(payload), headers: intake_headers
 
     assert_response :accepted
-    plan = @endpoint.inbound_events.find_by!(provider_event_id: "evt_queue").action_plans.first.reload
-    assert_predicate plan, :retrying?
-    refute_predicate plan, :terminal?
+    attempt = @endpoint.inbound_events.find_by!(provider_event_id: "evt_queue").action_attempts.first.reload
+    assert_predicate attempt, :retrying?
+    refute_predicate attempt, :terminal?
 
-    configuration.dispatcher = ->(_plan_id, _wait_until = nil) { true }
-    results = RecordingStudioWebhooks::RecoverActionPlans.call(now: plan.next_attempt_at + 1.second)
+    configuration.dispatcher = ->(_attempt_id, _wait_until = nil) { true }
+    results = RecordingStudioWebhooks::RecoverActionAttempts.call(now: attempt.next_attempt_at + 1.second)
 
-    assert_equal "action_plan_dispatched", results.first.code
-    refute_predicate plan.reload, :terminal?
+    assert_equal "action_attempt_dispatched", results.first.code
+    refute_predicate attempt.reload, :terminal?
   ensure
     configuration.dispatcher = original_dispatcher
   end
@@ -398,7 +398,6 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Registered actions"
     assert_includes response.body, "View"
     assert_includes response.body, "/admin/screens/action_attempts?"
-    refute_includes response.body, "/admin/webhooks/actionsc/"
   end
 
   test "authorized administrators can inspect providers screen with filters and table" do
@@ -475,15 +474,15 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     post inbound_path(token), params: JSON.generate(id: "evt_attempts_1", type: "demo.received"), headers: intake_headers
     assert_response :accepted
     event = @endpoint.inbound_events.find_by!(provider_event_id: "evt_attempts_1")
-    plan = event.action_plans.order(:execution_position).first
-    assert_not_nil plan
+    attempt = event.action_attempts.order(:execution_position).first
+    assert_not_nil attempt
 
     sign_in @user
     get "/admin/screens/action_attempts", params: {
       provider: "demo",
       endpoint: @endpoint.label,
-      action_name: plan.action_name,
-      status: plan.status,
+      action_name: attempt.action_name,
+      status: attempt.status,
       group_by: "week"
     }
 
@@ -497,21 +496,21 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     get "/admin/screens/action_attempts/chart", params: {
       provider: "demo",
       endpoint: @endpoint.label,
-      action_name: plan.action_name,
-      status: plan.status,
+      action_name: attempt.action_name,
+      status: attempt.status,
       group_by: "week"
     }
     assert_response :success
-    assert_includes response.body, "Action plans"
+    assert_includes response.body, "Action attempts"
 
     get "/admin/screens/action_attempts/table", params: {
       provider: "demo",
       endpoint: @endpoint.label,
-      action_name: plan.action_name,
-      status: plan.status
+      action_name: attempt.action_name,
+      status: attempt.status
     }
     assert_response :success
-    assert_includes response.body, "Action plans"
+    assert_includes response.body, "Action attempts"
   end
 
   test "action attempts action_name filter applies for registered actions without attempts" do
@@ -527,7 +526,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :success
-    assert_includes response.body, "Action plans"
+    assert_includes response.body, "Action attempts"
     assert_includes response.body, "No data available"
   end
 

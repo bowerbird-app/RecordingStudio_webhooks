@@ -24,7 +24,7 @@ class ConfigurationTest < Minitest::Test
   def test_configuration_accepts_explicit_admin_and_dispatcher_overrides
     with_fresh_configuration do |configuration|
       authorizer = ->(_context) { true }
-      dispatcher = ->(_plan_id, _wait_until = nil) { true }
+      dispatcher = ->(_attempt_id, _wait_until = nil) { true }
 
       configuration.admin_authorizer = authorizer
       configuration.admin_recording_scope = ->(_context) { [] }

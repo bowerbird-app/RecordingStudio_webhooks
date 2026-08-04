@@ -32,11 +32,11 @@ for deduplication and only an allowlisted provenance subset.
 
 Actions receive redacted data only. Worker errors are collapsed into generic
 state codes. The direct Sidekiq payload and Active Job payload contain an
-action-plan ID only.
+action-attempt ID only.
 
 ## Sandbox
 
-The admin sandbox does not create an event, plan, attempt, job, or log entry.
+The admin sandbox does not create an event, attempt, attempt, job, or log entry.
 It displays only a redacted result and never executes the matching handlers.
 Its request field is included in the engine parameter filter as a defense in
 depth measure for normal Rails request logging.

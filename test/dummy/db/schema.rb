@@ -88,7 +88,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_000000) do
     t.index ["root_recording_id"], name: "idx_rs_root_switchable_root_recording"
   end
 
-  create_table "recording_studio_webhooks_action_plans", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "recording_studio_webhooks_action_attempts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "action_name", null: false
     t.jsonb "action_snapshot", default: {}, null: false
     t.jsonb "attempt_history", default: [], null: false
@@ -106,10 +106,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_000000) do
     t.string "status", default: "pending", null: false
     t.jsonb "token_snapshot", default: {}, null: false
     t.datetime "updated_at", null: false
-    t.index ["inbound_event_id", "action_name"], name: "index_rsw_plans_on_event_and_action", unique: true
-    t.index ["inbound_event_id", "execution_position"], name: "index_rsw_plans_on_event_and_position", unique: true
-    t.index ["inbound_event_id"], name: "index_rsw_plans_on_event_id"
-    t.index ["status", "next_attempt_at"], name: "index_rsw_plans_on_status_and_next_attempt"
+    t.index ["inbound_event_id", "action_name"], name: "index_rsw_attempts_on_event_and_action", unique: true
+    t.index ["inbound_event_id", "execution_position"], name: "index_rsw_attempts_on_event_and_position", unique: true
+    t.index ["inbound_event_id"], name: "index_rsw_attempts_on_event_id"
+    t.index ["status", "next_attempt_at"], name: "index_rsw_attempts_on_status_and_next_attempt"
   end
 
   create_table "recording_studio_webhooks_endpoint_tokens", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -188,7 +188,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_000000) do
   add_foreign_key "recording_studio_events", "recording_studio_recordings", column: "recording_id"
   add_foreign_key "recording_studio_recordings", "recording_studio_recordings", column: "parent_recording_id"
   add_foreign_key "recording_studio_recordings", "recording_studio_recordings", column: "root_recording_id"
-  add_foreign_key "recording_studio_webhooks_action_plans", "recording_studio_webhooks_inbound_events", column: "inbound_event_id"
+  add_foreign_key "recording_studio_webhooks_action_attempts", "recording_studio_webhooks_inbound_events", column: "inbound_event_id"
   add_foreign_key "recording_studio_webhooks_endpoint_tokens", "recording_studio_webhooks_endpoints", column: "endpoint_id"
   add_foreign_key "recording_studio_webhooks_endpoints", "recording_studio_recordings"
   add_foreign_key "recording_studio_webhooks_inbound_events", "recording_studio_webhooks_endpoint_tokens", column: "endpoint_token_id"
