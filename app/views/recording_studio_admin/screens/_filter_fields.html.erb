@@ -1,14 +1,28 @@
 <% filters.each do |filter| %>
   <div class="<%= wrapper_class %>">
     <% if filter.type == :date_range %>
+      <% effective_preset_key = params[filter.preset_param].presence || filter.value&.preset_key || filter.options[:default] %>
+      <% start_value = filter.value&.start_date %>
+      <% end_value = filter.value&.end_date %>
+      <% span_days = if start_value.present? && end_value.present?
+                       (end_value.to_date - start_value.to_date).to_i
+                     end %>
+      <% if span_days == 28 %>
+        <% effective_preset_key = :last_4_weeks %>
+      <% end %>
+      <% if effective_preset_key.to_s == "last_4_weeks" && end_value.present? %>
+        <% normalized_end_date = end_value.to_date %>
+        <% start_value = normalized_end_date - 27.days %>
+        <% end_value = normalized_end_date %>
+      <% end %>
       <%= render FlatPack::DateRangeInput::Component.new(
         start_name: filter.start_param,
         end_name: filter.end_param,
-        start_value: filter.value&.start_date,
-        end_value: filter.value&.end_date,
+        start_value: start_value,
+        end_value: end_value,
         label: filter.key.to_s.humanize
       ) %>
-      <%= hidden_field_tag filter.preset_param, filter.value&.preset_key %>
+      <%= hidden_field_tag filter.preset_param, effective_preset_key %>
     <% else %>
       <% use_raw_option_label = filter.key.to_sym == :action_name || filter.param_key.to_sym == :action_name %>
       <% select_options = Array(filter.options[:values] || filter.options[:options]).map do |value|

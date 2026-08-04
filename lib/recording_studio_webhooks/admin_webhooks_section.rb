@@ -123,7 +123,7 @@ module RecordingStudioWebhooks
     end
 
     def action_widget_rows(context)
-      range = trailing_30_day_range(Time.current)
+      range = trailing_4_week_range(Time.current)
       counts = action_plan_relation(context)
                .where(created_at: range)
                .group(:action_name)
@@ -136,7 +136,7 @@ module RecordingStudioWebhooks
         .map do |name, total|
           {
             action_name: name,
-            attempts_30d: total,
+            attempts_4w: total,
             action_url: "/admin/screens/action_attempts?#{{ action_name: name }.to_query}"
           }
         end
@@ -144,7 +144,7 @@ module RecordingStudioWebhooks
 
     def action_widget_items(context)
       action_widget_rows(context).map do |row|
-        attempts_count = row[:attempts_30d].to_i
+        attempts_count = row[:attempts_4w].to_i
         {
           text: row.fetch(:action_name, "Unknown action"),
           href: row[:action_url],
@@ -248,8 +248,11 @@ module RecordingStudioWebhooks
     end
 
     def action_filter_values
-      observed_actions = ActionPlan.distinct.order(:action_name).pluck(:action_name)
-      [ACTION_FILTER_ALL, *observed_actions]
+      observed_actions = ActionPlan.distinct.order(:action_name).pluck(:action_name).compact
+      registered_actions = registered_action_rows.map(&:name).map(&:to_s).reject(&:empty?)
+      action_names = (observed_actions + registered_actions).uniq.sort
+
+      [ACTION_FILTER_ALL, *action_names]
     end
 
     def action_row_view_url(action, context)
@@ -376,14 +379,19 @@ module RecordingStudioWebhooks
       prior_reference.beginning_of_week..prior_reference.end_of_week
     end
 
-    def trailing_30_day_range(reference_time = Time.current)
-      (reference_time - 30.days).beginning_of_day..reference_time.end_of_day
+    def trailing_4_week_range(reference_time = Time.current)
+      end_date = reference_time.to_date
+      start_date = end_date - 27.days
+
+      start_date.beginning_of_day..end_date.end_of_day
     end
 
-    def previous_trailing_30_day_range(reference_time = Time.current)
-      previous_end = (reference_time - 30.days).end_of_day
-      previous_start = (reference_time - 60.days).beginning_of_day
-      previous_start..previous_end
+    def previous_trailing_4_week_range(reference_time = Time.current)
+      current_start_date = reference_time.to_date - 27.days
+      previous_end_date = current_start_date - 1.day
+      previous_start_date = previous_end_date - 27.days
+
+      previous_start_date.beginning_of_day..previous_end_date.end_of_day
     end
 
     def percent_change_label(current_count:, previous_count:)
@@ -450,7 +458,7 @@ module RecordingStudioWebhooks
         blast_radius :root
 
         query { |context| AdminWebhooksTrafficDefinition.traffic_events(context) }
-        filter :date_range, field: :received_at, default: :last_30_days
+        filter :date_range, field: :received_at, default: :last_4_weeks
         filter :group_by, values: FILTERABLE_GROUPINGS, default: :day
         filter :provider,
                options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
@@ -659,6 +667,9 @@ module RecordingStudioWebhooks
           action :edit,
                  text: "Edit",
                  url: ->(endpoint) { "/admin/webhooks/endpoints/#{endpoint.id}/edit" }
+             action :tokens,
+               text: "Tokens",
+               url: ->(endpoint) { "/admin/screens/tokens?#{ { provider: endpoint.provider_name, endpoint: endpoint.label }.to_query }" }
           default_columns :endpoint_path, :label, :provider_name, :enabled
           default_sort :created_at, direction: :desc
           paginate per_page: 25, mode: :infinite
@@ -681,7 +692,7 @@ module RecordingStudioWebhooks
         blast_radius :root
 
         query { |context| AdminWebhooksTrafficDefinition.action_plan_relation(context) }
-        filter :date_range, field: :created_at, default: :last_30_days
+        filter :date_range, field: :created_at, default: :last_4_weeks
         filter :group_by, values: FILTERABLE_GROUPINGS, default: :day
         filter :provider,
                options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
@@ -911,11 +922,11 @@ module RecordingStudioWebhooks
       widget = ::RecordingStudioAdmin::Widget.new("widgets.admin_webhooks.traffic") do
         type :chart
         title "Webhook traffic"
-        description "Inbound webhook events over the last 30 days."
+        description "Inbound webhook events over the last 4 weeks."
         change_good_when :up
-        metadata { { period_label: "Last 30 days" } }
+        metadata { { period_label: "Last 4 weeks" } }
         value do |context|
-          range = 30.days.ago.beginning_of_day..Time.current.end_of_day
+          range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
           AdminWebhooksTrafficDefinition.traffic_events(context)
                                         .where(received_at: range)
                                         .count
@@ -923,14 +934,14 @@ module RecordingStudioWebhooks
         change do |context|
           reference_time = Time.current
           relation = AdminWebhooksTrafficDefinition.traffic_events(context)
-          current_count = relation.where(received_at: AdminWebhooksTrafficDefinition.trailing_30_day_range(reference_time)).count
-          previous_count = relation.where(received_at: AdminWebhooksTrafficDefinition.previous_trailing_30_day_range(reference_time)).count
+          current_count = relation.where(received_at: AdminWebhooksTrafficDefinition.trailing_4_week_range(reference_time)).count
+          previous_count = relation.where(received_at: AdminWebhooksTrafficDefinition.previous_trailing_4_week_range(reference_time)).count
           AdminWebhooksTrafficDefinition.percent_change_label(current_count: current_count,
                                                               previous_count: previous_count)
         end
         chart_type :area
         series do |context|
-          range = 30.days.ago.beginning_of_day..Time.current.end_of_day
+          range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
           relation = AdminWebhooksTrafficDefinition.traffic_events(context)
                                                    .where(received_at: range)
           [{ name: "Inbound events", data: AdminWebhooksTrafficDefinition.date_series(relation, :week) }]
@@ -1015,11 +1026,11 @@ module RecordingStudioWebhooks
       widget = ::RecordingStudioAdmin::Widget.new("widgets.admin_webhooks.action_attempts") do
         type :chart
         title "Action attempts"
-        description "Action execution attempts over the last 30 days."
+        description "Action execution attempts over the last 4 weeks."
         change_good_when :up
-        metadata { { period_label: "Last 30 days" } }
+        metadata { { period_label: "Last 4 weeks" } }
         value do |context|
-          range = 30.days.ago.beginning_of_day..Time.current.end_of_day
+          range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
           AdminWebhooksTrafficDefinition.action_plan_relation(context)
                                         .where(created_at: range)
                                         .count
@@ -1027,14 +1038,14 @@ module RecordingStudioWebhooks
         change do |context|
           reference_time = Time.current
           relation = AdminWebhooksTrafficDefinition.action_plan_relation(context)
-          current_count = relation.where(created_at: AdminWebhooksTrafficDefinition.trailing_30_day_range(reference_time)).count
-          previous_count = relation.where(created_at: AdminWebhooksTrafficDefinition.previous_trailing_30_day_range(reference_time)).count
+          current_count = relation.where(created_at: AdminWebhooksTrafficDefinition.trailing_4_week_range(reference_time)).count
+          previous_count = relation.where(created_at: AdminWebhooksTrafficDefinition.previous_trailing_4_week_range(reference_time)).count
           AdminWebhooksTrafficDefinition.percent_change_label(current_count: current_count,
                                                               previous_count: previous_count)
         end
         chart_type :area
         series do |context|
-          range = 30.days.ago.beginning_of_day..Time.current.end_of_day
+          range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
           relation = AdminWebhooksTrafficDefinition.action_plan_relation(context)
                                                    .where(created_at: range)
           [{ name: "Action plans", data: AdminWebhooksTrafficDefinition.action_plan_date_series(relation, :week) }]
@@ -1067,11 +1078,11 @@ module RecordingStudioWebhooks
       widget = ::RecordingStudioAdmin::Widget.new("widgets.admin_webhooks.action_errors") do
         type :chart
         title "Action errors"
-        description "Failed action attempts over the last 30 days."
+        description "Failed action attempts over the last 4 weeks."
         change_good_when :down
-        metadata { { period_label: "Last 30 days" } }
+        metadata { { period_label: "Last 4 weeks" } }
         value do |context|
-          range = 30.days.ago.beginning_of_day..Time.current.end_of_day
+          range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
           AdminWebhooksTrafficDefinition.action_error_relation(context)
                                         .where(created_at: range)
                                         .count
@@ -1079,14 +1090,14 @@ module RecordingStudioWebhooks
         change do |context|
           reference_time = Time.current
           relation = AdminWebhooksTrafficDefinition.action_error_relation(context)
-          current_count = relation.where(created_at: AdminWebhooksTrafficDefinition.trailing_30_day_range(reference_time)).count
-          previous_count = relation.where(created_at: AdminWebhooksTrafficDefinition.previous_trailing_30_day_range(reference_time)).count
+          current_count = relation.where(created_at: AdminWebhooksTrafficDefinition.trailing_4_week_range(reference_time)).count
+          previous_count = relation.where(created_at: AdminWebhooksTrafficDefinition.previous_trailing_4_week_range(reference_time)).count
           AdminWebhooksTrafficDefinition.percent_change_label(current_count: current_count,
                                                               previous_count: previous_count)
         end
         chart_type :area
         series do |context|
-          range = 30.days.ago.beginning_of_day..Time.current.end_of_day
+          range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
           relation = AdminWebhooksTrafficDefinition.action_error_relation(context)
                                                    .where(created_at: range)
           [{ name: "Failed action plans",
@@ -1119,8 +1130,8 @@ module RecordingStudioWebhooks
 
       widget = ::RecordingStudioAdmin::Widget.new("widgets.admin_webhooks.actions") do
         type :list
-        title "Most Used Actions"
-        description "Most-used actions over the last 30 days."
+        title "Recently Used Actions"
+        description "Most-used actions over the last 4 weeks."
         list_options divider: true, hover: true, compact_preview: :text_summary
         hide_change
         hide_metric
@@ -1175,7 +1186,6 @@ module RecordingStudioWebhooks
       AdminWebhooksTrafficDefinition.ensure_provider_widget_definition!
       AdminWebhooksTrafficDefinition.ensure_endpoint_widget_definition!
       AdminWebhooksTrafficDefinition.ensure_actions_widget_definition!
-      AdminWebhooksTrafficDefinition.ensure_tokens_widget_definition!
       AdminWebhooksTrafficDefinition.ensure_action_attempts_widget_definition!
       AdminWebhooksTrafficDefinition.ensure_action_errors_widget_definition!
       if section_class_defined?
@@ -1212,32 +1222,35 @@ module RecordingStudioWebhooks
 
       desired_defaults = {
         "widgets.admin_webhooks.traffic" => { view_variant: :card,
-                                              params: { preset_key: :last_30_days, group_by: :week } },
+                                              params: { preset_key: :last_4_weeks, group_by: :week } },
         "widgets.admin_webhooks.action_attempts" => { view_variant: :card,
-                                                      params: { preset_key: :last_30_days, group_by: :week } },
+                                                      params: { preset_key: :last_4_weeks, group_by: :week } },
         "widgets.admin_webhooks.action_errors" => { view_variant: :card,
-                                                    params: { preset_key: :last_30_days, group_by: :week } },
-        "widgets.admin_webhooks.actions" => { view_variant: :card, params: { preset_key: :last_30_days } },
-        "widgets.admin_webhooks.tokens" => { view_variant: :card, params: { preset_key: :last_30_days } },
-        "widgets.admin_webhooks.providers" => { view_variant: :card, params: { preset_key: :last_30_days } },
-        "widgets.admin_webhooks.endpoints" => { view_variant: :card, params: { preset_key: :last_30_days } }
+                                                    params: { preset_key: :last_4_weeks, group_by: :week } },
+        "widgets.admin_webhooks.actions" => { view_variant: :card, params: { preset_key: :last_4_weeks } },
+        "widgets.admin_webhooks.providers" => { view_variant: :card, params: { preset_key: :last_4_weeks } },
+        "widgets.admin_webhooks.endpoints" => { view_variant: :card, params: { preset_key: :last_4_weeks } }
       }
       desired_keys = desired_defaults.keys
+      removed_keys = ["widgets.admin_webhooks.tokens"]
 
       ordered_usages = desired_keys.map do |key|
-        existing_by_key[key] || ::RecordingStudioAdmin::WidgetUsage.new(
+        existing = existing_by_key[key]
+        ::RecordingStudioAdmin::WidgetUsage.new(
           key: key,
           view_variant: desired_defaults[key][:view_variant],
-          title: nil,
-          chart_type: nil,
-          chart_options: nil,
+          title: existing&.title,
+          chart_type: existing&.chart_type,
+          chart_options: existing&.chart_options,
           params: desired_defaults[key][:params],
-          blast_radius: nil,
-          link_to: nil
+          blast_radius: existing&.blast_radius,
+          link_to: existing&.link_to
         )
       end
 
-      remaining_usages = existing_usages.reject { |usage| desired_keys.include?(usage.key) }
+      remaining_usages = existing_usages.reject do |usage|
+        desired_keys.include?(usage.key) || removed_keys.include?(usage.key)
+      end
       final_usages = ordered_usages + remaining_usages
       return if final_usages == existing_usages
 

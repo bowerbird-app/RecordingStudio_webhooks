@@ -452,6 +452,9 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Webhook traffic"
     assert_includes response.body, "Date range"
+    assert_includes response.body, "Last 4 weeks"
+    assert_includes response.body, "name=\"start_date\" value=\"#{(Date.current - 27.days).iso8601}\""
+    assert_includes response.body, "name=\"end_date\" value=\"#{Date.current.iso8601}\""
     assert_includes response.body, "Group by"
     assert_includes response.body, "Provider"
     assert_includes response.body, "Endpoint"
@@ -509,6 +512,23 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Action plans"
   end
 
+  test "action attempts action_name filter applies for registered actions without attempts" do
+    token = @endpoint.issue_token!.plaintext_token
+    post inbound_path(token), params: JSON.generate(id: "evt_attempts_filtering_1", type: "demo.received"), headers: intake_headers
+    assert_response :accepted
+
+    sign_in @user
+    get "/admin/screens/action_attempts/table", params: {
+      provider: "demo",
+      endpoint: @endpoint.label,
+      action_name: "demo.page_created"
+    }
+
+    assert_response :success
+    assert_includes response.body, "Action plans"
+    assert_includes response.body, "No data available"
+  end
+
   test "authorized administrators can filter events by token value" do
     sign_in @user
     first_token = @endpoint.issue_token!.plaintext_token
@@ -547,6 +567,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Endpoints"
     assert_match %r{/webhooks/inbound/rswh_[A-Za-z0-9_-]+}, response.body
     refute_includes response.body, "/webhooks/inbound/rswh_..."
+    escaped_provider = Regexp.escape(CGI.escape(@endpoint.provider_name))
+    assert_match(
+      %r{href="/admin/screens/tokens\?endpoint=[^"&]+(?:&amp;|&)provider=#{escaped_provider}"},
+      response.body
+    )
   end
 
   test "authorized administrators can disable endpoints via autosave switch" do

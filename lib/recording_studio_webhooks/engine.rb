@@ -40,5 +40,15 @@ module RecordingStudioWebhooks
     initializer "recording_studio_webhooks.configure_recording_studio_recordables" do
       config.to_prepare { RecordingStudioWebhooks.configure_recordables! }
     end
+
+    initializer "recording_studio_webhooks.patch_last_4_weeks_preset" do
+      config.to_prepare do
+        next unless defined?(RecordingStudioAdmin::Filters::DateRangeFilter)
+
+        target = RecordingStudioAdmin::Filters::DateRangeFilter
+        patch = RecordingStudioWebhooks::AdminLast4WeeksPatch::DateRangeFilter
+        target.prepend(patch) unless target.ancestors.include?(patch)
+      end
+    end
   end
 end
