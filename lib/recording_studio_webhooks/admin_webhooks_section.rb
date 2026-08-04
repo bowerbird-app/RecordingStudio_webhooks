@@ -692,7 +692,7 @@ module RecordingStudioWebhooks
                  value: lambda { |row, context|
                    context.view_context.link_to(
                      row.enabled_endpoints_count.to_i,
-                     "/admin/screens/endpoints?#{{ provider: row.provider_name, status: "enabled" }.to_query}",
+                     "/admin/screens/endpoints?#{{ provider: row.provider_name, status: 'enabled' }.to_query}",
                      data: { turbo_frame: "_top" }
                    )
                  }
