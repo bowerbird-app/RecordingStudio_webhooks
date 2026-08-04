@@ -59,7 +59,7 @@ module RecordingStudioWebhooks
           enabled: enabled_counts.fetch(provider_name, 0),
           events_30d: event_counts.fetch(provider_name, 0),
           last_event: last_event_at[provider_name]&.in_time_zone&.strftime("%b %-d, %Y %H:%M") || "No recent events",
-          provider_url: "/admin/screens/providers?#{ { provider: provider_name }.to_query }"
+          provider_url: "/admin/screens/providers?#{{ provider: provider_name }.to_query}"
         }
       end
     end
@@ -137,7 +137,7 @@ module RecordingStudioWebhooks
           {
             action_name: name,
             attempts_30d: total,
-            action_url: "/admin/screens/action_attempts?#{ { action_name: name }.to_query }"
+            action_url: "/admin/screens/action_attempts?#{{ action_name: name }.to_query}"
           }
         end
     end
@@ -202,21 +202,21 @@ module RecordingStudioWebhooks
       return Endpoint.none unless root_recording
 
       Endpoint.current
-        .joins(:recording_studio_recording)
-        .where(recording_studio_recordings: { root_recording_id: root_recording.id })
-        .left_joins(inbound_events: :action_plans)
-        .group("recording_studio_webhooks_endpoints.provider_name")
-        .select(
-          <<~SQL.squish
-            recording_studio_webhooks_endpoints.provider_name AS provider_name,
-            COUNT(DISTINCT recording_studio_webhooks_inbound_events.id) AS events_count,
-            COUNT(DISTINCT recording_studio_webhooks_endpoints.id) AS endpoints_count,
-            COUNT(DISTINCT CASE
-              WHEN recording_studio_webhooks_endpoints.enabled THEN recording_studio_webhooks_endpoints.id
-            END) AS enabled_endpoints_count,
-            MAX(recording_studio_webhooks_inbound_events.received_at) AS last_event_at
-          SQL
-        )
+              .joins(:recording_studio_recording)
+              .where(recording_studio_recordings: { root_recording_id: root_recording.id })
+              .left_joins(inbound_events: :action_plans)
+              .group("recording_studio_webhooks_endpoints.provider_name")
+              .select(
+                <<~SQL.squish
+                  recording_studio_webhooks_endpoints.provider_name AS provider_name,
+                  COUNT(DISTINCT recording_studio_webhooks_inbound_events.id) AS events_count,
+                  COUNT(DISTINCT recording_studio_webhooks_endpoints.id) AS endpoints_count,
+                  COUNT(DISTINCT CASE
+                    WHEN recording_studio_webhooks_endpoints.enabled THEN recording_studio_webhooks_endpoints.id
+                  END) AS enabled_endpoints_count,
+                  MAX(recording_studio_webhooks_inbound_events.received_at) AS last_event_at
+                SQL
+              )
     end
 
     def action_plan_relation(context)
@@ -263,12 +263,12 @@ module RecordingStudioWebhooks
       end
 
       relation = relation.where(recording_studio_webhooks_action_plans: { action_name: action.name })
-      relation = relation.where(recording_studio_webhooks_inbound_events: { provider_name: action.provider_name }) if action.provider_name.present?
+      if action.provider_name.present?
+        relation = relation.where(recording_studio_webhooks_inbound_events: { provider_name: action.provider_name })
+      end
 
       latest_plan = relation.order("recording_studio_webhooks_action_plans.created_at DESC").first
-      if latest_plan
-        return "/admin/webhooks/actionsc/#{latest_plan.id}"
-      end
+      return "/admin/webhooks/actionsc/#{latest_plan.id}" if latest_plan
 
       params = { action_name: action.name }
       params[:provider] = action.provider_name if action.provider_name.present?
@@ -483,8 +483,12 @@ module RecordingStudioWebhooks
           column :endpoint,
                  title: "Endpoint",
                  sortable: false,
-               value: ->(event, _context) { AdminWebhooksTrafficDefinition.truncated_endpoint_label(event.endpoint.label) },
-               tooltip: ->(event, _context) { AdminWebhooksTrafficDefinition.endpoint_label_tooltip(event.endpoint.label) }
+                 value: lambda { |event, _context|
+                   AdminWebhooksTrafficDefinition.truncated_endpoint_label(event.endpoint.label)
+                 },
+                 tooltip: lambda { |event, _context|
+                   AdminWebhooksTrafficDefinition.endpoint_label_tooltip(event.endpoint.label)
+                 }
           column :event_type, title: "Event type"
           column :status,
                  display: :badge,
@@ -543,7 +547,7 @@ module RecordingStudioWebhooks
                  value: lambda { |row, context|
                    context.view_context.link_to(
                      row.endpoints_count.to_i,
-                     "/admin/screens/endpoints?#{ { provider: row.provider_name }.to_query }",
+                     "/admin/screens/endpoints?#{{ provider: row.provider_name }.to_query}",
                      data: { turbo_frame: "_top" }
                    )
                  }
@@ -553,7 +557,7 @@ module RecordingStudioWebhooks
                  value: lambda { |row, context|
                    context.view_context.link_to(
                      row.events_count.to_i,
-                     "/admin/screens/webhook_traffic?#{ { provider: row.provider_name }.to_query }",
+                     "/admin/screens/webhook_traffic?#{{ provider: row.provider_name }.to_query}",
                      data: { turbo_frame: "_top" }
                    )
                  }
@@ -564,7 +568,7 @@ module RecordingStudioWebhooks
                    count = AdminWebhooksTrafficDefinition.registered_actions_count_for_provider(row.provider_name)
                    context.view_context.link_to(
                      count,
-                     "/admin/screens/actions?#{ { provider: row.provider_name }.to_query }",
+                     "/admin/screens/actions?#{{ provider: row.provider_name }.to_query}",
                      data: { turbo_frame: "_top" }
                    )
                  }
@@ -573,7 +577,8 @@ module RecordingStudioWebhooks
                  value: lambda { |row, _context|
                    row.last_event_at&.in_time_zone&.strftime("%b %-d, %Y %H:%M") || "No recent events"
                  }
-          default_columns :provider_name, :endpoints_count, :enabled_endpoints_count, :events_count, :actions_count, :last_event_at
+          default_columns :provider_name, :endpoints_count, :enabled_endpoints_count, :events_count, :actions_count,
+                          :last_event_at
           default_sort :events_count, direction: :desc
           paginate per_page: 25, mode: :infinite
         end
@@ -630,8 +635,12 @@ module RecordingStudioWebhooks
                    current_plaintext_token.present? ? "/webhooks/inbound/#{current_plaintext_token}" : "Active token present; full URL unavailable"
                  }
           column :label,
-                 value: ->(endpoint, _context) { AdminWebhooksTrafficDefinition.truncated_endpoint_label(endpoint.label) },
-                 tooltip: ->(endpoint, _context) { AdminWebhooksTrafficDefinition.endpoint_label_tooltip(endpoint.label) }
+                 value: lambda { |endpoint, _context|
+                   AdminWebhooksTrafficDefinition.truncated_endpoint_label(endpoint.label)
+                 },
+                 tooltip: lambda { |endpoint, _context|
+                   AdminWebhooksTrafficDefinition.endpoint_label_tooltip(endpoint.label)
+                 }
           column :provider_name, title: "Provider"
           column :enabled,
                  title: "Status",
@@ -644,9 +653,9 @@ module RecordingStudioWebhooks
                      size: :sm
                    }
                  }
-             action :view,
-               text: "View",
-               url: ->(endpoint) { "/admin/webhooks/endpoints/#{endpoint.id}" }
+          action :view,
+                 text: "View",
+                 url: ->(endpoint) { "/admin/webhooks/endpoints/#{endpoint.id}" }
           action :edit,
                  text: "Edit",
                  url: ->(endpoint) { "/admin/webhooks/endpoints/#{endpoint.id}/edit" }
@@ -746,8 +755,12 @@ module RecordingStudioWebhooks
           column :endpoint,
                  title: "Endpoint",
                  sortable: false,
-                 value: ->(plan, _context) { AdminWebhooksTrafficDefinition.truncated_endpoint_label(plan.inbound_event.endpoint.label) },
-                 tooltip: ->(plan, _context) { AdminWebhooksTrafficDefinition.endpoint_label_tooltip(plan.inbound_event.endpoint.label) }
+                 value: lambda { |plan, _context|
+                   AdminWebhooksTrafficDefinition.truncated_endpoint_label(plan.inbound_event.endpoint.label)
+                 },
+                 tooltip: lambda { |plan, _context|
+                   AdminWebhooksTrafficDefinition.endpoint_label_tooltip(plan.inbound_event.endpoint.label)
+                 }
           action :view,
                  text: "View",
                  url: lambda { |plan|
@@ -859,8 +872,12 @@ module RecordingStudioWebhooks
           column :endpoint,
                  title: "Endpoint",
                  sortable: false,
-                 value: ->(token, _context) { AdminWebhooksTrafficDefinition.truncated_endpoint_label(token.endpoint&.label.to_s) },
-                 tooltip: ->(token, _context) { AdminWebhooksTrafficDefinition.endpoint_label_tooltip(token.endpoint&.label.to_s) }
+                 value: lambda { |token, _context|
+                   AdminWebhooksTrafficDefinition.truncated_endpoint_label(token.endpoint&.label.to_s)
+                 },
+                 tooltip: lambda { |token, _context|
+                   AdminWebhooksTrafficDefinition.endpoint_label_tooltip(token.endpoint&.label.to_s)
+                 }
           column :prefix, title: "Token"
           column :status,
                  display: :badge,
@@ -878,7 +895,7 @@ module RecordingStudioWebhooks
           action :revoke,
                  text: "Revoke",
                  url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}/tokens/#{token.id}" },
-               method: :delete
+                 method: :delete
           default_columns :created_at, :provider, :endpoint, :prefix, :status
           default_sort :created_at, direction: :desc
           paginate per_page: 25, mode: :infinite
@@ -1174,7 +1191,7 @@ module RecordingStudioWebhooks
         link :webhook_traffic,
              text: "View traffic",
              url: ->(context) { context.admin_screen_path("webhook_traffic") }
-           link :tokens,
+        link :tokens,
              text: "Tokens",
              url: ->(context) { context.admin_screen_path("tokens") }
       end
