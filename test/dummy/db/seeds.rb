@@ -246,6 +246,7 @@ begin
     endpoint_tokens = seeded_endpoints.to_h do |endpoint|
       [endpoint, ensure_active_token.call(endpoint, user)]
     end
+    registered_action_names = RecordingStudioWebhooks.configuration.actions.all.map(&:name).map(&:to_s).reject(&:empty?)
 
     failed_target_count = 100
     non_failed_target_count = 300
@@ -298,13 +299,14 @@ begin
       )
       plan = event.action_plans.order(:execution_position).first
       raise "Failed seed event missing action plan: #{event_id}" unless plan
+      raise "Seed event produced unregistered action: #{plan.action_name}" unless registered_action_names.include?(plan.action_name)
 
       apply_plan_state.call(
         plan: plan,
         status: "failed",
         created_at: received_at + 20.seconds,
         attempts: 3 + (index % 2),
-        action_name: "demo.received.failed",
+        action_name: plan.action_name,
         error_code: "action_execution_failed"
       )
     end
@@ -342,6 +344,7 @@ begin
       )
       plan = event.action_plans.order(:execution_position).first
       raise "Non-failed seed event missing action plan: #{event_id}" unless plan
+      raise "Seed event produced unregistered action: #{plan.action_name}" unless registered_action_names.include?(plan.action_name)
 
       status = non_failed_statuses[(index / 9 + index) % non_failed_statuses.length]
       attempts = case status
@@ -356,7 +359,7 @@ begin
         status: status,
         created_at: received_at + 20.seconds,
         attempts: attempts,
-        action_name: "demo.received.non_failed"
+        action_name: plan.action_name
       )
     end
 
