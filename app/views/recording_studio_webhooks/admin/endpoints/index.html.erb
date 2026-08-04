@@ -94,7 +94,6 @@
                     <% popover.content do %>
                       <div class="w-36 text-left">
                         <%= link_to "Provider", "/admin/screens/endpoints?#{ { provider: endpoint.provider_name }.to_query }", class: "block rounded px-3 py-2 text-sm hover:bg-gray-50" %>
-                        <%= link_to "Edit", edit_admin_endpoint_path(endpoint), class: "block rounded px-3 py-2 text-sm hover:bg-gray-50" %>
                       </div>
                     <% end %>
                   <% end %>

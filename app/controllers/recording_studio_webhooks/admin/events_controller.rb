@@ -4,14 +4,14 @@ module RecordingStudioWebhooks
   module Admin
     class EventsController < BaseController
       before_action :load_endpoint, if: :endpoint_scoped?
-      before_action :load_event, only: :show
 
       def index
         @providers = webhook_configuration.providers.all.sort_by(&:name)
         @endpoints = endpoint_scope.current.order(:provider_name, :label)
         @filter = event_filter_params.to_h.symbolize_keys
 
-        scope = InboundEvent.includes(:action_attempts, :endpoint, :endpoint_token).where(endpoint_id: endpoint_scope.select(:id))
+        scope = InboundEvent.includes(:action_attempts, :endpoint,
+                                      :endpoint_token).where(endpoint_id: endpoint_scope.select(:id))
         scope = scope.where(endpoint_id: endpoint_revision_ids(@endpoint)) if endpoint_scoped?
         scope = scope.where(provider_name: @filter[:provider_name]) if @filter[:provider_name].present?
         scope = scope.where(endpoint_id: @filter[:endpoint_id]) if @filter[:endpoint_id].present?
@@ -25,47 +25,17 @@ module RecordingStudioWebhooks
 
         if @filter[:execution_mode].present?
           scope = scope.joins(:action_attempts)
-            .where("recording_studio_webhooks_action_attempts.policy_snapshot ->> 'execution_mode' = ?", @filter[:execution_mode])
-            .distinct
+                       .where("recording_studio_webhooks_action_attempts.policy_snapshot ->> 'execution_mode' = ?", @filter[:execution_mode])
+                       .distinct
         end
 
         @events = scope.order(received_at: :desc).limit(200)
-      end
-
-      def show
-        @events_index_params = event_filter_params.to_h.compact_blank
-        load_neighbor_events
       end
 
       private
 
       def endpoint_scoped?
         params[:endpoint_id].present?
-      end
-
-      def load_event
-        scope = InboundEvent.includes(:action_attempts).where(endpoint_id: endpoint_scope.select(:id))
-        scope = scope.where(endpoint_id: endpoint_revision_ids(@endpoint)) if endpoint_scoped?
-        @event = scope.find(params[:id])
-      rescue ActiveRecord::RecordNotFound
-        raise ActionController::RoutingError, "Not Found"
-      end
-
-      def load_neighbor_events
-        scope = InboundEvent.where(endpoint_id: endpoint_scope.select(:id))
-        scope = scope.where(endpoint_id: endpoint_revision_ids(@endpoint)) if endpoint_scoped?
-
-        newer_condition = [
-          "received_at > :received_at OR (received_at = :received_at AND created_at > :created_at)",
-          { received_at: @event.received_at, created_at: @event.created_at }
-        ]
-        older_condition = [
-          "received_at < :received_at OR (received_at = :received_at AND created_at < :created_at)",
-          { received_at: @event.received_at, created_at: @event.created_at }
-        ]
-
-        @newer_event = scope.where(*newer_condition).order(received_at: :asc, created_at: :asc).first
-        @older_event = scope.where(*older_condition).order(received_at: :desc, created_at: :desc).first
       end
 
       def event_filter_params

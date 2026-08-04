@@ -3,7 +3,7 @@
 module RecordingStudioWebhooks
   module Admin
     class EndpointsController < BaseController
-      before_action :load_endpoint, only: %i[edit update]
+      before_action :load_endpoint, only: :update
       before_action :authorize_admin_webhooks_write!, only: %i[create update]
 
       def index
@@ -24,7 +24,7 @@ module RecordingStudioWebhooks
             @endpoint.issue_token!(actor: current_admin_actor)
           end
 
-          redirect_to edit_admin_endpoint_path(@endpoint), notice: "Endpoint created."
+          redirect_to "/admin/screens/endpoints", notice: "Endpoint created."
         else
           @form_error ||= "Choose a registered provider." unless registered_provider?
           render :new, status: :unprocessable_entity
@@ -33,10 +33,6 @@ module RecordingStudioWebhooks
         render :new, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"
-      end
-
-      def edit
-        @endpoint_url = endpoint_url_for(@endpoint)
       end
 
       def update
@@ -48,15 +44,15 @@ module RecordingStudioWebhooks
             actor: current_admin_actor
           )
           if params[:auto_save].to_s == "1"
-            redirect_to safe_return_to_path(params[:return_to]) || edit_admin_endpoint_path(@endpoint)
+            redirect_to safe_return_to_path(params[:return_to]) || "/admin/screens/endpoints"
           else
-            redirect_to edit_admin_endpoint_path(@endpoint), notice: "Endpoint updated."
+            redirect_to "/admin/screens/endpoints", notice: "Endpoint updated."
           end
         else
-          render :edit, status: :unprocessable_entity
+          redirect_to "/admin/screens/endpoints", alert: @form_error
         end
       rescue ActiveRecord::RecordInvalid
-        render :edit, status: :unprocessable_entity
+        redirect_to "/admin/screens/endpoints", alert: @endpoint.errors.full_messages.to_sentence
       end
 
       private
@@ -129,19 +125,6 @@ module RecordingStudioWebhooks
 
       def cast_boolean(value)
         ActiveModel::Type::Boolean.new.cast(value)
-      end
-
-      def endpoint_url_for(endpoint)
-        now = Time.current
-        current_token = endpoint.endpoint_tokens
-                                .select do |token|
-          token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now)
-        end
-                                .max_by(&:active_at)
-        current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence
-        return nil if current_plaintext_token.blank?
-
-        "#{request.base_url}#{main_app.recording_studio_webhooks_inbound_path(endpoint_token: current_plaintext_token)}"
       end
 
       def safe_return_to_path(value)

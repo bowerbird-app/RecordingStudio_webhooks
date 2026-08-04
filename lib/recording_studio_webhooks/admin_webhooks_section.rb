@@ -112,7 +112,7 @@ module RecordingStudioWebhooks
         events_count = row[:events_30d].to_i
         {
           text: row.fetch(:label, "Unknown endpoint"),
-          href: "/admin/webhooks/endpoints/#{row[:endpoint_id]}/edit",
+          href: "/admin/screens/endpoints",
           trailing: "#{events_count} #{events_count == 1 ? 'event' : 'events'}"
         }
       end
@@ -643,10 +643,27 @@ module RecordingStudioWebhooks
                      size: :sm
                    }
                  }
-          action :view,
-                 text: "View",
-                 url: ->(event) { "/admin/webhooks/endpoints/#{event.endpoint_id}/events/#{event.id}" }
-          default_columns :received_at, :provider_name, :endpoint, :event_type, :status
+          column :actions_count,
+                 title: "Actions",
+                 sortable: false,
+                 value: lambda { |event, context|
+                   count = event.action_attempts.size
+                   event_time = event.received_at || event.created_at || Time.current
+                   week_start = event_time.to_date.beginning_of_week
+                   week_end = event_time.to_date.end_of_week
+                   context.view_context.link_to(
+                     count,
+                     "/admin/screens/action_attempts?#{{
+                       event_id: event.id,
+                       date_range_preset: "custom",
+                       start_date: week_start.iso8601,
+                       end_date: week_end.iso8601,
+                       group_by: "week"
+                     }.to_query}",
+                     data: { turbo_frame: "_top" }
+                   )
+                 }
+          default_columns :received_at, :provider_name, :endpoint, :event_type, :status, :actions_count
           default_sort :received_at, direction: :desc
           paginate per_page: 25, mode: :infinite
         end
@@ -809,9 +826,6 @@ module RecordingStudioWebhooks
                  value: lambda { |endpoint, context|
                    AdminWebhooksTrafficDefinition.endpoint_status_switch(endpoint, context)
                  }
-          action :edit,
-                 text: "Edit",
-                 url: ->(endpoint) { "/admin/webhooks/endpoints/#{endpoint.id}/edit" }
           action :copy_url,
                  text: "Copy URL",
                  url: lambda { |endpoint, context|
@@ -881,6 +895,13 @@ module RecordingStudioWebhooks
                options: -> { AdminWebhooksTrafficDefinition.action_status_filter_values },
                apply: lambda { |relation, value, _context|
                  relation.where(recording_studio_webhooks_action_attempts: { status: value })
+               }
+        filter :event_id,
+               apply: lambda { |relation, value, _context|
+                 inbound_event_id = value.to_s.strip
+                 next relation if inbound_event_id.empty?
+
+                 relation.where(recording_studio_webhooks_action_attempts: { inbound_event_id: inbound_event_id })
                }
         filter_presentation :modal, inline_count: 2
 
@@ -1062,7 +1083,7 @@ module RecordingStudioWebhooks
                  }
           action :view_endpoint,
                  text: "View endpoint",
-                 url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}/edit" }
+               url: ->(_token) { "/admin/screens/endpoints" }
           action :revoke,
                  text: "Revoke",
                  url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}/tokens/#{token.id}" },
