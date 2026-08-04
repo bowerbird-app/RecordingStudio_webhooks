@@ -385,7 +385,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     get "/admin/screens/providers", params: { provider: "demo" }
     assert_response :success
-    assert_includes response.body, "Provider performance"
+    assert_includes response.body, "Webhook providers that have been set in config."
     assert_includes response.body, "Provider"
 
     get "/admin/screens/actions", params: { provider: "demo" }
@@ -397,9 +397,8 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Registered actions"
     assert_includes response.body, "View"
-    has_direct_action_plan_link = response.body.include?("/admin/webhooks/actionsc/")
-    has_fallback_screen_link = response.body.include?("/admin/screens/action_attempts?")
-    assert has_direct_action_plan_link || has_fallback_screen_link
+    assert_includes response.body, "/admin/screens/action_attempts?"
+    refute_includes response.body, "/admin/webhooks/actionsc/"
   end
 
   test "authorized administrators can inspect providers screen with filters and table" do
@@ -413,14 +412,17 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Providers"
     assert_includes response.body, "Endpoint"
-    assert_includes response.body, "Provider performance"
+    assert_includes response.body, "Webhook providers that have been set in config."
     assert_includes response.body, "Latest event"
     assert_includes response.body, "Actions"
+    assert_includes response.body, "Enabled endpoints"
+    assert_includes response.body, "Events"
+    refute_includes response.body, "Inbound events"
 
     get "/admin/screens/providers/table"
     assert_response :success
     assert_includes response.body, "Provider"
-    assert_includes response.body, 'href="/admin/screens/endpoints?provider=demo"'
+    assert_includes response.body, 'href="/admin/screens/endpoints?provider=demo&amp;status=enabled"'
     assert_includes response.body, 'href="/admin/screens/webhook_traffic?provider=demo"'
     assert_includes response.body, 'href="/admin/screens/actions?provider=demo"'
     assert_includes response.body, 'data-turbo-frame="_top"'

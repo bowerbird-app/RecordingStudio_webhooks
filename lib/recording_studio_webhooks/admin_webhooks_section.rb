@@ -202,20 +202,39 @@ module RecordingStudioWebhooks
       root_recording = context.root_recording
       return Endpoint.none unless root_recording
 
+      quoted_root_id = ActiveRecord::Base.connection.quote(root_recording.id)
+
       Endpoint.current
               .joins(:recording_studio_recording)
               .where(recording_studio_recordings: { root_recording_id: root_recording.id })
-              .left_joins(inbound_events: :action_plans)
               .group("recording_studio_webhooks_endpoints.provider_name")
               .select(
                 <<~SQL.squish
                   recording_studio_webhooks_endpoints.provider_name AS provider_name,
-                  COUNT(DISTINCT recording_studio_webhooks_inbound_events.id) AS events_count,
                   COUNT(DISTINCT recording_studio_webhooks_endpoints.id) AS endpoints_count,
                   COUNT(DISTINCT CASE
                     WHEN recording_studio_webhooks_endpoints.enabled THEN recording_studio_webhooks_endpoints.id
                   END) AS enabled_endpoints_count,
-                  MAX(recording_studio_webhooks_inbound_events.received_at) AS last_event_at
+                  (
+                    SELECT COUNT(*)
+                    FROM recording_studio_webhooks_inbound_events provider_events
+                    INNER JOIN recording_studio_webhooks_endpoints provider_event_endpoints
+                      ON provider_event_endpoints.id = provider_events.endpoint_id
+                    INNER JOIN recording_studio_recordings provider_event_recordings
+                      ON provider_event_recordings.id = provider_event_endpoints.recording_studio_recording_id
+                    WHERE provider_event_recordings.root_recording_id = #{quoted_root_id}
+                      AND provider_events.provider_name = recording_studio_webhooks_endpoints.provider_name
+                  ) AS events_count,
+                  (
+                    SELECT MAX(provider_events.received_at)
+                    FROM recording_studio_webhooks_inbound_events provider_events
+                    INNER JOIN recording_studio_webhooks_endpoints provider_event_endpoints
+                      ON provider_event_endpoints.id = provider_events.endpoint_id
+                    INNER JOIN recording_studio_recordings provider_event_recordings
+                      ON provider_event_recordings.id = provider_event_endpoints.recording_studio_recording_id
+                    WHERE provider_event_recordings.root_recording_id = #{quoted_root_id}
+                      AND provider_events.provider_name = recording_studio_webhooks_endpoints.provider_name
+                  ) AS last_event_at
                 SQL
               )
     end
@@ -257,23 +276,6 @@ module RecordingStudioWebhooks
     end
 
     def action_row_view_url(action, context)
-      relation = ActionPlan.joins(:inbound_event)
-      root_recording = context&.root_recording
-      if root_recording
-        endpoint_ids = Endpoint.joins(:recording_studio_recording)
-                               .where(recording_studio_recordings: { root_recording_id: root_recording.id })
-                               .select(:id)
-        relation = relation.where(recording_studio_webhooks_inbound_events: { endpoint_id: endpoint_ids })
-      end
-
-      relation = relation.where(recording_studio_webhooks_action_plans: { action_name: action.name })
-      if action.provider_name.present?
-        relation = relation.where(recording_studio_webhooks_inbound_events: { provider_name: action.provider_name })
-      end
-
-      latest_plan = relation.order("recording_studio_webhooks_action_plans.created_at DESC").first
-      return "/admin/webhooks/actionsc/#{latest_plan.id}" if latest_plan
-
       params = { action_name: action.name }
       params[:provider] = action.provider_name if action.provider_name.present?
       "/admin/screens/action_attempts?#{params.to_query}"
@@ -402,30 +404,28 @@ module RecordingStudioWebhooks
       counts = endpoint_activity_counts_30d(endpoint)
       max_value = [counts.max.to_i, 1].max
       total_events = counts.sum
-      bar_count = counts.length
       width = 96.0
       height = 20.0
-      bar_gap = 1.0
-      bar_width = ((width - ((bar_count - 1) * bar_gap)) / bar_count).round(3)
+      point_count = counts.length
+      x_step = point_count > 1 ? (width / (point_count - 1)) : width
 
-      bars = counts.each_with_index.map do |count, index|
-        bar_height = ((count.to_f / max_value) * height).round(3)
-        x = (index * (bar_width + bar_gap)).round(3)
-        y = (height - bar_height).round(3)
+      points = counts.each_with_index.map do |count, index|
+        x = (index * x_step).round(3)
+        y = (height - ((count.to_f / max_value) * height)).round(3)
+        "#{x},#{y}"
+      end.join(" ")
 
-        view.tag.rect(
-          x: x,
-          y: y,
-          width: bar_width,
-          height: bar_height,
-          rx: 0.8,
-          ry: 0.8,
-          fill: "currentColor"
-        )
-      end
+      path = view.tag.polyline(
+        points: points,
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": 1.5,
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round"
+      )
 
       svg = view.tag.svg(
-        view.safe_join(bars),
+        path,
         width: width,
         height: height,
         viewBox: "0 0 #{width.to_i} #{height.to_i}",
@@ -663,7 +663,7 @@ module RecordingStudioWebhooks
       screen_class = Class.new(::RecordingStudioAdmin::Screen) do
         key "providers"
         title "Providers"
-        subtitle "Provider performance across webhook endpoints and inbound traffic."
+        subtitle "Webhook providers that have been set in config."
         blast_radius :root
 
         query { |context| AdminWebhooksTrafficDefinition.provider_screen_relation(context) }
@@ -675,7 +675,8 @@ module RecordingStudioWebhooks
         filter_presentation :inline
 
         table do
-          title "Provider performance"
+          title ""
+          hide_count
           filter :search,
                  apply: lambda { |relation, value, _context|
                    next relation unless value.present?
@@ -686,18 +687,17 @@ module RecordingStudioWebhooks
                    )
                  }
           column :provider_name, title: "Provider"
-          column :endpoints_count,
-                 title: "Endpoints",
+          column :enabled_endpoints_count,
+                 title: "Enabled endpoints",
                  value: lambda { |row, context|
                    context.view_context.link_to(
-                     row.endpoints_count.to_i,
-                     "/admin/screens/endpoints?#{{ provider: row.provider_name }.to_query}",
+                     row.enabled_endpoints_count.to_i,
+                     "/admin/screens/endpoints?#{{ provider: row.provider_name, status: "enabled" }.to_query}",
                      data: { turbo_frame: "_top" }
                    )
                  }
-          column :enabled_endpoints_count, title: "Enabled endpoints"
           column :events_count,
-                 title: "Inbound events",
+                 title: "Events",
                  value: lambda { |row, context|
                    context.view_context.link_to(
                      row.events_count.to_i,
@@ -719,9 +719,9 @@ module RecordingStudioWebhooks
           column :last_event_at,
                  title: "Latest event",
                  value: lambda { |row, _context|
-                   row.last_event_at&.in_time_zone&.strftime("%b %-d, %Y %H:%M") || "No recent events"
+                   row.last_event_at.presence || "No recent events"
                  }
-          default_columns :provider_name, :endpoints_count, :enabled_endpoints_count, :events_count, :actions_count,
+          default_columns :provider_name, :enabled_endpoints_count, :events_count, :actions_count,
                           :last_event_at
           default_sort :events_count, direction: :desc
           paginate per_page: 25, mode: :infinite
