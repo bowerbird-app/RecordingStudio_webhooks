@@ -328,8 +328,8 @@ module RecordingStudioWebhooks
                   end
 
       view.form_with(url: "/admin/webhooks/endpoints/#{endpoint.id}", method: :patch,
-             data: { turbo_action: "replace" },
-             class: "inline-flex items-center") do
+                     data: { turbo_action: "replace" },
+                     class: "inline-flex items-center") do
         view.safe_join([
                          view.hidden_field_tag(:auto_save, "1"),
                          view.hidden_field_tag(:return_to, return_to),
@@ -392,7 +392,7 @@ module RecordingStudioWebhooks
     end
 
     def endpoint_activity_chart_link(endpoint)
-      "/admin/screens/webhook_traffic?#{ { endpoint: endpoint.label }.to_query }"
+      "/admin/screens/webhook_traffic?#{{ endpoint: endpoint.label }.to_query}"
     end
 
     def endpoint_activity_mini_chart(endpoint, context)
@@ -805,25 +805,31 @@ module RecordingStudioWebhooks
                  }
           column :enabled,
                  title: "Status",
-               sortable: false,
-               value: ->(endpoint, context) { AdminWebhooksTrafficDefinition.endpoint_status_switch(endpoint, context) }
+                 sortable: false,
+                 value: lambda { |endpoint, context|
+                   AdminWebhooksTrafficDefinition.endpoint_status_switch(endpoint, context)
+                 }
           action :edit,
                  text: "Edit",
                  url: ->(endpoint) { "/admin/webhooks/endpoints/#{endpoint.id}/edit" }
-             action :copy_url,
-               text: "Copy URL",
-                   url: lambda { |endpoint, context|
-                     copy_value = AdminWebhooksTrafficDefinition.endpoint_inbound_url(endpoint, context)
-                     next "#" if copy_value.blank?
+          action :copy_url,
+                 text: "Copy URL",
+                 url: lambda { |endpoint, context|
+                   copy_value = AdminWebhooksTrafficDefinition.endpoint_inbound_url(endpoint, context)
+                   next "#" if copy_value.blank?
 
-                     current_path = context.view_context&.request&.fullpath.to_s
-                     current_path = "/admin/screens/endpoints" if current_path.blank?
-                     "#{current_path}#copy-url=#{CGI.escape(copy_value)}"
-                   },
-                   visible_if: ->(endpoint, context) { AdminWebhooksTrafficDefinition.endpoint_inbound_url(endpoint, context).present? }
-             action :tokens,
-               text: "Tokens",
-               url: ->(endpoint) { "/admin/screens/tokens?#{ { provider: endpoint.provider_name, endpoint: endpoint.label }.to_query }" }
+                   current_path = context.view_context&.request&.fullpath.to_s
+                   current_path = "/admin/screens/endpoints" if current_path.blank?
+                   "#{current_path}#copy-url=#{CGI.escape(copy_value)}"
+                 },
+                 visible_if: lambda { |endpoint, context|
+                   AdminWebhooksTrafficDefinition.endpoint_inbound_url(endpoint, context).present?
+                 }
+          action :tokens,
+                 text: "Tokens",
+                 url: lambda { |endpoint|
+                   "/admin/screens/tokens?#{{ provider: endpoint.provider_name, endpoint: endpoint.label }.to_query}"
+                 }
           default_columns :label, :endpoint_path, :provider_name, :activity, :enabled
           default_sort :created_at, direction: :desc
           paginate per_page: 25, mode: :infinite
@@ -1056,7 +1062,7 @@ module RecordingStudioWebhooks
                  }
           action :view_endpoint,
                  text: "View endpoint",
-               url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}/edit" }
+                 url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}/edit" }
           action :revoke,
                  text: "Revoke",
                  url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}/tokens/#{token.id}" },
