@@ -439,6 +439,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     post inbound_path(token), params: JSON.generate(id: "evt_traffic_1", type: "demo.received"), headers: intake_headers
     assert_response :accepted
     assert_equal 1, @endpoint.inbound_events.where(provider_event_id: "evt_traffic_1").count
+    traffic_event = @endpoint.inbound_events.find_by!(provider_event_id: "evt_traffic_1")
 
     sign_in @user
     get "/admin/sections/admin_webhooks"
@@ -454,6 +455,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Webhook traffic"
     assert_includes response.body, "Date range"
     assert_includes response.body, "Last 4 weeks"
+    assert_includes response.body, 'data-controller="recording-studio-webhooks--date-range-filter"'
     assert_includes response.body, "name=\"start_date\" value=\"#{(Date.current - 27.days).iso8601}\""
     assert_includes response.body, "name=\"end_date\" value=\"#{Date.current.iso8601}\""
     assert_includes response.body, "Group by"
@@ -467,6 +469,30 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     get "/admin/screens/webhook_traffic/table", params: { provider: "demo", endpoint: @endpoint.label }
     assert_response :success
     assert_includes response.body, "Inbound events"
+    week_start = traffic_event.received_at.to_date.beginning_of_week.iso8601
+    week_end = traffic_event.received_at.to_date.end_of_week.iso8601
+    assert_includes response.body, "/admin/screens/action_attempts?"
+    assert_includes response.body, "event_id=#{traffic_event.id}"
+    assert_includes response.body, "date_range_preset=custom"
+    assert_includes response.body, "start_date=#{week_start}"
+    assert_includes response.body, "end_date=#{week_end}"
+    assert_includes response.body, "group_by=week"
+  end
+
+  test "explicit week date range is preserved even when preset param is stale" do
+    sign_in @user
+    period = RecordingStudioAdmin::Period.from_preset_key(:this_week)
+
+    get "/admin/screens/webhook_traffic", params: {
+      date_range_preset: "last_4_weeks",
+      start_date: period.start_date.iso8601,
+      end_date: period.end_date.iso8601
+    }
+
+    assert_response :success
+    assert_includes response.body, "name=\"start_date\" value=\"#{period.start_date.iso8601}\""
+    assert_includes response.body, "name=\"end_date\" value=\"#{period.end_date.iso8601}\""
+    refute_includes response.body, "name=\"start_date\" value=\"#{(period.end_date - 27.days).iso8601}\""
   end
 
   test "authorized administrators can inspect action attempts screen with chart and table" do
@@ -600,8 +626,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :redirect
-    assert_includes response.location, "/admin/webhooks/endpoints/"
-    assert_includes response.location, "/edit"
+    assert_redirected_to "/admin/screens/endpoints"
 
     current_endpoint = RecordingStudioWebhooks::Endpoint.current.find_by!(
       provider_name: original_endpoint.provider_name,
@@ -622,32 +647,12 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_redirected_to "/admin/screens/endpoints?provider=demo"
   end
 
-  test "stale endpoint edit URL resolves to current endpoint status" do
+  test "endpoint edit route is not available" do
     sign_in @user
 
-    stale_endpoint = @endpoint
-    disabled_endpoint = RecordingStudioWebhooks::EndpointLifecycle.update!(
-      endpoint: stale_endpoint,
-      attributes: { enabled: false },
-      actor: @user
-    )
-    RecordingStudioWebhooks::EndpointLifecycle.update!(
-      endpoint: disabled_endpoint,
-      attributes: { enabled: true },
-      actor: @user
-    )
-    current_endpoint = RecordingStudioWebhooks::Endpoint.current.find_by!(
-      provider_name: stale_endpoint.provider_name,
-      recording_studio_recording_id: stale_endpoint.recording_studio_recording_id
-    )
+    get "/admin/webhooks/endpoints/#{@endpoint.id}/edit"
 
-    get "/admin/webhooks/endpoints/#{stale_endpoint.id}/edit"
-
-    assert_response :success
-    assert_includes response.body, "Active webhook URL"
-    assert_includes response.body, "name=\"endpoint[enabled]\""
-    assert_includes response.body, "action=\"/admin/webhooks/endpoints/#{current_endpoint.id}\""
-    refute_includes response.body, "action=\"/admin/webhooks/endpoints/#{stale_endpoint.id}\""
+    assert_response :not_found
   end
 
   test "endpoint show route is not available" do
@@ -666,7 +671,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "endpoint event inspect works after endpoint is revised" do
+  test "endpoint event show route is not available" do
     sign_in @user
     token = @endpoint.issue_token!.plaintext_token
 
@@ -682,8 +687,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
     get "/admin/webhooks/endpoints/#{current_endpoint.id}/events/#{event.id}"
 
-    assert_response :success
-    assert_includes response.body, "demo.received"
+    assert_response :not_found
   end
 
   test "tokens screen excludes revoked token snapshots" do
@@ -787,7 +791,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "value=\"#{@endpoint.id}\""
   end
 
-  test "creating an endpoint auto-issues a token and redirects to endpoint edit" do
+  test "creating an endpoint auto-issues a token and redirects to endpoints screen" do
     sign_in @user
     label = "Auto token endpoint"
     other_workspace = Workspace.create!(name: "Auto Token Workspace #{SecureRandom.hex(4)}")
@@ -806,11 +810,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :redirect
-    assert_match %r{/admin/webhooks/endpoints/.+/edit}, response.location
-
-    follow_redirect!
-    assert_response :success
-    assert_includes response.body, "Active webhook URL"
+    assert_redirected_to "/admin/screens/endpoints"
     endpoint = RecordingStudioWebhooks::Endpoint.current.find_by!(provider_name: "demo", label: label)
 
     assert_equal label, endpoint.label
