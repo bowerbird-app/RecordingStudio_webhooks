@@ -327,8 +327,9 @@ module RecordingStudioWebhooks
                     "/admin/screens/endpoints"
                   end
 
-      view.form_with(url: "/admin/webhooks/endpoints/#{endpoint.id}", method: :patch, local: true,
-                     class: "inline-flex items-center") do
+      view.form_with(url: "/admin/webhooks/endpoints/#{endpoint.id}", method: :patch,
+             data: { turbo_action: "replace" },
+             class: "inline-flex items-center") do
         view.safe_join([
                          view.hidden_field_tag(:auto_save, "1"),
                          view.hidden_field_tag(:return_to, return_to),
@@ -377,6 +378,74 @@ module RecordingStudioWebhooks
       return nil if base_url.empty?
 
       "#{base_url}#{inbound_path}"
+    end
+
+    def endpoint_activity_counts_30d(endpoint, reference_time = Time.current)
+      end_date = reference_time.to_date
+      start_date = end_date - 29.days
+      counts_by_date = InboundEvent
+                       .where(endpoint_id: endpoint.id, received_at: start_date.beginning_of_day..end_date.end_of_day)
+                       .group(Arel.sql("DATE(received_at)"))
+                       .count
+
+      (start_date..end_date).map { |date| counts_by_date.fetch(date, 0).to_i }
+    end
+
+    def endpoint_activity_chart_link(endpoint)
+      "/admin/screens/webhook_traffic?#{ { endpoint: endpoint.label }.to_query }"
+    end
+
+    def endpoint_activity_mini_chart(endpoint, context)
+      view = context.view_context
+      return "-" unless view
+
+      counts = endpoint_activity_counts_30d(endpoint)
+      max_value = [counts.max.to_i, 1].max
+      total_events = counts.sum
+      bar_count = counts.length
+      width = 96.0
+      height = 20.0
+      bar_gap = 1.0
+      bar_width = ((width - ((bar_count - 1) * bar_gap)) / bar_count).round(3)
+
+      bars = counts.each_with_index.map do |count, index|
+        bar_height = ((count.to_f / max_value) * height).round(3)
+        x = (index * (bar_width + bar_gap)).round(3)
+        y = (height - bar_height).round(3)
+
+        view.tag.rect(
+          x: x,
+          y: y,
+          width: bar_width,
+          height: bar_height,
+          rx: 0.8,
+          ry: 0.8,
+          fill: "currentColor"
+        )
+      end
+
+      svg = view.tag.svg(
+        view.safe_join(bars),
+        width: width,
+        height: height,
+        viewBox: "0 0 #{width.to_i} #{height.to_i}",
+        xmlns: "http://www.w3.org/2000/svg",
+        class: "text-[var(--surface-muted-content-color)]"
+      )
+
+      content = view.tag.span(
+        view.safe_join([
+                         svg,
+                         view.tag.span("#{total_events} events in last 30 days", class: "sr-only")
+                       ]),
+        title: "#{total_events} events in last 30 days"
+      )
+
+      view.link_to(
+        endpoint_activity_chart_link(endpoint),
+        data: { turbo_frame: "_top" },
+        class: "inline-flex items-center"
+      ) { content }
     end
 
     def endpoint_token_state(token)
@@ -728,6 +797,12 @@ module RecordingStudioWebhooks
                    AdminWebhooksTrafficDefinition.endpoint_inbound_path(endpoint)
                  }
           column :provider_name, title: "Provider"
+          column :activity,
+                 title: "Activity",
+                 sortable: false,
+                 value: lambda { |endpoint, context|
+                   AdminWebhooksTrafficDefinition.endpoint_activity_mini_chart(endpoint, context)
+                 }
           column :enabled,
                  title: "Status",
                sortable: false,
@@ -749,7 +824,7 @@ module RecordingStudioWebhooks
              action :tokens,
                text: "Tokens",
                url: ->(endpoint) { "/admin/screens/tokens?#{ { provider: endpoint.provider_name, endpoint: endpoint.label }.to_query }" }
-          default_columns :label, :endpoint_path, :provider_name, :enabled
+          default_columns :label, :endpoint_path, :provider_name, :activity, :enabled
           default_sort :created_at, direction: :desc
           paginate per_page: 25, mode: :infinite
         end

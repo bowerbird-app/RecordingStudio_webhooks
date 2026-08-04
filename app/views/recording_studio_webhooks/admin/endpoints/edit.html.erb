@@ -8,7 +8,7 @@
   variant: :h1
 ) %>
 
-<%= form_with model: @endpoint, url: admin_endpoint_path(@endpoint), class: "space-y-3" do |form| %>
+<%= form_with model: @endpoint, url: admin_endpoint_path(@endpoint), class: "space-y-3", data: { turbo_action: "replace" } do |form| %>
   <% if @form_error.present? || @endpoint.errors.any? %>
     <%= render FlatPack::Alert::Component.new(
       description: @form_error.presence || @endpoint.errors.full_messages.to_sentence,

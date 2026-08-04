@@ -565,11 +565,16 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     get "/admin/screens/endpoints/table", params: { provider: @endpoint.provider_name }
     assert_response :success
     assert_includes response.body, "Endpoints"
+    assert_includes response.body, "Activity"
     assert_match %r{/webhooks/inbound/rswh_[A-Za-z0-9_-]+}, response.body
     refute_includes response.body, "/webhooks/inbound/rswh_..."
     escaped_provider = Regexp.escape(CGI.escape(@endpoint.provider_name))
     assert_match(
       %r{href="/admin/screens/tokens\?endpoint=[^"&]+(?:&amp;|&)provider=#{escaped_provider}"},
+      response.body
+    )
+    assert_match(
+      %r{href="/admin/screens/webhook_traffic\?endpoint=[^"&]+"},
       response.body
     )
     assert_match %r{href="/admin/screens/endpoints(?:/table)?(?:\?[^\"]*)?#copy-url=https?%3A%2F%2F[^\"]+"}, response.body
