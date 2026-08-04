@@ -31,7 +31,7 @@ module RecordingStudioWebhooks
 
       def destroy
         @endpoint.endpoint_tokens.find(params[:id]).revoke!(actor: current_admin_actor)
-        redirect_to admin_endpoint_tokens_path(@endpoint), notice: "Token revoked."
+        redirect_to "/admin/screens/tokens", notice: "Token revoked."
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"
       end

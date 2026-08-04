@@ -872,6 +872,13 @@ module RecordingStudioWebhooks
                      size: :sm
                    }
                  }
+          action :view_endpoint,
+                 text: "View endpoint",
+                 url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}" }
+          action :revoke,
+                 text: "Revoke",
+                 url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}/tokens/#{token.id}" },
+               method: :delete
           default_columns :created_at, :provider, :endpoint, :prefix, :status
           default_sort :created_at, direction: :desc
           paginate per_page: 25, mode: :infinite

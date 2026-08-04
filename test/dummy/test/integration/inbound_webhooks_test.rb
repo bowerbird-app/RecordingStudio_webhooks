@@ -617,18 +617,28 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "demo.received"
   end
 
-  test "token history shows only latest token snapshot rows" do
+  test "tokens screen excludes revoked token snapshots" do
     sign_in @user
 
     first_issuance = @endpoint.issue_token!
     first_prefix = first_issuance.endpoint_token.prefix
     @endpoint.rotate_token!(actor: @user)
 
-    get "/admin/webhooks/endpoints/#{@endpoint.id}/tokens"
+    get "/admin/screens/tokens", params: { provider: @endpoint.provider_name, endpoint: @endpoint.label }
 
     assert_response :success
-    assert_equal 1, response.body.scan(first_prefix).length
-    assert_match(/<td class=\"p-2\">[A-Z][a-z]{2} \d{2} \d{4}<\/td>/, response.body)
+    assert_includes response.body, "Recent tokens"
+    refute_includes response.body, first_prefix
+  end
+
+  test "revoking a token redirects back to tokens screen" do
+    sign_in @user
+    issuance = @endpoint.issue_token!
+
+    delete "/admin/webhooks/endpoints/#{@endpoint.id}/tokens/#{issuance.endpoint_token.id}"
+
+    assert_redirected_to "/admin/screens/tokens"
+    assert_equal "Token revoked.", flash[:notice]
   end
 
   test "authorized administrators can inspect tokens screen with provider and endpoint filters" do
@@ -650,6 +660,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Recent tokens"
     assert_includes response.body, "Token"
     assert_includes response.body, "Status"
+    assert_includes response.body, "Actions"
   end
 
   test "authorized administrators can issue a token from global token page and return to tokens screen" do
