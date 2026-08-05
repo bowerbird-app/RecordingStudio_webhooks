@@ -72,7 +72,8 @@ seed_inbound_event = lambda do |endpoint:, token:, event_id:, event_type:, paylo
     if received_at
       RecordingStudioWebhooks::InboundEvent.where(id: existing.id).update_all(
         received_at: received_at,
-        updated_at: Time.current
+        created_at: received_at,
+        updated_at: received_at
       )
       existing.reload
     end
@@ -101,7 +102,8 @@ seed_inbound_event = lambda do |endpoint:, token:, event_id:, event_type:, paylo
   if received_at && event
     RecordingStudioWebhooks::InboundEvent.where(id: event.id).update_all(
       received_at: received_at,
-      updated_at: Time.current
+      created_at: received_at,
+      updated_at: received_at
     )
     event.reload
   end
@@ -109,11 +111,8 @@ seed_inbound_event = lambda do |endpoint:, token:, event_id:, event_type:, paylo
   event
 end
 
-evenly_distributed_time = lambda do |index:, total:, range_start:, range_span_seconds:|
-  return range_start if total <= 1
-
-  offset_seconds = (range_span_seconds * index.to_f / (total - 1)).round
-  range_start + offset_seconds.seconds
+random_time_within = lambda do |range_start:, range_end:|
+  range_start + rand((range_end - range_start).to_i + 1).seconds
 end
 
 apply_attempt_state = lambda do |attempt:, status:, created_at:, attempts:, action_name:, error_code: nil|
@@ -246,14 +245,25 @@ begin
     endpoint_tokens = seeded_endpoints.to_h do |endpoint|
       [endpoint, ensure_active_token.call(endpoint, user)]
     end
-    registered_action_names = RecordingStudioWebhooks.configuration.actions.all.map(&:name).map(&:to_s).reject(&:empty?)
+    registered_actions = RecordingStudioWebhooks.configuration.actions.all
+    seed_targets = seeded_endpoints.flat_map do |endpoint|
+      registered_actions.filter_map do |action|
+        next unless action.provider_name == endpoint.provider_name
+
+        {
+          endpoint: endpoint,
+          action_name: action.name.to_s,
+          event_type: action.event_pattern.value
+        }
+      end
+    end
+    raise "No compatible endpoint/action targets are registered" if seed_targets.empty?
 
     failed_target_count = 100
     non_failed_target_count = 300
     total_monthly_seeds = failed_target_count + non_failed_target_count
-    range_start = Time.current.utc.prev_month.beginning_of_month
-    range_end = Time.current.utc.end_of_day
-    range_span_seconds = [(range_end - range_start).to_i, 1].max
+    range_end = Time.current.utc - 1.hour
+    range_start = Time.current.utc - 30.days
 
     monthly_event_scope = RecordingStudioWebhooks::InboundEvent
       .joins(endpoint: :recording_studio_recording)
@@ -265,21 +275,18 @@ begin
       RecordingStudioWebhooks::InboundEvent.where(id: monthly_event_ids).delete_all
     end
 
-    demo_endpoints = seeded_endpoints.select { |endpoint| endpoint.provider_name == "demo" }
-    demo_endpoints = seeded_endpoints if demo_endpoints.empty?
-
     failed_target_count.times do |index|
-      endpoint = demo_endpoints[index % demo_endpoints.length]
-      received_at = evenly_distributed_time.call(
-        index: index,
-        total: failed_target_count,
+      target = seed_targets[index % seed_targets.length]
+      endpoint = target.fetch(:endpoint)
+      event_type = target.fetch(:event_type)
+      received_at = random_time_within.call(
         range_start: range_start,
-        range_span_seconds: range_span_seconds
+        range_end: range_end
       )
       event_id = format("seed_monthly_failed_%03d", index + 1)
       payload = {
         id: event_id,
-        type: "demo.received",
+        type: event_type,
         data: {
           object: {
             title: format("Seed failed event %03d", index + 1),
@@ -292,14 +299,13 @@ begin
         endpoint: endpoint,
         token: endpoint_tokens.fetch(endpoint),
         event_id: event_id,
-        event_type: "demo.received",
+        event_type: event_type,
         payload: payload,
         request_id: format("seed-monthly-failed-%03d", index + 1),
         received_at: received_at
       )
-      attempt = event.action_attempts.order(:execution_position).first
+      attempt = event.action_attempts.find_by(action_name: target.fetch(:action_name))
       raise "Failed seed event missing action attempt: #{event_id}" unless attempt
-      raise "Seed event produced unregistered action: #{attempt.action_name}" unless registered_action_names.include?(attempt.action_name)
 
       apply_attempt_state.call(
         attempt: attempt,
@@ -313,15 +319,14 @@ begin
 
     non_failed_statuses = %w[succeeded retrying queued running pending skipped cancelled].freeze
     non_failed_target_count.times do |index|
-      endpoint = demo_endpoints[(index + 1) % demo_endpoints.length]
-      received_at = evenly_distributed_time.call(
-        index: index,
-        total: non_failed_target_count,
+      target = seed_targets[(index + 1) % seed_targets.length]
+      endpoint = target.fetch(:endpoint)
+      event_type = target.fetch(:event_type)
+      received_at = random_time_within.call(
         range_start: range_start,
-        range_span_seconds: range_span_seconds
+        range_end: range_end
       )
       event_id = format("seed_monthly_nonfailed_%03d", index + 1)
-      event_type = "demo.received"
       payload = {
         id: event_id,
         type: event_type,
@@ -342,9 +347,8 @@ begin
         request_id: format("seed-monthly-nonfailed-%03d", index + 1),
         received_at: received_at
       )
-      attempt = event.action_attempts.order(:execution_position).first
+      attempt = event.action_attempts.find_by(action_name: target.fetch(:action_name))
       raise "Non-failed seed event missing action attempt: #{event_id}" unless attempt
-      raise "Seed event produced unregistered action: #{attempt.action_name}" unless registered_action_names.include?(attempt.action_name)
 
       status = non_failed_statuses[(index / 9 + index) % non_failed_statuses.length]
       attempts = case status

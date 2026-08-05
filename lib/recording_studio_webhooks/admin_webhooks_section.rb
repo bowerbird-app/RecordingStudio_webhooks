@@ -281,6 +281,29 @@ module RecordingStudioWebhooks
       "/admin/screens/action_attempts?#{params.to_query}"
     end
 
+    def action_activity_counts_30d(action, context, reference_time = Time.current)
+      end_date = reference_time.to_date
+      start_date = end_date - 29.days
+      counts_by_date = action_attempt_relation(context)
+                       .where(action_name: action.name, created_at: start_date.beginning_of_day..end_date.end_of_day)
+                       .group(Arel.sql("DATE(recording_studio_webhooks_action_attempts.created_at)"))
+                       .count
+
+      (start_date..end_date).map { |date| counts_by_date.fetch(date, 0).to_i }
+    end
+
+    def action_activity_chart(action, context)
+      counts = action_activity_counts_30d(action, context)
+      description = "#{counts.sum} attempts in last 30 days"
+
+      activity_mini_chart(
+        counts: counts,
+        description: description,
+        url: action_row_view_url(action, context),
+        context: context
+      )
+    end
+
     def action_status_filter_values
       ActionAttempt::STATUSES
     end
@@ -397,55 +420,59 @@ module RecordingStudioWebhooks
       "/admin/screens/webhook_traffic?#{{ endpoint: endpoint.label }.to_query}"
     end
 
-    def endpoint_activity_mini_chart(endpoint, context)
+    def activity_mini_chart(counts:, description:, url:, context:)
       view = context.view_context
       return "-" unless view
 
-      counts = endpoint_activity_counts_30d(endpoint)
-      max_value = [counts.max.to_i, 1].max
-      total_events = counts.sum
-      width = 96.0
-      height = 20.0
-      point_count = counts.length
-      x_step = point_count > 1 ? (width / (point_count - 1)) : width
-
-      points = counts.each_with_index.map do |count, index|
-        x = (index * x_step).round(3)
-        y = (height - ((count.to_f / max_value) * height)).round(3)
-        "#{x},#{y}"
-      end.join(" ")
-
-      path = view.tag.polyline(
-        points: points,
-        fill: "none",
-        stroke: "currentColor",
-        "stroke-width": 1.5,
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round"
-      )
-
-      svg = view.tag.svg(
-        path,
-        width: width,
-        height: height,
-        viewBox: "0 0 #{width.to_i} #{height.to_i}",
-        xmlns: "http://www.w3.org/2000/svg",
-        class: "text-[var(--surface-muted-content-color)]"
+      chart = view.render(
+        FlatPack::Chart::Component.new(
+          type: :line,
+          series: [{ name: description, data: counts }],
+          card: false,
+          height: 56,
+          class: "w-full",
+          options: {
+            chart: { sparkline: { enabled: true }, toolbar: { show: false } },
+            markers: { size: 0 },
+            tooltip: { enabled: false },
+            grid: { show: false },
+            xaxis: {
+              labels: { show: false },
+              axisBorder: { show: false },
+              axisTicks: { show: false }
+            },
+            yaxis: { show: false },
+            legend: { show: false },
+            dataLabels: { enabled: false }
+          }
+        )
       )
 
       content = view.tag.span(
         view.safe_join([
-                         svg,
-                         view.tag.span("#{total_events} events in last 30 days", class: "sr-only")
+                         chart,
+                         view.tag.span(description, class: "sr-only")
                        ]),
-        title: "#{total_events} events in last 30 days"
+        title: description,
+        class: "block w-[104px] min-w-[104px]"
       )
 
       view.link_to(
-        endpoint_activity_chart_link(endpoint),
+        url,
         data: { turbo_frame: "_top" },
         class: "inline-flex items-center"
       ) { content }
+    end
+
+    def endpoint_activity_mini_chart(endpoint, context)
+      counts = endpoint_activity_counts_30d(endpoint)
+
+      activity_mini_chart(
+        counts: counts,
+        description: "#{counts.sum} events in last 30 days",
+        url: endpoint_activity_chart_link(endpoint),
+        context: context
+      )
     end
 
     def endpoint_token_state(token)
@@ -456,16 +483,7 @@ module RecordingStudioWebhooks
     end
 
     def endpoint_token_state_badge_style(token)
-      case endpoint_token_state(token)
-      when "active"
-        :success
-      when "expired"
-        :warning
-      when "revoked"
-        :danger
-      else
-        :default
-      end
+      endpoint_token_state_badge_style_for(endpoint_token_state(token))
     end
 
     def endpoint_token_state_badge_style_for(state)
@@ -593,7 +611,9 @@ module RecordingStudioWebhooks
         subtitle "Inspect inbound webhook volume for the current workspace."
         blast_radius :root
 
-        query { |context| AdminWebhooksTrafficDefinition.traffic_events(context) }
+        query do |context|
+          AdminWebhooksTrafficDefinition.traffic_events(context).preload(:action_attempts)
+        end
         filter :date_range, field: :received_at, default: :last_4_weeks
         filter :group_by, values: FILTERABLE_GROUPINGS, default: :day
         filter :provider,
@@ -655,10 +675,10 @@ module RecordingStudioWebhooks
                      count,
                      "/admin/screens/action_attempts?#{{
                        event_id: event.id,
-                       date_range_preset: "custom",
+                       date_range_preset: 'custom',
                        start_date: week_start.iso8601,
                        end_date: week_end.iso8601,
-                       group_by: "week"
+                       group_by: 'week'
                      }.to_query}",
                      data: { turbo_frame: "_top" }
                    )
@@ -779,6 +799,11 @@ module RecordingStudioWebhooks
                options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
                apply: lambda { |relation, value, _context|
                  relation.where(provider_name: value)
+               }
+        filter :endpoint,
+               options: -> { AdminWebhooksTrafficDefinition.endpoint_filter_values },
+               apply: lambda { |relation, value, _context|
+                 relation.where(label: value)
                }
         filter :status,
                values: -> { AdminWebhooksTrafficDefinition.endpoint_status_filter_values },
@@ -1005,11 +1030,26 @@ module RecordingStudioWebhooks
                      ].compact.any? { |field| field.to_s.downcase.include?(term) }
                    end
                  }
-          column :name, title: "Action", sortable: false, value: ->(action, _context) { action.name }
+          column :name,
+                 title: "Action",
+                 sortable: false,
+                 value: lambda { |action, context|
+                   context.view_context.link_to(
+                     action.name,
+                     AdminWebhooksTrafficDefinition.action_row_view_url(action, context),
+                     data: { turbo_frame: "_top" }
+                   )
+                 }
           column :provider_name, title: "Provider", sortable: false,
                                  value: ->(action, _context) { action.provider_name.presence || "Any" }
           column :event_pattern, title: "Event pattern", sortable: false,
                                  value: ->(action, _context) { action.event_pattern.value }
+          column :activity,
+                 title: "Activity",
+                 sortable: false,
+                 value: lambda { |action, context|
+                   AdminWebhooksTrafficDefinition.action_activity_chart(action, context)
+                 }
           column :priority, title: "Priority", sortable: false, value: ->(action, _context) { action.priority }
           column :source, title: "Source", sortable: false, value: ->(action, _context) { action.source }
           action :view,
@@ -1017,7 +1057,7 @@ module RecordingStudioWebhooks
                  url: lambda { |action, context|
                    AdminWebhooksTrafficDefinition.action_row_view_url(action, context)
                  }
-          default_columns :name, :provider_name, :event_pattern, :priority, :source
+          default_columns :name, :provider_name, :event_pattern, :activity, :priority, :source
           paginate per_page: 25, mode: :infinite
         end
       end
@@ -1083,7 +1123,12 @@ module RecordingStudioWebhooks
                  }
           action :view_endpoint,
                  text: "View endpoint",
-               url: ->(_token) { "/admin/screens/endpoints" }
+                 url: lambda { |token|
+                   "/admin/screens/endpoints?#{{
+                     provider: token.endpoint&.provider_name,
+                     endpoint: token.endpoint&.label
+                   }.compact.to_query}"
+                 }
           action :revoke,
                  text: "Revoke",
                  url: ->(token) { "/admin/webhooks/endpoints/#{token.endpoint_id}/tokens/#{token.id}" },
@@ -1229,7 +1274,8 @@ module RecordingStudioWebhooks
           range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
           relation = AdminWebhooksTrafficDefinition.action_attempt_relation(context)
                                                    .where(created_at: range)
-          [{ name: "Action attempts", data: AdminWebhooksTrafficDefinition.action_attempt_date_series(relation, :week) }]
+          [{ name: "Action attempts",
+             data: AdminWebhooksTrafficDefinition.action_attempt_date_series(relation, :week) }]
         end
         chart_options do
           {

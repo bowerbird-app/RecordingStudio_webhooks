@@ -7,8 +7,7 @@ module RecordingStudioWebhooks
       before_action :authorize_admin_webhooks_write!, only: %i[create destroy]
 
       def index
-        @tokens = @endpoint.endpoint_tokens.stable.order(created_at: :desc)
-        @events_by_token_id = @endpoint.inbound_events.group(:endpoint_token_id).count
+        load_index_data
       end
 
       def create
@@ -23,8 +22,7 @@ module RecordingStudioWebhooks
         response.headers["Pragma"] = "no-cache"
         render :show, status: :created
       rescue ArgumentError, ActiveRecord::RecordInvalid
-        @tokens = @endpoint.endpoint_tokens.stable.order(created_at: :desc)
-        @events_by_token_id = @endpoint.inbound_events.group(:endpoint_token_id).count
+        load_index_data
         @form_error = "The token could not be issued."
         render :index, status: :unprocessable_entity
       end
@@ -61,6 +59,11 @@ module RecordingStudioWebhooks
         parsed
       rescue JSON::ParserError
         raise ArgumentError
+      end
+
+      def load_index_data
+        @tokens = @endpoint.endpoint_tokens.stable.order(created_at: :desc)
+        @events_by_token_id = @endpoint.inbound_events.group(:endpoint_token_id).count
       end
     end
   end

@@ -64,9 +64,11 @@
 
              parsed = Time.zone.parse(value)
              if parsed
-               content_tag(:span,
-                           "#{time_ago_in_words(parsed)} ago",
-                           title: parsed.in_time_zone.strftime("%b %-d, %Y %H:%M:%S %Z"))
+               render FlatPack::Tooltip::Component.new(
+                 text: parsed.in_time_zone.strftime("%b %-d, %Y %H:%M:%S %Z")
+               ) do
+                 content_tag(:span, "#{time_ago_in_words(parsed)} ago")
+               end
              else
                value
              end

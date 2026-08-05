@@ -20,8 +20,10 @@ module RecordingStudioWebhooks
         end
         scope = scope.where(event_type: @filter[:event_type]) if @filter[:event_type].present?
         scope = scope.where(status: @filter[:status]) if @filter[:status].present?
-        scope = scope.where("received_at >= ?", parsed_from_time) if parsed_from_time
-        scope = scope.where("received_at <= ?", parsed_to_time) if parsed_to_time
+        from_time = parsed_from_time
+        to_time = parsed_to_time
+        scope = scope.where("received_at >= ?", from_time) if from_time
+        scope = scope.where("received_at <= ?", to_time) if to_time
 
         if @filter[:execution_mode].present?
           scope = scope.joins(:action_attempts)

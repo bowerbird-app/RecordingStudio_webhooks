@@ -24,7 +24,7 @@ module RecordingStudioWebhooks
         provider = webhook_configuration.providers.fetch(@selected_provider_name)
         raise ArgumentError unless provider
 
-        event_type = resolved_event_type(provider, payload)
+        event_type = resolved_event_type(provider, payload, headers)
         EventPattern.validate_event_name!(event_type)
 
         @sandbox_result = build_sandbox_result(provider, payload, event_type, headers)
@@ -123,7 +123,7 @@ module RecordingStudioWebhooks
         raise ArgumentError
       end
 
-      def resolved_event_type(provider, payload)
+      def resolved_event_type(provider, payload, headers)
         explicit = sandbox_fields.fetch(:event_type, "").to_s.strip
         return explicit if explicit.present?
 
@@ -133,7 +133,7 @@ module RecordingStudioWebhooks
         extracted = invoke_provider_callable(
           extractor,
           payload: payload,
-          headers: parsed_headers,
+          headers: headers,
           endpoint: @endpoint,
           controller: self
         )
