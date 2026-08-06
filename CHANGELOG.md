@@ -2,11 +2,13 @@
 
 ## Unreleased
 
+## [0.1.0] - 2026-08-06
+
 ### Added
 
 - Inbound-only `recording_studio_webhooks` Rails engine.
 - Deterministic provider/action registries, exact and suffix-wildcard matching,
-  policy snapshots, redaction, deduplication, action attemptning, retries, and
+  policy snapshots, redaction, deduplication, action attempting, retries, and
   Sidekiq/Active Job/custom dispatch.
 - UUID endpoint, token, inbound-event, and action-attempt persistence.
 - Recording Studio-scoped FlatPack administration, sandbox, generators, doctor
