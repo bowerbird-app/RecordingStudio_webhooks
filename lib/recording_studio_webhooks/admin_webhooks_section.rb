@@ -226,6 +226,16 @@ module RecordingStudioWebhooks
                       AND provider_events.provider_name = recording_studio_webhooks_endpoints.provider_name
                   ) AS events_count,
                   (
+                    SELECT MIN(provider_events.received_at)
+                    FROM recording_studio_webhooks_inbound_events provider_events
+                    INNER JOIN recording_studio_webhooks_endpoints provider_event_endpoints
+                      ON provider_event_endpoints.id = provider_events.endpoint_id
+                    INNER JOIN recording_studio_recordings provider_event_recordings
+                      ON provider_event_recordings.id = provider_event_endpoints.recording_studio_recording_id
+                    WHERE provider_event_recordings.root_recording_id = #{quoted_root_id}
+                      AND provider_events.provider_name = recording_studio_webhooks_endpoints.provider_name
+                  ) AS first_event_at,
+                  (
                     SELECT MAX(provider_events.received_at)
                     FROM recording_studio_webhooks_inbound_events provider_events
                     INNER JOIN recording_studio_webhooks_endpoints provider_event_endpoints
@@ -261,6 +271,19 @@ module RecordingStudioWebhooks
       registered_action_rows.count do |action|
         action.provider_name.nil? || action.provider_name == provider_name
       end
+    end
+
+    def provider_traffic_url(row)
+      params = { provider: row.provider_name }
+      if row.first_event_at.present? && row.last_event_at.present?
+        params.merge!(
+          date_range_preset: "custom",
+          start_date: row.first_event_at.to_date.iso8601,
+          end_date: row.last_event_at.to_date.iso8601
+        )
+      end
+
+      "/admin/screens/webhook_traffic?#{params.to_query}"
     end
 
     def endpoint_filter_values
@@ -738,7 +761,7 @@ module RecordingStudioWebhooks
                  value: lambda { |row, context|
                    context.view_context.link_to(
                      row.events_count.to_i,
-                     "/admin/screens/webhook_traffic?#{{ provider: row.provider_name }.to_query}",
+                     AdminWebhooksTrafficDefinition.provider_traffic_url(row),
                      data: { turbo_frame: "_top" }
                    )
                  }

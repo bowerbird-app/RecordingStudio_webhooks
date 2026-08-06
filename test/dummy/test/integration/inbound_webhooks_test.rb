@@ -422,7 +422,12 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Provider"
     assert_includes response.body, 'href="/admin/screens/endpoints?provider=demo&amp;status=enabled"'
-    assert_includes response.body, 'href="/admin/screens/webhook_traffic?provider=demo"'
+    traffic_link = Nokogiri::HTML(response.body).at_css('a[href^="/admin/screens/webhook_traffic?"][href*="provider=demo"]')
+    assert_not_nil traffic_link
+    traffic_params = Rack::Utils.parse_nested_query(URI.parse(traffic_link["href"]).query)
+    assert_equal "custom", traffic_params["date_range_preset"]
+    assert_predicate traffic_params["start_date"], :present?
+    assert_predicate traffic_params["end_date"], :present?
     assert_includes response.body, 'href="/admin/screens/actions?provider=demo"'
     assert_includes response.body, 'data-turbo-frame="_top"'
     demo_actions_count = RecordingStudioWebhooks.configuration.actions.all.count do |action|
@@ -432,6 +437,14 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
       %r{<a[^>]*href="/admin/screens/actions\?provider=demo"[^>]*>#{demo_actions_count}</a>},
       response.body
     )
+
+    get "/admin/screens/webhook_traffic/table", params: traffic_params
+    assert_response :success
+    assert_includes response.body, "demo.received"
+
+    get "/admin/screens/webhook_traffic/table_count", params: traffic_params
+    assert_response :success
+    assert_includes response.body, traffic_link.text
   end
 
   test "authorized administrators can inspect native webhook traffic with filters, chart, and table" do
