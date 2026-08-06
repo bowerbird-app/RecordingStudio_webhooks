@@ -1,11 +1,24 @@
 Rails.application.routes.draw do
   devise_for :users
 
+  require "sidekiq/web"
+  authenticate :user, ->(user) { user.email == "admin@admin.com" } do
+    mount Sidekiq::Web => "/sidekiq"
+  end
+
   # RecordingStudio engine is data/API-focused and has no browser root route.
   # Keep legacy links working by redirecting the base path to the app home.
   get "/recording_studio", to: redirect("/"), as: nil
   mount RecordingStudio::Engine, at: "/recording_studio"
   mount RecordingStudioRootSwitchable::Engine, at: "/recording_studio_root_switchable"
+  recording_studio_admin_for :webhooks, at: "/admin", root_section: :admin_webhooks
+  mount RecordingStudioWebhooks::Engine, at: "/admin/webhooks", as: "recording_studio_admin_webhooks_engine"
+  post "/webhooks/inbound/:endpoint_token",
+    to: "recording_studio_webhooks/public/intake#create",
+    as: :recording_studio_webhooks_inbound,
+    constraints: {
+      endpoint_token: /rswh_[A-Za-z0-9_-]+/
+    }
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -17,12 +30,11 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  get "docs/install", to: "docs#install", as: :docs_install
-  get "docs/config", to: "docs#configuration", as: :docs_config
-  get "docs/recordable_types", to: "docs#recordable_types", as: :docs_recordable_types
-  get "docs/recordings_tree", to: "docs#recordings_tree", as: :docs_recordings_tree
-  get "docs/gem_views", to: "docs#gem_views", as: :docs_gem_views
-  get "docs/methods", to: "docs#methods", as: :docs_methods
+  get "recording_tree" => "recording_trees#index", as: :recording_tree
+  get "install" => "install#show", as: :install
+  get "config" => "config#show", as: :config
+  get "dummy_webhook_tester" => "dummy_webhook_tester#show", as: :dummy_webhook_tester
+  post "dummy_webhook_tester" => "dummy_webhook_tester#create"
 
   # Defines the root path route ("/")
   root "home#index"

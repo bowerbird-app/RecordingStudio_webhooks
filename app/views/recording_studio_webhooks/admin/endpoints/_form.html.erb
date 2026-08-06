@@ -1,0 +1,67 @@
+<%= form_with model: @endpoint, url: @endpoint.persisted? ? admin_endpoint_path(@endpoint) : admin_endpoints_path, class: "space-y-5" do |form| %>
+  <% if @form_error.present? || @endpoint.errors.any? %>
+    <%= render FlatPack::Alert::Component.new(
+      description: @form_error.presence || @endpoint.errors.full_messages.to_sentence,
+      style: :danger
+    ) %>
+  <% end %>
+
+  <% unless @endpoint.persisted? %>
+    <% if respond_to?(:current_root_recording, true) && current_root_recording.present? %>
+      <%= form.hidden_field :recording_studio_recording_id, value: current_root_recording.id %>
+    <% else %>
+      <%= render FlatPack::Alert::Component.new(
+        description: "Select a root recording in the host app before creating endpoints.",
+        style: :warning
+      ) %>
+    <% end %>
+
+    <%= render FlatPack::Select::Component.new(
+      name: "endpoint[provider_name]",
+      label: "Provider",
+      options: webhook_configuration.providers.all.map { |provider| [provider.name, provider.name] },
+      value: @endpoint.provider_name.to_s,
+      class: "w-full"
+    ) %>
+
+    <%= render FlatPack::TextInput::Component.new(
+      name: "endpoint[label]",
+      label: "Label",
+      value: @endpoint.label,
+      required: true,
+      placeholder: "Billing Production",
+      help_text: "Human-readable name used in the admin UI."
+    ) %>
+
+  <% end %>
+
+  <% unless @endpoint.persisted? %>
+    <%= hidden_field_tag "endpoint[enabled]", "0" %>
+    <div class="flex items-center">
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input
+          type="checkbox"
+          name="endpoint[enabled]"
+          value="1"
+          class="sr-only peer"
+          <%= "checked" if @endpoint.enabled? %>
+        >
+        <div
+          class="pointer-events-none rounded-full transition-colors duration-200 h-6 w-11 bg-[var(--switch-track-background-color)] peer-checked:bg-[var(--switch-track-checked-background-color)] peer-focus-visible:ring-2 peer-focus-visible:ring-inset peer-focus-visible:ring-[var(--switch-focus-ring-color)] peer-focus-visible:ring-offset-2"
+          role="switch"
+          aria-checked="<%= @endpoint.enabled? %>"
+        ></div>
+        <div class="pointer-events-none absolute left-0.5 top-0 rounded-full bg-[var(--switch-thumb-background-color)] shadow-[var(--switch-thumb-shadow)] transition-transform duration-200 translate-y-0.5 w-5 h-5 peer-checked:translate-x-5"></div>
+      </label>
+      <span class="ml-3 text-sm font-medium text-[var(--switch-label-color)]">Accept inbound events</span>
+    </div>
+
+    <%= render FlatPack::Button::Component.new(
+      text: "Create endpoint",
+      style: :primary,
+      size: :md,
+      type: "submit",
+      disabled: !respond_to?(:current_root_recording, true) || current_root_recording.blank?
+    ) %>
+  <% end %>
+<% end %>

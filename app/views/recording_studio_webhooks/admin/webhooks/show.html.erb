@@ -1,0 +1,12 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: "#{main_app.recording_studio_admin_webhooks_path}/sections/admin_webhooks",
+  anchor_tooltip: "Close"
+) %>
+
+<div class="flex flex-wrap items-start justify-between gap-4">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: "Admin Webhooks",
+    subtitle: "Operational overview for providers, endpoints, intake activity, and execution behavior.",
+    variant: :h1
+  ) %>
+</div>

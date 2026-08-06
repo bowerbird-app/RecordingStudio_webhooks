@@ -1,0 +1,5 @@
+Admin UI:
+Admin root → Admin Webhooks → Provider → Endpoint → Token
+
+RecordingStudio settings:
+Admin root recording → Endpoint recording → Token recording

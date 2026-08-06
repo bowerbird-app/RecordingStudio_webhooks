@@ -1,0 +1,379 @@
+<div class="mx-auto flex w-full max-w-6xl flex-col gap-8">
+  <% configure_example = [
+    "RecordingStudioWebhooks.configure do |config|",
+    "  config.admin_authorizer = lambda do |context|",
+    "    next false unless defined?(::RecordingStudioAccessible)",
+    "",
+    "    actor = context.actor",
+    "    next false unless actor",
+    "",
+    "    selected_root = context.controller.current_root_recording",
+    "    next false unless selected_root",
+    "",
+    "    required_role = context.permission.to_sym == :admin ? :admin : :view",
+    "",
+    "    ::RecordingStudioAccessible.authorized?(",
+    "      actor: actor,",
+    "      recording: selected_root,",
+    "      role: required_role",
+    "    )",
+    "  rescue StandardError",
+    "    false",
+    "  end",
+    "",
+    "  config.admin_recording_scope = lambda do |context|",
+    "    selected_root = context.controller.current_root_recording",
+    "    return RecordingStudio::Recording.none unless selected_root",
+    "",
+    "    RecordingStudio::Recording",
+    "      .where(trashed_at: nil)",
+    "      .where(\"id = :root_id OR root_recording_id = :root_id\", root_id: selected_root.id)",
+    "  end",
+    "",
+    "  config.dispatcher = :sidekiq",
+    "  config.provider_roots = [Rails.root.join(\"app/webhooks/providers\").to_s]",
+    "  config.action_roots = [Rails.root.join(\"app/webhooks/actions\").to_s]",
+    "  config.automatic_discovery = true",
+    "end"
+  ].join("\n") %>
+
+  <% provider_example = [
+    "# app/webhooks/providers/stripe.rb",
+    "module Webhooks",
+    "  module Providers",
+    "    class Stripe < RecordingStudioWebhooks::Provider",
+    "      def self.register!",
+    "        register(",
+    "          \"stripe\",",
+    "          signature_verifier: lambda { |context|",
+    "            secret = ENV[\"STRIPE_WEBHOOK_SECRET\"].to_s",
+    "            signature = context.headers[\"stripe-signature\"].to_s",
+    "            next false if secret.empty? || signature.empty?",
+    "",
+    "            ::Stripe::Webhook.construct_event(context.raw_payload, signature, secret)",
+    "            true",
+    "          rescue StandardError",
+    "            false",
+    "          },",
+    "          event_type_extractor: ->(payload) { payload[\"type\"] },",
+    "          event_id_extractor: ->(payload) { payload[\"id\"] }",
+    "        )",
+    "      end",
+    "    end",
+    "  end",
+    "end",
+    "",
+    "Webhooks::Providers::Stripe.register!"
+  ].join("\n") %>
+
+  <% endpoint_example = [
+    "# via Admin UI: Endpoints -> New",
+    "# provider_name: stripe",
+    "# label: Billing Production",
+    "# enabled: true",
+    "",
+    "# optional settings example (console/service path):",
+    "endpoint = RecordingStudioWebhooks::Endpoint.new(",
+    "  recording_studio_recording_id: recording_id,",
+    "  provider_name: \"stripe\",",
+    "  label: \"Billing Production\",",
+    "  enabled: true,",
+    "  metadata: { environment: \"production\", owner: \"payments\" },",
+    "  policy_overrides: { deduplicate: true, timeout: 30 }",
+    ")"
+  ].join("\n") %>
+
+  <% token_example = [
+    "# issue/rotate token for an endpoint",
+    "endpoint = RecordingStudioWebhooks::Endpoint.find(endpoint_id)",
+    "issuance = endpoint.issue_token!(actor: Current.actor)",
+    "plaintext_token = issuance.plaintext_token",
+    "webhook_url = \"\#{request.base_url}\#{recording_studio_webhooks_inbound_path(endpoint_token: plaintext_token)}\"",
+    "",
+    "# token plaintext is shown once at issuance time"
+  ].join("\n") %>
+
+  <% action_example = [
+    "# app/webhooks/actions/stripe/payment_intent_succeeded_action.rb",
+    "module Webhooks",
+    "  module Actions",
+    "    module Stripe",
+    "      class PaymentIntentSucceededAction < RecordingStudioWebhooks::Action",
+    "        def self.call(context)",
+    "          # implement behavior",
+    "          true",
+    "        end",
+    "",
+    "        def self.register!",
+    "          register(",
+    "            \"stripe.payment_intent_succeeded\",",
+    "            provider: \"stripe\",",
+    "            event: \"payment_intent.succeeded\",",
+    "            policy: { max_retries: 2 }",
+    "          )",
+    "        end",
+    "      end",
+    "    end",
+    "  end",
+    "end",
+    "",
+    "Webhooks::Actions::Stripe::PaymentIntentSucceededAction.register!"
+  ].join("\n") %>
+
+  <%= render FlatPack::PageTitle::Component.new(
+    title: "Config",
+    subtitle: "Setup reference for configuration, providers, endpoints, tokens, and actions.",
+    variant: :h1
+  ) %>
+
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold">1. RecordingStudioWebhooks.configure</h2>
+    <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><code><%= configure_example %></code></pre>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr>
+            <th class="p-2">Param</th>
+            <th class="p-2">Required</th>
+            <th class="p-2">Accepted values</th>
+            <th class="p-2">Explanation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-t">
+            <td class="p-2 font-mono">admin_authorizer</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">Callable receiving context</td>
+            <td class="p-2">Decides which signed-in users are allowed to use the webhooks admin area.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">admin_recording_scope</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">Callable returning ActiveRecord scope</td>
+            <td class="p-2">Defines which recordings the allowed user can see and manage in webhooks screens.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">dispatcher</td>
+            <td class="p-2">No</td>
+            <td class="p-2">:sidekiq, :active_job, callable</td>
+            <td class="p-2">Chooses how action attempts are queued.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">provider_roots</td>
+            <td class="p-2">Yes (for discovery flow)</td>
+            <td class="p-2">Array of directory paths</td>
+            <td class="p-2">Directories scanned for provider registration files.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">action_roots</td>
+            <td class="p-2">Yes (for discovery flow)</td>
+            <td class="p-2">Array of directory paths</td>
+            <td class="p-2">Directories scanned for action registration files.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">automatic_discovery</td>
+            <td class="p-2">No</td>
+            <td class="p-2">true or false</td>
+            <td class="p-2">When true, providers and actions are loaded from root directories automatically.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold">2. How to add providers</h2>
+    <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><code><%= provider_example %></code></pre>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr>
+            <th class="p-2">Param</th>
+            <th class="p-2">Required</th>
+            <th class="p-2">Accepted values</th>
+            <th class="p-2">Explanation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-t">
+            <td class="p-2 font-mono">name</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">Lowercase string identifier, example: stripe</td>
+            <td class="p-2">Provider key used by endpoints and actions.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">signature_verifier</td>
+            <td class="p-2">No</td>
+            <td class="p-2">Callable, usually reads ENV["STRIPE_WEBHOOK_SECRET"] and signature header</td>
+            <td class="p-2">Validates request authenticity before accepting payloads. Return true only for valid signed payloads.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">event_type_extractor</td>
+            <td class="p-2">No</td>
+            <td class="p-2">Callable receiving payload</td>
+            <td class="p-2">Extracts event type from payload for action matching.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">event_id_extractor</td>
+            <td class="p-2">No</td>
+            <td class="p-2">Callable receiving payload</td>
+            <td class="p-2">Extracts provider event id for deduplication/audit traceability.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold">3. How to add endpoints (metadata/settings)</h2>
+    <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><code><%= endpoint_example %></code></pre>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr>
+            <th class="p-2">Param</th>
+            <th class="p-2">Required</th>
+            <th class="p-2">Accepted values</th>
+            <th class="p-2">Explanation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-t">
+            <td class="p-2 font-mono">recording_studio_recording_id</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">UUID</td>
+            <td class="p-2">Connects endpoint to a stable Recording Studio recording.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">provider_name</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">Registered provider key, example: stripe</td>
+            <td class="p-2">Determines verifier/extractors and provider-specific actions.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">label</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">String up to 255 chars</td>
+            <td class="p-2">Human-readable endpoint name in admin UI.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">enabled</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">true or false</td>
+            <td class="p-2">Controls whether inbound requests are accepted for this endpoint.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">metadata</td>
+            <td class="p-2">No</td>
+            <td class="p-2">Safe JSON object</td>
+            <td class="p-2">Stores non-secret tags, such as environment or owner.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">policy_overrides</td>
+            <td class="p-2">No</td>
+            <td class="p-2">Policy hash, example keys: deduplicate, timeout, max_retries</td>
+            <td class="p-2">Overrides default policy behavior for this endpoint.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold">4. Tokens</h2>
+    <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><code><%= token_example %></code></pre>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr>
+            <th class="p-2">Param</th>
+            <th class="p-2">Required</th>
+            <th class="p-2">Accepted values</th>
+            <th class="p-2">Explanation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-t">
+            <td class="p-2 font-mono">endpoint_id</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">UUID</td>
+            <td class="p-2">Identifies which endpoint receives the issued token.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">actor</td>
+            <td class="p-2">Recommended</td>
+            <td class="p-2">Current actor/user object</td>
+            <td class="p-2">Used for audit trails during token issue/revoke actions.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">expires_at</td>
+            <td class="p-2">No</td>
+            <td class="p-2">Time or nil</td>
+            <td class="p-2">Sets optional token expiration timestamp.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">metadata</td>
+            <td class="p-2">No</td>
+            <td class="p-2">JSON object</td>
+            <td class="p-2">Stores non-secret metadata related to token issuance.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">active_at</td>
+            <td class="p-2">No</td>
+            <td class="p-2">Time (defaults to now)</td>
+            <td class="p-2">Defines when the token becomes active.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold">5. Actions</h2>
+    <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><code><%= action_example %></code></pre>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr>
+            <th class="p-2">Param</th>
+            <th class="p-2">Required</th>
+            <th class="p-2">Accepted values</th>
+            <th class="p-2">Explanation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-t">
+            <td class="p-2 font-mono">name</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">Unique string identifier</td>
+            <td class="p-2">Action name used in logs, attempts, and registration lookup.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">provider</td>
+            <td class="p-2">No</td>
+            <td class="p-2">Provider key or nil</td>
+            <td class="p-2">Scopes action to one provider; nil allows matching any provider.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">event</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">Event name or pattern</td>
+            <td class="p-2">Determines which inbound events trigger this action.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">policy</td>
+            <td class="p-2">No</td>
+            <td class="p-2">Policy hash, example: max_retries</td>
+            <td class="p-2">Overrides retry/timing/execution behavior for this action.</td>
+          </tr>
+          <tr class="border-t">
+            <td class="p-2 font-mono">context (call method)</td>
+            <td class="p-2">Yes</td>
+            <td class="p-2">Execution context object</td>
+            <td class="p-2">Provides event, endpoint snapshots, and runtime metadata to action code.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

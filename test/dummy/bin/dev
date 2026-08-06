@@ -8,6 +8,24 @@ fi
 # Default to port 3000 if not specified
 export PORT="${PORT:-3000}"
 
+# Remove stale server PID files so `bin/dev` can recover after abrupt exits.
+if [ -f tmp/pids/server.pid ]; then
+  PID="$(cat tmp/pids/server.pid)"
+
+  if [ -n "$PID" ] && ps -p "$PID" >/dev/null 2>&1; then
+    if ps -p "$PID" -o stat= | grep -q "Z"; then
+      echo "Removing stale zombie Rails PID: $PID"
+      rm -f tmp/pids/server.pid
+    else
+      echo "Rails server already running with PID: $PID"
+      exit 1
+    fi
+  else
+    echo "Removing stale Rails PID file"
+    rm -f tmp/pids/server.pid
+  fi
+fi
+
 # Let the debug gem allow remote connections,
 # but avoid loading until `debugger` is called
 export RUBY_DEBUG_OPEN="true"

@@ -1,0 +1,70 @@
+<%= render FlatPack::PageTitle::Component.new(
+  title: "Dummy Webhook Tester",
+  subtitle: "Submit realistic webhook payloads to inbound intake and execute matched actions.",
+  variant: :h1
+) %>
+
+<% if @form_error.present? %>
+  <%= render FlatPack::Alert::Component.new(description: @form_error, style: :danger) %>
+<% end %>
+
+<%= form_with url: main_app.dummy_webhook_tester_path, scope: :tester, class: "space-y-4" do %>
+  <%= render FlatPack::TextInput::Component.new(
+    name: "tester[endpoint_input]",
+    label: "Inbound URL or token",
+    value: @endpoint_input,
+    required: true,
+    placeholder: "https://host/webhooks/inbound/rswh_..."
+  ) %>
+
+  <%= render FlatPack::TextArea::Component.new(
+    name: "tester[headers_json]",
+    label: "Test headers JSON",
+    value: @headers_json,
+    rows: 6,
+    required: true,
+    class: "font-mono text-sm"
+  ) %>
+
+  <%= render FlatPack::TextArea::Component.new(
+    name: "tester[payload_json]",
+    label: "Sample JSON payload",
+    value: @payload_json,
+    rows: 12,
+    required: true,
+    class: "font-mono text-sm"
+  ) %>
+
+  <%= render FlatPack::Button::Component.new(
+    text: "Send webhook",
+    style: :primary,
+    size: :md,
+    type: "submit"
+  ) %>
+<% end %>
+
+<% if @result.present? %>
+  <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+    <% card.header do %>
+      <%= render FlatPack::PageTitle::Component.new(title: "Last run result", variant: :h3, class: "mb-0 pb-0") %>
+    <% end %>
+    <% card.body do %>
+      <ul class="space-y-2 text-sm">
+        <li>Status: <strong><%= @result.fetch(:status) %></strong></li>
+        <li>Code: <strong><%= @result.fetch(:code) %></strong></li>
+        <li>Provider event id: <strong><%= @result.fetch(:provider_event_id) || "n/a" %></strong></li>
+        <li>Inbound event id: <strong><%= @result.fetch(:event_id) || "n/a" %></strong></li>
+      </ul>
+
+      <% attempts = @result.fetch(:attempts, []) %>
+      <% if attempts.any? %>
+        <p class="mt-4 text-sm font-medium">Executed attempts</p>
+        <ul class="mt-2 space-y-2 text-sm">
+          <% attempts.each_with_index do |attempt, index| %>
+            <li>Attempt <%= index + 1 %>: <strong><%= attempt.fetch(:code) %></strong> (status <%= attempt.fetch(:status) %>)</li>
+          <% end %>
+        </ul>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

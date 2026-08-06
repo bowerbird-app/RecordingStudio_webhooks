@@ -1,0 +1,62 @@
+<% filters.each do |filter| %>
+  <div class="<%= wrapper_class %>">
+    <% if filter.type == :date_range %>
+      <div data-controller="recording-studio-webhooks--date-range-filter">
+        <% effective_preset_key = params[filter.preset_param].presence || filter.value&.preset_key || filter.options[:default] %>
+        <% submitted_start = params[filter.start_param].presence %>
+        <% submitted_end = params[filter.end_param].presence %>
+        <% start_value = filter.value&.start_date %>
+        <% end_value = filter.value&.end_date %>
+        <% span_days = if start_value.present? && end_value.present?
+                         (end_value.to_date - start_value.to_date).to_i
+                       end %>
+        <% if span_days == 27 %>
+          <% effective_preset_key = :last_4_weeks %>
+        <% end %>
+        <% if submitted_start.present? && submitted_end.present? && span_days != 27 %>
+          <% effective_preset_key = nil %>
+        <% end %>
+        <% if effective_preset_key.to_s == "last_4_weeks" && end_value.present? && (submitted_start.blank? || submitted_end.blank? || span_days == 27) %>
+          <% normalized_end_date = end_value.to_date %>
+          <% start_value = normalized_end_date - 27.days %>
+          <% end_value = normalized_end_date %>
+        <% end %>
+        <%= render FlatPack::DateRangeInput::Component.new(
+          start_name: filter.start_param,
+          end_name: filter.end_param,
+          start_value: start_value,
+          end_value: end_value,
+          label: filter.key.to_s.humanize
+        ) %>
+        <%= hidden_field_tag filter.preset_param, effective_preset_key %>
+      </div>
+    <% else %>
+       <% use_raw_option_label = filter.key.to_sym == :action_name || filter.param_key.to_sym == :action_name %>
+       <% endpoint_filter = filter.key.to_sym == :endpoint || filter.param_key.to_sym == :endpoint %>
+      <% select_options = Array(filter.options[:values] || filter.options[:options]).map do |value|
+           option_label = value.to_s
+         option_label = option_label.humanize unless use_raw_option_label || endpoint_filter
+           option_label = truncate(option_label, length: 30) if endpoint_filter
+           { label: option_label, value: value }
+         end %>
+      <% select_search_options = filter.options.slice(:searchable, :search_mode, :search_param, :search_endpoint).compact %>
+      <% if select_options.any? %>
+        <%= render FlatPack::Select::Component.new(
+          name: filter.param_key,
+          options: select_options,
+          value: filter.value,
+          label: filter.key.to_s.humanize,
+          placeholder: "All",
+          **select_search_options
+        ) %>
+      <% else %>
+        <%= render FlatPack::SearchInput::Component.new(
+          name: filter.param_key,
+          value: filter.value,
+          label: filter.key.to_s.humanize,
+          placeholder: filter.key.to_s.humanize
+        ) %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

@@ -1,0 +1,91 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: "#{main_app.recording_studio_admin_webhooks_path}/sections/admin_webhooks",
+  anchor_tooltip: "Close"
+) %>
+
+<%= render FlatPack::PageTitle::Component.new(
+  title: @action_attempt.action_name,
+  subtitle: "Persisted action attempt and sanitized attempt history.",
+  variant: :h1
+) %>
+
+<div class="grid gap-6">
+  <section class="space-y-3">
+    <%= render FlatPack::PageTitle::Component.new(title: "Details", variant: :h3, class: "mb-0 pb-0") %>
+    <% detail_rows = [
+         {
+           label: "Status",
+           value: render(
+             FlatPack::Badge::Component.new(
+               text: @action_attempt.status.to_s.humanize,
+               style: webhook_status_style(@action_attempt.status),
+               size: :sm
+             )
+           )
+         },
+         { label: "Attempts", value: @action_attempt.attempts.to_s },
+         { label: "Execution mode", value: @action_attempt.policy.execution_mode.to_s },
+         {
+           label: "Next attempt",
+           value: @action_attempt.next_attempt_at&.in_time_zone&.strftime("%b %-d, %Y %H:%M") || "None"
+         }
+       ] %>
+    <%= render FlatPack::Table::Component.new(data: detail_rows, class: "text-sm") do |table| %>
+      <% table.column(title: content_tag(:span, "Field", class: "sr-only"), html: ->(row) { row[:label].to_s }) %>
+      <% table.column(title: content_tag(:span, "Value", class: "sr-only"), html: ->(row) { row[:value] }) %>
+    <% end %>
+  </section>
+
+  <section class="space-y-3">
+    <%= render FlatPack::PageTitle::Component.new(title: "Attempt history", variant: :h3, class: "mb-0 pb-0") %>
+    <% attempt_rows = Array(@action_attempt.attempt_history).each_with_index.map do |entry, index|
+         data = entry.is_a?(Hash) ? entry : {}
+         {
+           attempt: data["attempt"].presence || (index + 1),
+           status: data["status"].to_s,
+           at: data["at"].to_s,
+           error: data["error"].to_s
+         }
+       end %>
+
+    <% if attempt_rows.any? %>
+      <%= render FlatPack::Table::Component.new(data: attempt_rows, class: "text-sm") do |table| %>
+        <% table.column(title: content_tag(:span, "Attempt", class: "sr-only"), html: ->(row) { row[:attempt].to_s }) %>
+        <% table.column(title: content_tag(:span, "Status", class: "sr-only"), html: lambda { |row|
+             render FlatPack::Badge::Component.new(
+               text: row[:status].to_s.humanize,
+               style: webhook_status_style(row[:status]),
+               size: :sm
+             )
+           }) %>
+        <% table.column(title: content_tag(:span, "Recorded at", class: "sr-only"), html: lambda { |row|
+             value = row[:at].to_s
+             next "-" if value.blank?
+
+             parsed = Time.zone.parse(value)
+             if parsed
+               render FlatPack::Tooltip::Component.new(
+                 text: parsed.in_time_zone.strftime("%b %-d, %Y %H:%M:%S %Z")
+               ) do
+                 content_tag(:span, "#{time_ago_in_words(parsed)} ago")
+               end
+             else
+               value
+             end
+           }) %>
+        <% table.column(title: content_tag(:span, "Error", class: "sr-only"), html: ->(row) { row[:error].presence || "-" }) %>
+      <% end %>
+    <% else %>
+      <p class="text-sm text-(--surface-muted-content-color)">No attempt history recorded yet.</p>
+    <% end %>
+  </section>
+
+  <section class="space-y-3">
+    <%= render FlatPack::PageTitle::Component.new(title: "Payload", variant: :h3, class: "mb-0 pb-0") %>
+    <%= render FlatPack::CodeBlock::Component.new(
+      code: pretty_webhook_json(@event&.payload),
+      language: "json",
+      title: "Payload"
+    ) %>
+  </section>
+</div>

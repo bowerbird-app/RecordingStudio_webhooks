@@ -1,0 +1,99 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: "#{main_app.recording_studio_admin_webhooks_path}/sections/admin_webhooks",
+  anchor_tooltip: "Close"
+) %>
+
+<%= render FlatPack::PageTitle::Component.new(
+  title: "Inbound events",
+  variant: :h1
+) %>
+
+<%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+  <% card.body do %>
+    <%= form_with url: params[:endpoint_id].present? ? admin_endpoint_events_path(@endpoint) : admin_events_path, method: :get, class: "grid gap-3 md:grid-cols-4" do |_form| %>
+      <%= render FlatPack::Select::Component.new(
+        name: "provider_name",
+        label: "Provider",
+        options: [["All", ""]] + @providers.map { |provider| [provider.name, provider.name] },
+        value: @filter[:provider_name].to_s,
+        class: "w-full"
+      ) %>
+
+      <%= render FlatPack::Select::Component.new(
+        name: "endpoint_id",
+        label: "Endpoint",
+        options: [["All", ""]] + @endpoints.map { |endpoint| ["#{endpoint.provider_name} / #{endpoint.label}", endpoint.id] },
+        value: @filter[:endpoint_id].to_s,
+        class: "w-full"
+      ) %>
+
+      <%= render FlatPack::TextInput::Component.new(
+        name: "endpoint_token",
+        label: "Token",
+        value: (@filter[:endpoint_token].presence || @filter[:endpoint_token_id]).to_s,
+        placeholder: "rswh_..."
+      ) %>
+
+      <%= render FlatPack::TextInput::Component.new(
+        name: "event_type",
+        label: "Event type",
+        value: @filter[:event_type].to_s,
+        placeholder: "invoice.paid"
+      ) %>
+
+      <%= render FlatPack::Select::Component.new(
+        name: "status",
+        label: "Status",
+        options: [["All", ""], ["accepted", "accepted"], ["planned", "planned"]],
+        value: @filter[:status].to_s,
+        class: "w-full"
+      ) %>
+
+      <%= render FlatPack::Select::Component.new(
+        name: "execution_mode",
+        label: "Mode",
+        options: [["All", ""], ["parallel", "parallel"], ["sequential", "sequential"]],
+        value: @filter[:execution_mode].to_s,
+        class: "w-full"
+      ) %>
+
+      <%= render FlatPack::TextInput::Component.new(
+        name: "from",
+        label: "From",
+        value: @filter[:from].to_s,
+        placeholder: "YYYY-MM-DD HH:MM"
+      ) %>
+
+      <%= render FlatPack::TextInput::Component.new(
+        name: "to",
+        label: "To",
+        value: @filter[:to].to_s,
+        placeholder: "YYYY-MM-DD HH:MM"
+      ) %>
+
+      <div class="md:col-span-4">
+        <%= render FlatPack::Button::Component.new(text: "Apply filters", style: :primary, size: :sm, type: "submit") %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.body do %>
+    <% if @events.any? %>
+      <ul class="space-y-3">
+        <% @events.each do |event| %>
+          <li class="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+            <div>
+              <strong><%= event.provider_name %> · <%= event.event_type %></strong><br>
+              <span class="text-sm"><%= event.received_at %> · <%= event.status %> · endpoint <%= event.endpoint.label %> (<%= event.endpoint.recording_studio_recording_id %>)</span><br>
+              <span class="text-xs text-gray-600">token: <%= event.endpoint_token.attributes.fetch("token", nil).to_s.presence || "Unavailable" %> · attempts: <%= event.action_attempts.sum(&:attempts) %></span>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm">No events match the current filters.</p>
+    <% end %>
+  <% end %>
+<% end %>

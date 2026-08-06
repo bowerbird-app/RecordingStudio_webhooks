@@ -1,0 +1,27 @@
+<meta name="robots" content="noindex,nofollow">
+
+<%= render FlatPack::PageTitle::Component.new(
+  title: "Webhook endpoint ready",
+  subtitle: "Use this URL in your provider to start receiving inbound webhooks.",
+  variant: :h1
+) %>
+
+<%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+  <% card.body do %>
+    <%= render FlatPack::TextInput::Component.new(
+      name: "endpoint_url",
+      label: "Webhook endpoint URL",
+      value: @endpoint_url,
+      quick_copy: true,
+      help_text: "Copy and paste this full URL into your provider webhook configuration."
+    ) %>
+  <% end %>
+  <% card.footer do %>
+    <%= render FlatPack::Button::Component.new(
+      text: "Done",
+      style: :primary,
+      size: :md,
+      url: admin_endpoint_path(@endpoint)
+    ) %>
+  <% end %>
+<% end %>

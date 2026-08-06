@@ -2,7 +2,7 @@
   <% sidebar.header do %>
     <%= render FlatPack::Sidebar::Header::Component.new(
       brand_abbr: "RS",
-      title: "Addon Template",
+      title: "Webhook Demo",
       subtitle: "Recording Studio"
     ) %>
   <% end %>
@@ -16,39 +16,39 @@
       ) %>
 
       <%= render FlatPack::Sidebar::Item::Component.new(
+        label: "Webhook endpoints",
+        href: "#{main_app.recording_studio_admin_webhooks_path}/sections/admin_webhooks",
+        icon: :bolt
+      ) %>
+
+      <%= render FlatPack::Sidebar::Item::Component.new(
+        label: "Dummy webhook tester",
+        href: main_app.dummy_webhook_tester_path,
+        icon: :beaker
+      ) %>
+
+      <%= render FlatPack::Sidebar::Item::Component.new(
         label: "Install",
-        href: main_app.docs_install_path,
-        icon: :arrow_down_tray
-      ) %>
-
-      <%= render FlatPack::Sidebar::Item::Component.new(
-        label: "Config",
-        href: main_app.docs_config_path,
-        icon: :settings
-      ) %>
-
-      <%= render FlatPack::Sidebar::Item::Component.new(
-        label: "Methods",
-        href: main_app.docs_methods_path,
-        icon: :code_bracket
-      ) %>
-
-      <%= render FlatPack::Sidebar::Item::Component.new(
-        label: "Recordable types",
-        href: main_app.docs_recordable_types_path,
-        icon: :queue_list
-      ) %>
-
-      <%= render FlatPack::Sidebar::Item::Component.new(
-        label: "Recordings tree",
-        href: main_app.docs_recordings_tree_path,
+        href: main_app.install_path,
         icon: :folder
       ) %>
 
       <%= render FlatPack::Sidebar::Item::Component.new(
-        label: "Gem Views",
-        href: main_app.docs_gem_views_path,
-        icon: :eye
+        label: "Config",
+        href: main_app.config_path,
+        icon: :cog
+      ) %>
+
+      <%= render FlatPack::Sidebar::Item::Component.new(
+        label: "Sidekiq",
+        href: main_app.url_for("/sidekiq"),
+        icon: :clock
+      ) %>
+
+      <%= render FlatPack::Sidebar::Item::Component.new(
+        label: "Recording tree",
+        href: main_app.recording_tree_path,
+        icon: :folder
       ) %>
 
     </nav>

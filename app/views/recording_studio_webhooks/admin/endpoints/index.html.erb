@@ -1,0 +1,110 @@
+<%= render FlatPack::PageNav::Component.new(
+  anchor_url: "#{main_app.recording_studio_admin_webhooks_path}/sections/admin_webhooks",
+  anchor_tooltip: "Close"
+) %>
+
+<div class="flex items-center justify-between gap-4">
+  <%= render FlatPack::PageTitle::Component.new(
+    title: "Endpoints",
+    subtitle: "Managed endpoint identities under Admin Webhooks providers.",
+    variant: :h1
+  ) %>
+  <div class="flex gap-2">
+    <%= render FlatPack::Button::Component.new(text: "New", style: :primary, size: :md, url: new_admin_endpoint_path) %>
+  </div>
+</div>
+
+<%= form_with url: admin_endpoints_path, method: :get, class: "flex flex-wrap items-end gap-3" do |form| %>
+  <%= render FlatPack::Select::Component.new(
+    name: "provider",
+    label: "Provider",
+    options: [["All providers", ""]] + @providers.map { |provider| [provider.name, provider.name] },
+    value: @selected_provider.to_s,
+    class: "w-56"
+  ) %>
+  <%= render FlatPack::Button::Component.new(text: "Apply", style: :secondary, size: :md, type: "submit") %>
+<% end %>
+
+<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% card.body do %>
+    <% if @endpoints.any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr>
+              <th class="p-2">URL</th>
+              <th class="p-2">Label</th>
+              <th class="p-2">Provider</th>
+              <th class="p-2">Status</th>
+              <th class="p-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @endpoints.each do |endpoint| %>
+              <tr class="border-t">
+                <td class="p-2">
+                  <% now = Time.current %>
+                  <% current_token = endpoint.endpoint_tokens
+                    .select { |token| token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now) }
+                    .max_by(&:active_at) %>
+                  <% current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence %>
+                  <% inbound_template_path = if current_plaintext_token.present?
+                                               "/webhooks/inbound/#{current_plaintext_token}"
+                                             else
+                                               "Active token present; full URL unavailable"
+                                             end %>
+                  <% inbound_template_url = "#{request.base_url}#{inbound_template_path}" %>
+                  <div class="flex min-w-56 items-center gap-2" data-controller="flat-pack--text-input" data-flat-pack--text-input-quick-copy-enabled-value="true">
+                    <span class="font-mono text-xs"><%= inbound_template_path %></span>
+                    <input type="hidden" value="<%= current_plaintext_token.present? ? inbound_template_url : '' %>" data-flat-pack--text-input-target="input">
+                    <%= render FlatPack::Button::Component.new(
+                      icon: "clipboard-document",
+                      icon_only: true,
+                      style: :ghost,
+                      size: :sm,
+                      aria: { label: "Copy endpoint path for #{endpoint.label}" },
+                      disabled: current_plaintext_token.blank?,
+                      data: {
+                        action: "click->flat-pack--text-input#copyFromButton",
+                        flat_pack__text_input_target: "copyButton"
+                      }
+                    ) %>
+                  </div>
+                </td>
+                <td class="p-2"><%= endpoint.label %></td>
+                <td class="p-2"><%= endpoint.provider_name %></td>
+                <td class="p-2">
+                  <%= render FlatPack::Badge::Component.new(
+                    text: endpoint.enabled? ? "enabled" : "disabled",
+                    style: endpoint.enabled? ? :success : :warning,
+                    size: :sm
+                  ) %>
+                </td>
+                <td class="p-2 text-right">
+                  <% trigger_id = "endpoint-actions-#{endpoint.id}" %>
+                  <%= render FlatPack::Button::Component.new(
+                    id: trigger_id,
+                    icon: "ellipsis-vertical",
+                    icon_only: true,
+                    style: :ghost,
+                    size: :sm,
+                    aria: { label: "Endpoint actions for #{endpoint.provider_name}" }
+                  ) %>
+                  <%= render FlatPack::Popover::Component.new(trigger_id: trigger_id, placement: :bottom, class: "p-0") do |popover| %>
+                    <% popover.content do %>
+                      <div class="w-36 text-left">
+                        <%= link_to "Provider", "/admin/screens/endpoints?#{ { provider: endpoint.provider_name }.to_query }", class: "block rounded px-3 py-2 text-sm hover:bg-gray-50" %>
+                      </div>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-sm">No endpoints are available for your Recording Studio recordings.</p>
+    <% end %>
+  <% end %>
+<% end %>

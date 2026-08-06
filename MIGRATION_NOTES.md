@@ -1,35 +1,18 @@
-# Migration Notes - Private Gems to Public Gems
+# Migration Notes
 
-## Completed Changes
-
-1. Removed repository access entries from `.devcontainer/devcontainer.json`.
-2. Updated `docs/gem_template/CODESPACES.md` and `docs/gem_template/PRIVATE_GEMS.md` for public dependencies.
-3. Replaced MakeupArtist with FlatPack in the dummy app dependency, views, layouts, and Tailwind sources.
-4. Pinned the dummy app to FlatPack `v0.1.129` in `test/dummy/Gemfile` and its lockfile.
-5. Regenerated the dummy app bundle and completed the FlatPack installation work.
-
-## Current Requirements
-
-- Ruby 3.3 or newer
-- Rails 8.1 or newer
-- Public RubyGems and GitHub access for dependency installation
-- No private gem credentials for the template dependencies
-
-## Verification
-
-Install both bundles and run the complete gem and dummy app test path:
+Install the engine migration after the host application's
+`recording_studio_recordings` table exists:
 
 ```bash
-bundle install
-BUNDLE_GEMFILE=test/dummy/Gemfile bundle install
-bundle exec rake test:all
+bin/rails generate recording_studio_webhooks:migrations
+bin/rails db:migrate
 ```
 
-Run the dummy app from its directory for browser verification:
+The generated migration creates exactly four PostgreSQL UUID tables:
+endpoints, endpoint tokens, inbound events, and action attempts. It has a foreign
+key to `recording_studio_recordings`, so it must run after Recording Studio's
+migrations.
 
-```bash
-cd test/dummy
-bin/dev
-```
-
-Use the [FlatPack repository](https://github.com/bowerbird-app/flatpack) and the live FlatPack demo linked from the top-level README for current component documentation.
+Do not edit a copied migration to add plaintext token, provider secret, raw
+header, or raw payload columns. Use host credentials for verifier material and
+the engine's safe metadata/policy fields only.
