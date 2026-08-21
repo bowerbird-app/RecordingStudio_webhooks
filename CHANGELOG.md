@@ -16,7 +16,7 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - Dummy copies of Admin section/screen templates were removed so Admin 2.0 renders those pages.
 - FlatPack `v0.1.133` buttons take `href:`, not `url:`. Dummy sign-out/home buttons and leftover engine New/Done buttons were updated.
 - Dummy ignores `app/webhooks` from Zeitwerk so Rails 8 CI eager load matches engine discovery.
-- Dummy `test:dummy` always prepares the test database (CI was seeding development into `DATABASE_URL`).
+- Dummy `test:dummy` loads schema without seeds (`db:create` + `db:schema:load`). `db:prepare` on a fresh CI database seeded Studio Workspace, so Admin traffic screens queried the wrong root.
 - Dummy lockfile picks up Rails `8.1.3.1`, `json` `2.21.2`, `mail` `2.9.1`, and Brakeman `8.0.6` so dummy security CI can pass.
 - Root RuboCop inherits `.rubocop_todo.yml` for existing engine offenses so 4.2 CI lint can pass without a style rewrite.
 
