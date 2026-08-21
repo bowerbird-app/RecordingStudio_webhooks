@@ -1,14 +1,22 @@
 module ApplicationHelper
-	def recording_studio_page_nav(title:, page_nav_anchor_url: nil)
-		content_for(:title, title)
-		content_for(:page_nav_anchor_url, page_nav_anchor_url) if page_nav_anchor_url.present?
-	end
+  def dummy_page_nav(title:, back_url: nil, back_label: "Home")
+    recording_studio_page_nav(
+      title: title,
+      page_nav_back_url: back_url,
+      page_nav_back_label: back_label
+    )
 
-	def recording_studio_page_nav_right(&)
-		content_for(:page_nav_right, &)
-	end
-
-	def recording_studio_accessible_avatars(*)
-		nil
-	end
+    recording_studio_page_nav_right do
+      concat recording_studio_root_switch_dropdown(style: :ghost, size: :md)
+      concat render(
+        FlatPack::Button::Component.new(
+          text: "Sign out",
+          style: :ghost,
+          size: :md,
+          url: main_app.destroy_user_session_path,
+          data: { turbo_method: :delete }
+        )
+      )
+    end
+  end
 end

@@ -19,18 +19,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     end
     workspace = Workspace.create!(name: "Webhook Workspace #{SecureRandom.hex(4)}")
     @recording = RecordingStudio.root_recording_for(workspace)
-    original_access_authorizer = RecordingStudioAccessible.configuration.access_management_authorizer
-    begin
-      RecordingStudioAccessible.configuration.access_management_authorizer = ->(recording:, **) { recording.present? }
-      RecordingStudioAccessible.grant_access(
-        recording: @recording,
-        actor: @user,
-        role: :admin,
-        manager_actor: @user
-      )
-    ensure
-      RecordingStudioAccessible.configuration.access_management_authorizer = original_access_authorizer
-    end
+    result = RecordingStudioAccessible.bootstrap_owner_access!(
+      recording: @recording,
+      actor: @user
+    )
+    raise result.error if result.failure?
 
     @endpoint = RecordingStudioWebhooks::EndpointLifecycle.create!(
       endpoint: RecordingStudioWebhooks::Endpoint.new(

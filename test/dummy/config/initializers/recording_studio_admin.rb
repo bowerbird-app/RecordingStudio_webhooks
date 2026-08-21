@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RecordingStudioAdmin.configure do |config|
-  config.engine_layout = "application"
+  config.engine_layout = "recording_studio/default_layout"
   config.async_widgets.enabled = false
   config.access_recording_resolver = lambda do |context|
     context.controller.current_root_recording || RecordingStudio.root_recording_for(Workspace.order(:name).first)

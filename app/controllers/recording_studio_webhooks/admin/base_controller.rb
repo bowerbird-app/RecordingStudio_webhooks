@@ -122,11 +122,7 @@ module RecordingStudioWebhooks
       end
 
       def admin_layout
-        if lookup_context.exists?("flat_pack_sidebar", ["layouts"], true)
-          "flat_pack_sidebar"
-        else
-          "recording_studio_webhooks/application"
-        end
+        "recording_studio_webhooks/application"
       end
     end
   end

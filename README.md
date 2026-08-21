@@ -218,5 +218,9 @@ See [configuration](docs/CONFIGURATION.md),
 
 `test/dummy` mounts the engine at `/webhooks`, seeds a stable Recording Studio
 recording plus a demo endpoint, and configures a no-op dispatcher. Sign in as
-`admin@admin.com` with password `Password`, then use **Webhook endpoints** in
-the sidebar. The demo never sends outbound requests or executes queued work.
+`admin@admin.com` with password `Password`, then open **Webhook endpoints**
+from Admin webhooks. The demo never sends outbound requests or executes queued work.
+
+The dummy is on the Recording Studio 4.2 kit: core `v4.2.0`, Accessible `v0.6.1`,
+Root Switchable `v0.5.0`, and FlatPack `v0.1.133`. Authenticated dummy screens
+use Recording Studio's shared default layout plus FlatPack CSS/JS.
