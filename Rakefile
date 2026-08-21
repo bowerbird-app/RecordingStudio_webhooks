@@ -32,7 +32,8 @@ end
 def dummy_bundle_base_env
   {
     "BUNDLE_GEMFILE" => DUMMY_GEMFILE,
-    "DISABLE_SIMPLECOV" => "true"
+    "DISABLE_SIMPLECOV" => "true",
+    "RAILS_ENV" => "test"
   }
 end
 
@@ -48,7 +49,10 @@ namespace :test do
     Dir.chdir(DUMMY_APP_ROOT) do
       env = dummy_bundle_env
 
-      run_command!(env, "bundle", "exec", "bin/rails", "db:prepare")
+      # Load schema without seeds. `db:prepare` on an empty CI database runs
+      # `db:setup`, which seeds Studio Workspace. Admin traffic screens then
+      # query that root instead of the workspace each dummy test creates.
+      run_command!(env, "bundle", "exec", "bin/rails", "db:create", "db:schema:load")
       run_command!(env, "bundle", "exec", "bin/rails", "test")
     end
   end

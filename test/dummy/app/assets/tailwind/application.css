@@ -8,6 +8,8 @@
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/recordingstudio-*/app/views/**/*.erb";
 
 /* Include RecordingStudio Admin gem templates and presenter class-based utilities */
+@source "../../../vendor/bundle/**/RecordingStudio_admin*/app/views/**/*.erb";
+@source "../../../vendor/bundle/**/recording_studio_admin*/app/views/**/*.erb";
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/RecordingStudio_admin-*/app/views/**/*.erb";
 @source "../../../../../../usr/local/bundle/ruby/**/bundler/gems/RecordingStudio_admin-*/lib/recording_studio_admin/widgets/presenter.rb";
 

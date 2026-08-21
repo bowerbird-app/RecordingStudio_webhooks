@@ -19,18 +19,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     end
     workspace = Workspace.create!(name: "Webhook Workspace #{SecureRandom.hex(4)}")
     @recording = RecordingStudio.root_recording_for(workspace)
-    original_access_authorizer = RecordingStudioAccessible.configuration.access_management_authorizer
-    begin
-      RecordingStudioAccessible.configuration.access_management_authorizer = ->(recording:, **) { recording.present? }
-      RecordingStudioAccessible.grant_access(
-        recording: @recording,
-        actor: @user,
-        role: :admin,
-        manager_actor: @user
-      )
-    ensure
-      RecordingStudioAccessible.configuration.access_management_authorizer = original_access_authorizer
-    end
+    result = RecordingStudioAccessible.bootstrap_owner_access!(
+      recording: @recording,
+      actor: @user
+    )
+    raise result.error if result.failure?
 
     @endpoint = RecordingStudioWebhooks::EndpointLifecycle.create!(
       endpoint: RecordingStudioWebhooks::Endpoint.new(
@@ -380,8 +373,10 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Actions"
     assert_includes response.body, "Action attempts"
     assert_includes response.body, "Action errors"
-    assert_includes response.body, 'href="/admin/screens/actions"'
-    assert_includes response.body, 'href="/admin/screens/providers"'
+    # Admin 2.0 still passes FlatPack Button `url:` (not `href:`), so the
+    # actions screen is present as a widget path rather than an <a href>.
+    assert_includes response.body, "/admin/screens/actions"
+    assert_includes response.body, "/admin/screens/providers"
 
     get "/admin/screens/providers", params: { provider: "demo" }
     assert_response :success

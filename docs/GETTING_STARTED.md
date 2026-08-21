@@ -28,7 +28,7 @@ Background action                 # A worker runs your local Ruby code.
 
 ## Install
 
-Add the gem, generate its setup files, and apply its migration.
+This engine requires Recording Studio `~> 4.2`. Add the gem, generate its setup files, and apply its migration.
 
 ```bash
 bundle add recording_studio_webhooks                         # Add the engine to the host application.
@@ -50,7 +50,7 @@ The host supplies two callbacks because the engine cannot know how a host repres
 - `admin_authorizer` decides whether the signed-in user can enter the webhooks admin UI.
 - `admin_recording_scope` decides which recordings that user can view and manage.
 
-When using `RecordingStudioAccessible`, delegate to its established policy instead of building a second permission system.
+When using `RecordingStudioAccessible`, delegate to its established policy instead of building a second permission system. Enable Accessible on the host root with `RecordingStudio.enable_capability(:accessible, on: Workspace)`. For the first owner on an empty owned root, call `RecordingStudioAccessible.bootstrap_owner_access!`; use `grant_access` for later invites.
 
 ```ruby
 # config/initializers/recording_studio_webhooks.rb           # Load this when Rails starts.
@@ -163,7 +163,14 @@ end                                                           # Finish host name
 Webhooks::Providers::Stripe.register!                        # Register the provider during boot.
 ```
 
-Use explicit roots to load trusted registration files. The engine requires files in lexical order and does not infer constants from filenames.
+Use explicit roots to load trusted registration files. The engine requires files in lexical order and does not infer constants from filenames. Rails 8 autoloads every `app/*` directory, so tell Zeitwerk to ignore the discovery folders or CI eager load will look for `Providers::Demo` instead of `Webhooks::Providers::Demo`:
+
+```ruby
+# config/application.rb
+initializer :ignore_webhook_discovery_from_zeitwerk, before: :setup_main_autoloader do
+  Rails.autoloaders.main.ignore(root.join("app/webhooks"))
+end
+```
 
 ```ruby
 RecordingStudioWebhooks.configure do |config|                # Configure local registration file discovery.

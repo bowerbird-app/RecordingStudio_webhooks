@@ -22,6 +22,10 @@ There are four engine tables, all with UUID primary keys:
 | inbound events | redacted receipt and immutable intake snapshots |
 | action attempts | action snapshot, state, retries, and append-only attempts |
 
+Endpoints are tree objects: people create and manage them, so they are
+recordings. Inbound events and action attempts are exhaust (logs), not children
+of the recording tree.
+
 The event stores the endpoint, token, and intake-policy snapshot. Each action
 attempt stores endpoint, token, policy, and action snapshots. This means later
 configuration changes do not rewrite historical provenance.

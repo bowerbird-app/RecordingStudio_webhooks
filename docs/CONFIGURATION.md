@@ -24,4 +24,6 @@ only in memory. Authorization and rate-limit hooks receive a redacted payload.
 
 Use `provider_roots`, `action_roots`, and `automatic_discovery = true` only for
 explicit, trusted local directories. Discovery loads Ruby files in lexical
-order; it does not scan arbitrary constants.
+order; it does not scan arbitrary constants. Ignore those directories from
+Zeitwerk so Rails 8 CI eager load does not treat `app/webhooks` as an autoload
+root.

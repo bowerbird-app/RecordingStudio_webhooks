@@ -1,3 +1,5 @@
+<% dummy_page_nav(title: "Inbound webhook demo", back_url: main_app.root_path) %>
+
 <div class="mx-auto flex w-full max-w-6xl flex-col gap-6">
   <%= render FlatPack::PageTitle::Component.new(
     title: "Inbound webhook demo",
@@ -38,7 +40,7 @@
 
       <% card.body do %>
         <ol class="space-y-3 text-sm leading-6 list-decimal pl-5">
-          <li>Open Webhook endpoints from the sidebar.</li>
+          <li>Open Webhook endpoints from Admin webhooks.</li>
           <li>Create an endpoint for a seeded Recording Studio recording.</li>
           <li>Issue a token and copy it only from the immediate response.</li>
           <li>Use the sandbox with a sample JSON payload; it does not persist or execute anything.</li>
@@ -67,7 +69,7 @@
           text: "Open webhook endpoints",
           style: :primary,
           size: :md,
-          url: recording_studio_admin_webhooks_engine_path
+          href: recording_studio_admin_webhooks_engine_path
         ) %>
       <% end %>
     <% end %>

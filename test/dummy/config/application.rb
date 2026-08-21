@@ -41,8 +41,12 @@ module Dummy
       g.orm :active_record, primary_key_type: :uuid
     end
 
-    # Don't generate system test files.
-    config.generators.system_tests = nil
+    # Discovery files under app/webhooks are required by the engine, not Zeitwerk.
+    # Rails 8 treats every app/* directory as an autoload root, so eager load in CI
+    # would otherwise expect Providers::Demo instead of Webhooks::Providers::Demo.
+    initializer :ignore_webhook_discovery_from_zeitwerk, before: :setup_main_autoloader do
+      Rails.autoloaders.main.ignore(root.join("app/webhooks"))
+    end
 
     # The dummy app exercises the engine migration directly. Host applications
     # normally use `recording_studio_webhooks:migrations` during installation.

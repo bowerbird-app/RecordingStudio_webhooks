@@ -19,12 +19,19 @@ end
 grant_admin_access = lambda do |recording, actor|
   next if RecordingStudioAccessible.role_for(actor: actor, recording: recording) == :admin
 
-  result = RecordingStudioAccessible.grant_access(
-    recording: recording,
-    actor: actor,
-    role: :admin,
-    manager_actor: actor
-  )
+  result = if RecordingStudioAccessible.respond_to?(:bootstrap_owner_access!)
+             RecordingStudioAccessible.bootstrap_owner_access!(
+               recording: recording,
+               actor: actor
+             )
+           else
+             RecordingStudioAccessible.grant_access(
+               recording: recording,
+               actor: actor,
+               role: :admin,
+               manager_actor: actor
+             )
+           end
 
   raise "Failed to grant access: #{result.error}" if result.failure?
 end
@@ -194,8 +201,6 @@ page = Page.find_or_create_by!(title: "Getting Started")
 
 previous_actor = Current.actor
 Current.actor = user
-previous_access_authorizer = RecordingStudioAccessible.configuration.access_management_authorizer
-RecordingStudioAccessible.configuration.access_management_authorizer = ->(recording:, **) { recording.present? }
 previous_dispatcher = RecordingStudioWebhooks.configuration.dispatcher
 RecordingStudioWebhooks.configuration.dispatcher = ->(_attempt_id, wait_until: nil) { true }
 
@@ -380,7 +385,6 @@ begin
   end
 ensure
   RecordingStudioWebhooks.configuration.dispatcher = previous_dispatcher
-  RecordingStudioAccessible.configuration.access_management_authorizer = previous_access_authorizer
   Current.actor = previous_actor
 end
 

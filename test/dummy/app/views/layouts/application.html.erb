@@ -11,31 +11,21 @@
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Load app styles, FlatPack token styles, and utility classes %>
+    <%# Load Tailwind utilities first. Do not link flat_pack/application — its relative
+        @imports are not rewritten by Propshaft and break sign-in styles. %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "flat_pack/variables", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "flat_pack/rich_text", "data-turbo-track": "reload" %>
-    <% tailwind_asset = if Rails.application.assets&.respond_to?(:find_asset)
-                          Rails.application.assets.find_asset("tailwind.css")
-                        else
-                          Rails.application.assets&.load_path&.find("tailwind.css")
-                        end %>
-    <% if tailwind_asset %>
-      <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
-    <% end %>
-    <%= turbo_include_tags %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="m-0 bg-(--surface-page-background-color) text-(--surface-content-color)">
-    <main class="mx-auto w-full max-w-7xl px-5 py-6">
+  <body class="m-0 min-h-screen bg-[var(--surface-page-background-color)] text-[var(--surface-content-color)]">
+    <main class="mx-auto flex min-h-screen w-full max-w-md items-center justify-center p-6">
       <%= yield %>
     </main>
   </body>
