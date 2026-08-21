@@ -12,6 +12,9 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - Dummy and root Gemfiles pin the current tagged kit: Recording Studio `v4.2.0`, Accessible `v0.6.1`, Root Switchable `v0.5.0`, FlatPack `v0.1.133`.
 - Dummy authenticated screens use Recording Studio's shared default layout plus FlatPack CSS/JS instead of a custom sidebar shell.
 - Dummy first-owner grants use `RecordingStudioAccessible.bootstrap_owner_access!`.
+- Dummy tests use a no-op dispatcher (CI has Postgres only). Development still uses Sidekiq.
+- Dummy copies of Admin section/screen templates were removed so Admin 2.0 renders those pages.
+- FlatPack `v0.1.133` buttons take `href:`, not `url:`. Dummy sign-out/home buttons and leftover engine New/Done buttons were updated.
 
 ### Upgrade notes
 

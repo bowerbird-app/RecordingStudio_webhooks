@@ -216,10 +216,11 @@ See [configuration](docs/CONFIGURATION.md),
 
 ## Dummy application
 
-`test/dummy` mounts the engine at `/webhooks`, seeds a stable Recording Studio
-recording plus a demo endpoint, and configures a no-op dispatcher. Sign in as
-`admin@admin.com` with password `Password`, then open **Webhook endpoints**
-from Admin webhooks. The demo never sends outbound requests or executes queued work.
+`test/dummy` mounts the engine at `/webhooks` and seeds a stable Recording Studio
+recording plus a demo endpoint. Tests use a no-op dispatcher so CI can run without
+Redis; development uses Sidekiq. Sign in as `admin@admin.com` with password
+`Password`, then open **Webhook endpoints** from Admin webhooks. The demo never
+sends outbound requests.
 
 The dummy is on the Recording Studio 4.2 kit: core `v4.2.0`, Accessible `v0.6.1`,
 Root Switchable `v0.5.0`, and FlatPack `v0.1.133`. Authenticated dummy screens

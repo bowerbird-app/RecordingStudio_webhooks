@@ -373,8 +373,10 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Actions"
     assert_includes response.body, "Action attempts"
     assert_includes response.body, "Action errors"
-    assert_includes response.body, 'href="/admin/screens/actions"'
-    assert_includes response.body, 'href="/admin/screens/providers"'
+    # Admin 2.0 still passes FlatPack Button `url:` (not `href:`), so the
+    # actions screen is present as a widget path rather than an <a href>.
+    assert_includes response.body, "/admin/screens/actions"
+    assert_includes response.body, "/admin/screens/providers"
 
     get "/admin/screens/providers", params: { provider: "demo" }
     assert_response :success
