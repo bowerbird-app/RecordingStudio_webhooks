@@ -163,7 +163,14 @@ end                                                           # Finish host name
 Webhooks::Providers::Stripe.register!                        # Register the provider during boot.
 ```
 
-Use explicit roots to load trusted registration files. The engine requires files in lexical order and does not infer constants from filenames.
+Use explicit roots to load trusted registration files. The engine requires files in lexical order and does not infer constants from filenames. Rails 8 autoloads every `app/*` directory, so tell Zeitwerk to ignore the discovery folders or CI eager load will look for `Providers::Demo` instead of `Webhooks::Providers::Demo`:
+
+```ruby
+# config/application.rb
+initializer :ignore_webhook_discovery_from_zeitwerk, before: :setup_main_autoloader do
+  Rails.autoloaders.main.ignore(root.join("app/webhooks"))
+end
+```
 
 ```ruby
 RecordingStudioWebhooks.configure do |config|                # Configure local registration file discovery.

@@ -32,7 +32,8 @@ end
 def dummy_bundle_base_env
   {
     "BUNDLE_GEMFILE" => DUMMY_GEMFILE,
-    "DISABLE_SIMPLECOV" => "true"
+    "DISABLE_SIMPLECOV" => "true",
+    "RAILS_ENV" => "test"
   }
 end
 
