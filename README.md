@@ -226,3 +226,12 @@ Sidekiq. Sign in as `admin@admin.com` with password `Password`, then open
 The dummy is on the Recording Studio 4.2 kit: core `v4.2.0`, Accessible `v0.6.1`,
 Root Switchable `v0.5.0`, and FlatPack `v0.1.133`. Authenticated dummy screens
 use Recording Studio's shared default layout plus FlatPack CSS/JS.
+
+## Cloud Agent boot
+
+Cloud Agent Builds run `.cursor/install.sh`, then `.cursor/fetch-skills.sh`.
+The install hook provisions a cold image. On a warm snapshot it skips apt,
+ruby-build, db:prepare, and tailwind when Ruby, bundle, and Postgres are
+already usable. Fetch-skills always runs last. `.cursor/start.sh` starts
+PostgreSQL on each boot. Rebuild with Draft off to load a new pack. See
+[Cursor skills in Cloud Agents](docs/cursor-skills.md).

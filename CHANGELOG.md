@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+## [0.2.1] - 2026-09-02
+
+Cloud Agent Builds fetch the skill pack at Build. Warm snapshots skip apt,
+Ruby, database, and CSS provision. Product behavior is unchanged.
+
+### Added
+
+- Track `.cursor/environment.json`, `.cursor/install.sh`, `.cursor/fetch-skills.sh`,
+  and `.cursor/start.sh`. Builds fetch RecordingStudio_cursor_plugin instead of
+  reading a vendored pack. `.cursor/skills/` and `.cursor/rules/` stay gitignored.
+
+### Fixed
+
+- `.cursor/install.sh` skips apt, ruby-build, db:prepare, and tailwind when
+  Ruby, bundle, and Postgres are already usable. A skippable provision
+  failure no longer fails the Build. Fetch-skills always runs last.
+
+### Upgrade notes
+
+- No host or schema changes. Rebuild the Cloud Agent environment with Draft
+  off so Build loads the pack.
+
 ## [0.2.0] - 2026-08-21
 
 Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
