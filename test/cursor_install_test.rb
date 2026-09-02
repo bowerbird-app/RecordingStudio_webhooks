@@ -54,6 +54,16 @@ class CursorInstallTest < Minitest::Test
     refute_includes install, "fetch-skills.sh\" || true"
   end
 
+  def test_lockfiles_pin_current_gem_version
+    version = File.read(File.join(ROOT, "lib/recording_studio_webhooks/version.rb"))[/VERSION = "([^"]+)"/, 1]
+    %w[Gemfile.lock test/dummy/Gemfile.lock].each do |relative|
+      lock = File.read(File.join(ROOT, relative))
+      assert_includes lock, "recording_studio_webhooks (#{version})", relative
+      other = lock.scan(/recording_studio_webhooks \((\d+\.\d+\.\d+)\)/).flatten.uniq - [version]
+      assert_empty other, "#{relative} still pins #{other.join(', ')}"
+    end
+  end
+
   def test_gemspec_excludes_cursor_directory
     spec = Gem::Specification.load(File.join(ROOT, "recording_studio_webhooks.gemspec"))
     cursor_files = spec.files.grep(%r{(^|/)\.cursor/})
