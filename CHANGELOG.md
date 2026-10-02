@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Dummy and root Gemfiles pin Recording Studio git tag `v4.2.2`
+  (`036686aa4eaf4f945f920cf4b11be4e842de0aac`).
+
 ## [0.2.1] - 2026-09-02
 
 Cloud Agent Builds fetch the skill pack at Build. Warm snapshots skip apt,
