@@ -6,6 +6,20 @@
 
 - Dummy and root Gemfiles pin Recording Studio git tag `v4.2.2`
   (`036686aa4eaf4f945f920cf4b11be4e842de0aac`).
+- Dummy and root Gemfiles pin RecordingStudio Accessible to `v0.11.1` and Root
+  Switchable to `v0.5.3`. Admin stays on branch
+  `cursor/rs41-accessible-06-upgrade-eb59` because tag `v2.0.4` does not contain
+  the pinned commit.
+- Dummy installs Accessible `0.8`–`0.11` migrations (dependent grants,
+  invitations, string roles). Seeds and tests already grant through
+  `bootstrap_owner_access!` and `grant_access`.
+
+### Upgrade notes
+
+- Hosts that follow the dummy stack should pin Accessible `v0.11.1` and Root
+  Switchable `v0.5.3`, then run `bin/rails generate recording_studio_accessible:migrations`
+  and `bin/rails db:migrate` so `recording_studio_accesses.role` is a string.
+  Grant through Accessible public services; `RecordingStudio::Access` is readonly.
 
 ## [0.2.1] - 2026-09-02
 

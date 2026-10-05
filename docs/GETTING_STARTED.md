@@ -50,7 +50,7 @@ The host supplies two callbacks because the engine cannot know how a host repres
 - `admin_authorizer` decides whether the signed-in user can enter the webhooks admin UI.
 - `admin_recording_scope` decides which recordings that user can view and manage.
 
-When using `RecordingStudioAccessible`, delegate to its established policy instead of building a second permission system. Enable Accessible on the host root with `RecordingStudio.enable_capability(:accessible, on: Workspace)`. For the first owner on an empty owned root, call `RecordingStudioAccessible.bootstrap_owner_access!`; use `grant_access` for later invites.
+When using `RecordingStudioAccessible`, delegate to its established policy instead of building a second permission system. Enable Accessible on the host root with `RecordingStudio.enable_capability(:accessible, on: Workspace)`. For the first owner on an empty owned root, call `RecordingStudioAccessible.bootstrap_owner_access!`; use `grant_access` for later invites. Accessible `0.11` stores roles as strings (`view`, `edit`, `admin`); do not create or update `RecordingStudio::Access` rows directly.
 
 ```ruby
 # config/initializers/recording_studio_webhooks.rb           # Load this when Rails starts.
