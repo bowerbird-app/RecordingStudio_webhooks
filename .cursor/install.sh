@@ -16,6 +16,17 @@ PREFIX=/usr/local
 
 log() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 
+# Dummy credentials (`test/dummy/config/credentials.yml.enc`) use the shared
+# RecordingStudio_* development master key. Set RAILS_MASTER_KEY, or write
+# test/dummy/config/master.key. Do not generate a per-repo master key.
+# Never commit the key.
+if [ -n "${RAILS_MASTER_KEY:-}" ]; then
+  log "Writing dummy master.key from RAILS_MASTER_KEY"
+  umask 077
+  mkdir -p "${ROOT}/test/dummy/config"
+  printf '%s' "${RAILS_MASTER_KEY}" > "${ROOT}/test/dummy/config/master.key"
+fi
+
 ruby_ok() {
   command -v ruby >/dev/null 2>&1 || return 1
   [ "$(ruby -e 'print RUBY_VERSION')" = "${RUBY_VERSION}" ]

@@ -48,6 +48,8 @@ class CursorInstallTest < Minitest::Test
     assert_includes install, "ruby-build"
     assert_includes install, "db:prepare"
     assert_includes install, "tailwindcss:build"
+    assert_includes install, "RAILS_MASTER_KEY"
+    assert_includes install, "mkdir -p \"${ROOT}/test/dummy/config\""
     refute_nil fetch_at, "install.sh must run fetch-skills.sh"
     assert_operator apt_at, :<, fetch_at
     assert_operator fetch_at, :<, complete_at
@@ -90,6 +92,7 @@ class CursorInstallTest < Minitest::Test
     assert_equal 1, result.fetch("SANDBOX_FETCHED"), result.fetch("log")
     assert_equal 0, result.fetch("SANDBOX_APT"), result.fetch("log")
     assert_equal 1, result.fetch("SANDBOX_SKIP"), result.fetch("stdout")
+    assert_equal 1, result.fetch("SANDBOX_MASTER_KEY"), result.fetch("stdout")
   end
 
   def test_failed_skippable_provision_still_fetches_skills
@@ -100,6 +103,7 @@ class CursorInstallTest < Minitest::Test
     assert_equal 1, result.fetch("SANDBOX_APT"), result.fetch("log")
     assert_includes result.fetch("log"), "apt-get update"
     refute_includes result.fetch("log"), "apt-get install"
+    assert_equal 1, result.fetch("SANDBOX_MASTER_KEY"), result.fetch("stdout")
   end
 
   private
@@ -112,7 +116,7 @@ class CursorInstallTest < Minitest::Test
       parsed[key] = value if key && value
     end
 
-    %w[SANDBOX_EXIT SANDBOX_FETCHED SANDBOX_APT SANDBOX_SKIP].each do |key|
+    %w[SANDBOX_EXIT SANDBOX_FETCHED SANDBOX_APT SANDBOX_SKIP SANDBOX_MASTER_KEY].each do |key|
       parsed[key] = Integer(parsed.fetch(key))
     end
 

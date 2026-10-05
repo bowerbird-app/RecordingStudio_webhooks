@@ -12,6 +12,12 @@ Never put provider signing material, endpoint tokens, or secret-store paths in
 endpoint identity, metadata, policy, action snapshots, job arguments, source
 control, or logs.
 
+Dummy app credentials live in `test/dummy/config/credentials.yml.enc`. That file
+is encrypted with the shared RecordingStudio_* development master key (dev/test
+only; this gem has no production site). Keep the encrypted file. Do not mint a
+per-repo dummy master key. Set `RAILS_MASTER_KEY`, or write the shared key to
+`test/dummy/config/master.key`. That file is gitignored and is never committed.
+
 ## Intake
 
 Public intake uses `ActionController::API`, so it is stateless and has no
