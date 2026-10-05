@@ -83,6 +83,7 @@ export STUB_LOG="${LOG}"
 export APT_GET_EXIT=1
 export PATH="${BIN}"
 export HOME="${SANDBOX}"
+export RAILS_MASTER_KEY="${RAILS_MASTER_KEY:-sandbox-dummy-master-key}"
 
 set +e
 STDOUT_FILE="${SANDBOX}/stdout.log"
@@ -99,10 +100,19 @@ grep -q 'apt-get' "${LOG}" && SANDBOX_APT=1
 SANDBOX_SKIP=0
 grep -q 'already usable' "${STDOUT_FILE}" && SANDBOX_SKIP=1
 
+SANDBOX_MASTER_KEY=0
+if [[ -f "${FAKE_ROOT}/test/dummy/config/master.key" ]]; then
+  actual="$(cat "${FAKE_ROOT}/test/dummy/config/master.key")"
+  if [[ "${actual}" == "${RAILS_MASTER_KEY}" ]]; then
+    SANDBOX_MASTER_KEY=1
+  fi
+fi
+
 printf 'SANDBOX_EXIT=%s\n' "${SANDBOX_EXIT}"
 printf 'SANDBOX_FETCHED=%s\n' "${SANDBOX_FETCHED}"
 printf 'SANDBOX_APT=%s\n' "${SANDBOX_APT}"
 printf 'SANDBOX_SKIP=%s\n' "${SANDBOX_SKIP}"
+printf 'SANDBOX_MASTER_KEY=%s\n' "${SANDBOX_MASTER_KEY}"
 printf 'SANDBOX_DIR=%s\n' "${SANDBOX}"
 printf 'SANDBOX_LOG=%s\n' "${LOG}"
 printf 'SANDBOX_STDOUT=%s\n' "${STDOUT_FILE}"

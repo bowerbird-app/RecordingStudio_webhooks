@@ -228,11 +228,15 @@ Root Switchable `v0.5.3`, and FlatPack `v0.1.198`. Authenticated dummy screens
 use Recording Studio's shared default layout plus FlatPack CSS/JS. Dummy Accessible
 setup uses string roles and Accessible `0.8`–`0.11` migrations.
 
+Dummy credentials (`test/dummy/config/credentials.yml.enc`) are encrypted with the shared RecordingStudio_* development master key. Set `RAILS_MASTER_KEY` or put that key in `test/dummy/config/master.key` (gitignored). Keep the encrypted file; do not generate a per-repo dummy key.
+
 ## Cloud Agent boot
 
 Cloud Agent Builds run `.cursor/install.sh`, then `.cursor/fetch-skills.sh`.
 The install hook provisions a cold image. On a warm snapshot it skips apt,
 ruby-build, db:prepare, and tailwind when Ruby, bundle, and Postgres are
-already usable. Fetch-skills always runs last. `.cursor/start.sh` starts
-PostgreSQL on each boot. Rebuild with Draft off to load a new pack. See
+already usable. If `RAILS_MASTER_KEY` is set, it writes gitignored
+`test/dummy/config/master.key` so dummy credentials decrypt. Fetch-skills always
+runs last. `.cursor/start.sh` starts PostgreSQL on each boot. Rebuild with Draft
+off to load a new pack. See
 [Cursor skills in Cloud Agents](docs/cursor-skills.md).

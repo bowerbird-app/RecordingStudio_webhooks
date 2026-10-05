@@ -22,6 +22,10 @@ Provider callbacks and intake hooks should return `true` to permit work. A
 false value or exception fails closed. Signature verifiers receive request bytes
 only in memory. Authorization and rate-limit hooks receive a redacted payload.
 
+Host apps should set `token_digest_secret` from encrypted credentials (see
+`recording_studio_webhooks.token_digest_secret` in the dummy credentials file)
+or another secret store. Never commit the value.
+
 Use `provider_roots`, `action_roots`, and `automatic_discovery = true` only for
 explicit, trusted local directories. Discovery loads Ruby files in lexical
 order; it does not scan arbitrary constants. Ignore those directories from

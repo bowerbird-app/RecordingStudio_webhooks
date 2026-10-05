@@ -42,6 +42,8 @@ test/dummy/app/assets/builds/
 test/dummy/public/assets/
 
 # Credentials
+config/master.key
+config/credentials/*.key
 test/dummy/config/master.key
 test/dummy/config/credentials/*.key
 
