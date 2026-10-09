@@ -37,6 +37,10 @@ module RecordingStudioWebhooks
       config.to_prepare { RecordingStudioWebhooks::Admin::Registration.register! }
     end
 
+    initializer "recording_studio_webhooks.metrics" do
+      config.to_prepare { RecordingStudioWebhooks::Metrics.register! }
+    end
+
     initializer "recording_studio_webhooks.configure_recording_studio_recordables" do
       config.to_prepare { RecordingStudioWebhooks.configure_recordables! }
     end

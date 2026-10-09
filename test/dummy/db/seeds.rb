@@ -193,6 +193,7 @@ user = User.find_or_create_by!(email: "admin@admin.com") do |u|
 end
 
 # Create the workspace recordables
+admin_root = AdminRoot.find_or_create_by!(name: "Admin")
 workspace = Workspace.find_or_create_by!(name: "Studio Workspace")
 accessible_workspace = Workspace.find_or_create_by!(name: "Client Workspace")
 private_workspace = Workspace.find_or_create_by!(name: "Private Workspace")
@@ -206,6 +207,7 @@ RecordingStudioWebhooks.configuration.dispatcher = ->(_attempt_id, wait_until: n
 
 begin
   # Create the root recording
+  admin_root_recording = RecordingStudio.root_recording_for(admin_root)
   root_recording = RecordingStudio.root_recording_for(workspace)
   accessible_root_recording = RecordingStudio.root_recording_for(accessible_workspace)
   private_root_recording = RecordingStudio.root_recording_for(private_workspace)
@@ -214,7 +216,7 @@ begin
 
   find_or_record_child.call(page, root_recording, folder_recording)
 
-  [root_recording, accessible_root_recording, private_root_recording].each do |recording|
+  [admin_root_recording, root_recording, accessible_root_recording, private_root_recording].each do |recording|
     grant_admin_access.call(recording, user)
   end
 

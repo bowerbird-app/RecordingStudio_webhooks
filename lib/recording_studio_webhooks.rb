@@ -27,6 +27,7 @@ require "recording_studio_webhooks/dispatcher"
 require "recording_studio_webhooks/admin_webhooks_section"
 require "recording_studio_webhooks/admin_last_4_weeks_patch"
 require "recording_studio_webhooks/admin/registration"
+require "recording_studio_webhooks/metrics"
 require "recording_studio_webhooks/public_intake_guard"
 require "recording_studio_webhooks/engine"
 
