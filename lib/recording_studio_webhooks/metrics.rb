@@ -17,6 +17,8 @@ module RecordingStudioWebhooks
     module_function
 
     def register!
+      return if RecordingStudioMetrics.find("webhook_events.over_time")
+
       register_events!
       register_attempts!
       register_endpoints!
