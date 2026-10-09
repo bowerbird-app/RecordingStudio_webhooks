@@ -33,7 +33,7 @@ class MetricsTest < Minitest::Test
     refute_includes metrics, "rescue"
 
     assert_includes engine, 'initializer "recording_studio_webhooks.metrics"'
-    assert_includes engine, "RecordingStudioWebhooks::Metrics.register!"
+    assert_includes engine, "RecordingStudioWebhooks::Metrics.install!"
     refute_includes engine, "RecordingStudioMetrics::Api.register!"
 
     assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", "~> 0.2"'

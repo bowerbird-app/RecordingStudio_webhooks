@@ -8,7 +8,7 @@ Site-wide Webhooks metrics register with Recording Studio Metrics for the operat
 
 ### Added
 
-- `RecordingStudioWebhooks::Metrics.register!` registers `:webhook_events`,
+- `RecordingStudioWebhooks::Metrics.install!` registers `:webhook_events`,
   `:webhook_attempts`, and `:webhook_endpoints` (`blast_radius: :site`) with
   RecordingStudioMetrics. Events: `webhook_events.over_time` (`received_at`),
   `webhook_events.by_provider` (`provider_name`). Attempts: `webhook_attempts.by_status`.

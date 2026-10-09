@@ -16,12 +16,27 @@ module RecordingStudioWebhooks
 
     module_function
 
+    def install!
+      prepend_admin_view_overrides
+      register!
+    end
+
     def register!
       return if RecordingStudioMetrics.find("webhook_events.over_time")
 
       register_events!
       register_attempts!
       register_endpoints!
+    end
+
+    def prepend_admin_view_overrides
+      view_path = RecordingStudioWebhooks::Engine.root.join("app/views").to_s
+      if defined?(RecordingStudioAdmin::ScreensController)
+        RecordingStudioAdmin::ScreensController.prepend_view_path(view_path)
+      end
+      return unless defined?(RecordingStudioAdmin::ScreenWidgetsController)
+
+      RecordingStudioAdmin::ScreenWidgetsController.prepend_view_path(view_path)
     end
 
     def register_events!

@@ -53,16 +53,21 @@ module RecordingStudioWebhooks
 
     initializer "recording_studio_webhooks.prepend_admin_view_overrides" do
       config.to_prepare do
-        next unless defined?(RecordingStudioAdmin)
-
         view_path = RecordingStudioWebhooks::Engine.root.join("app/views").to_s
-        RecordingStudioAdmin::ScreensController.prepend_view_path(view_path)
-        RecordingStudioAdmin::ScreenWidgetsController.prepend_view_path(view_path)
+
+        if defined?(RecordingStudioAdmin::ScreensController)
+          RecordingStudioAdmin::ScreensController.prepend_view_path(view_path)
+        end
+
+        if defined?(RecordingStudioAdmin::ScreenWidgetsController)
+          RecordingStudioAdmin::ScreenWidgetsController.prepend_view_path(view_path)
+        end
       end
     end
 
-    initializer "recording_studio_webhooks.metrics" do
-      config.to_prepare { RecordingStudioWebhooks::Metrics.register! }
+    initializer "recording_studio_webhooks.metrics",
+                after: "recording_studio_api.prepend_recording_studio_admin_views" do
+      config.to_prepare { RecordingStudioWebhooks::Metrics.install! }
     end
   end
 end
