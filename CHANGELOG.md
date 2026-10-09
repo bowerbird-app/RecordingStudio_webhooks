@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+## [0.3.0] - 2026-10-09
+
+Site-wide Webhooks metrics register with Recording Studio Metrics for the operations API.
+
+### Added
+
+- `RecordingStudioWebhooks::Metrics.register!` registers `:webhook_events`,
+  `:webhook_attempts`, and `:webhook_endpoints` (`blast_radius: :site`) with
+  RecordingStudioMetrics. Events: `webhook_events.over_time` (`received_at`),
+  `webhook_events.by_provider` (`provider_name`). Attempts: `webhook_attempts.by_status`.
+  Endpoints: `webhook_endpoints.enabled` (current endpoints with `enabled: true`).
+  Each metric is exposed on `:operations` only. `api_authorize` uses
+  `RecordingStudioWebhooks::Api::Access.can_view?` (AdminRoot `:view`).
+- Runtime dependency `recording_studio_metrics` `~> 0.2` (GitHub tag `v0.2.0`).
+
+### Upgrade notes
+
+- Bump to `0.3.0`. No migration.
+- Add `recording_studio_metrics` at tag `v0.2.0`.
+- This gem does not call `RecordingStudioMetrics::Api.register!`. When
+  RecordingStudio API is present, the host registers Metrics endpoints once:
+
+```ruby
+RecordingStudioMetrics::Api.register!(api: :operations)
+```
+
 ### Changed
 
 - Dummy and root Gemfiles pin Recording Studio git tag `v4.2.2`

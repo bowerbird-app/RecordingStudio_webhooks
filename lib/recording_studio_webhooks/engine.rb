@@ -64,5 +64,9 @@ module RecordingStudioWebhooks
         end
       end
     end
+
+    initializer "recording_studio_webhooks.metrics" do
+      config.to_prepare { RecordingStudioWebhooks::Metrics.register! }
+    end
   end
 end

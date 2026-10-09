@@ -12,6 +12,7 @@ gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_access
 # 51579fa59545a28b62d710a4547b9f062b8ea46a (merge-base --is-ancestor is false).
 gem "recording_studio_admin", github: "bowerbird-app/RecordingStudio_admin",
                               branch: "cursor/rs41-accessible-06-upgrade-eb59"
+gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.2.0"
 
 group :development, :test do
   gem "debug"

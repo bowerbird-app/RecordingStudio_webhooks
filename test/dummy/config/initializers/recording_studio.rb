@@ -6,6 +6,7 @@ RecordingStudio.configure do |config|
     "Workspace",
     "Folder",
     "Page",
+    "AdminRoot",
     "RecordingStudioWebhooks::Endpoint",
     "RecordingStudioWebhooks::EndpointToken"
   ]
