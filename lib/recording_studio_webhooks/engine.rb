@@ -65,9 +65,8 @@ module RecordingStudioWebhooks
       end
     end
 
-    initializer "recording_studio_webhooks.metrics",
-                after: "recording_studio_api.prepend_recording_studio_admin_views" do
-      config.to_prepare { RecordingStudioWebhooks::Metrics.install! }
+    initializer "recording_studio_webhooks.metrics" do
+      config.to_prepare { RecordingStudioWebhooks::Metrics.register! }
     end
   end
 end

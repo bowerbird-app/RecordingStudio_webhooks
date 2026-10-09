@@ -10,14 +10,6 @@ RecordingStudio.configure do |config|
     "RecordingStudioWebhooks::Endpoint",
     "RecordingStudioWebhooks::EndpointToken"
   ]
-  if defined?(RecordingStudioApi)
-    required_recordable_types += [
-      "RecordingStudioApi::ApiClient",
-      "RecordingStudioApi::ApiCredential",
-      "RecordingStudioApi::ApiAccessToken",
-      "RecordingStudioApi::AdminApi"
-    ]
-  end
   config.recordable_types = (Array(config.recordable_types) + required_recordable_types).uniq
   config.enable_capability :accessible, on: "Workspace"
 

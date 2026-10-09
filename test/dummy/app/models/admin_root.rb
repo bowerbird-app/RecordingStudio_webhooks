@@ -6,7 +6,6 @@ class AdminRoot < ApplicationRecord
 
   recording_studio_recordable label: "Admin", root: true, shared: false
   RecordingStudio.enable_capability(:accessible, on: self)
-  RecordingStudio.enable_capability(:api_access_point, on: self) if defined?(RecordingStudioApi)
 
   recording_studio_admin_sections do
     section :admin_webhooks

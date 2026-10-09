@@ -29,14 +29,15 @@ class MetricsTest < Minitest::Test
     assert_includes metrics, "API = :operations"
     assert_includes metrics, "Api::Access.can_view?"
     refute_includes metrics, "RecordingStudioMetrics::Api.register!"
+    refute_includes metrics, "prepend_view_path"
     refute_includes metrics, "respond_to?"
     refute_includes metrics, "rescue"
 
     assert_includes engine, 'initializer "recording_studio_webhooks.metrics"'
-    assert_includes engine, "RecordingStudioWebhooks::Metrics.install!"
+    assert_includes engine, "RecordingStudioWebhooks::Metrics.register!"
     refute_includes engine, "RecordingStudioMetrics::Api.register!"
 
     assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", "~> 0.2"'
-    assert_includes dummy_metrics, "RecordingStudioMetrics::Api.register!(api: :operations)"
+    refute_includes dummy_metrics, "RecordingStudioMetrics::Api.register!"
   end
 end

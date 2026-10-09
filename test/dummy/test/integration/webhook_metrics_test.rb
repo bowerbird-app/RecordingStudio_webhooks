@@ -2,13 +2,18 @@
 
 require "test_helper"
 
-class WebhookMetricsApiTest < ActionDispatch::IntegrationTest
-  OPERATIONS_ROOT = "/recording_studio_api/apis/operations/v1"
-  PUBLIC_ROOT = "/recording_studio_api/api/v1"
+class WebhookMetricsTest < ActiveSupport::TestCase
+  GrantContext = Struct.new(:access_grant)
+  Grant = Struct.new(:actor)
 
   setup do
     @staff = User.create!(
       email: "metrics-staff-#{SecureRandom.hex(4)}@example.com",
+      password: "Password",
+      password_confirmation: "Password"
+    )
+    @outsider = User.create!(
+      email: "metrics-outsider-#{SecureRandom.hex(4)}@example.com",
       password: "Password",
       password_confirmation: "Password"
     )
@@ -18,29 +23,7 @@ class WebhookMetricsApiTest < ActionDispatch::IntegrationTest
     @admin_root = RecordingStudio.root_recording_for(AdminRoot.find_or_create_by!(name: "Admin"))
     grant!(@admin_root, @staff, :admin)
     bootstrap_owner!(@root, @staff)
-
     seed_webhooks!
-
-    @staff_operations_token = provision_token(
-      access_point: @admin_root,
-      actor: @staff,
-      role: :edit,
-      name: "Staff operations metrics #{SecureRandom.hex(4)}",
-      api: :operations
-    )
-    @workspace_operations_token = provision_token(
-      access_point: @root,
-      actor: @staff,
-      role: :edit,
-      name: "Workspace operations metrics #{SecureRandom.hex(4)}",
-      api: :operations
-    )
-    @public_token = provision_token(
-      access_point: @root,
-      actor: @staff,
-      role: :view,
-      name: "Public metrics #{SecureRandom.hex(4)}"
-    )
     Current.actor = nil
   end
 
@@ -48,95 +31,72 @@ class WebhookMetricsApiTest < ActionDispatch::IntegrationTest
     Current.actor = nil
   end
 
-  test "operations staff token reads webhook event, attempt, and endpoint metrics" do
-    get "#{OPERATIONS_ROOT}/metrics/webhook_events/over_time",
-        params: { interval: "day" },
-        headers: auth(@staff_operations_token),
-        as: :json
-    assert_response :success
-    opened = timeseries_counts(response.parsed_body)
-    assert_equal events_received_between(Time.utc(2026, 10, 7), Time.utc(2026, 10, 8)), opened["2026-10-07"]
-    assert_equal events_received_between(Time.utc(2026, 10, 8), Time.utc(2026, 10, 9)), opened["2026-10-08"]
-    assert_operator opened["2026-10-07"], :>=, 1
-    assert_operator opened["2026-10-08"], :>=, 2
-
-    get "#{OPERATIONS_ROOT}/metrics/webhook_events/by_provider",
-        headers: auth(@staff_operations_token),
-        as: :json
-    assert_response :success
-    provider_counts = breakdown_counts(response.parsed_body)
-    RecordingStudioWebhooks::InboundEvent.distinct.pluck(:provider_name).each do |provider|
-      assert_equal RecordingStudioWebhooks::InboundEvent.where(provider_name: provider).count,
-                   provider_counts[provider].to_i
-    end
-
-    get "#{OPERATIONS_ROOT}/metrics/webhook_attempts/by_status",
-        headers: auth(@staff_operations_token),
-        as: :json
-    assert_response :success
-    status_counts = breakdown_counts(response.parsed_body)
-    RecordingStudioWebhooks::ActionAttempt::STATUSES.each do |status|
-      assert_equal RecordingStudioWebhooks::ActionAttempt.where(status: status).count, status_counts[status].to_i
-    end
-
-    get "#{OPERATIONS_ROOT}/metrics/webhook_endpoints/enabled",
-        headers: auth(@staff_operations_token),
-        as: :json
-    assert_response :success
-    enabled = RecordingStudioWebhooks::Endpoint.current.where(enabled: true).count
-    assert_equal enabled, response.parsed_body.fetch("value")
-    assert_operator RecordingStudioWebhooks::Endpoint.current.where(enabled: false).count, :>=, 1
-  end
-
-  test "metrics index lists webhook metrics" do
-    get "#{OPERATIONS_ROOT}/metrics", headers: auth(@staff_operations_token), as: :json
-
-    assert_response :success
-    identifiers = response.parsed_body.fetch("metrics").map { |row| row.fetch("identifier") }
+  test "registered webhook metrics return seeded event, attempt, and endpoint values" do
+    identifiers = RecordingStudioMetrics.definitions.map(&:identifier)
     %w[
       webhook_events.over_time
       webhook_events.by_provider
       webhook_attempts.by_status
       webhook_endpoints.enabled
     ].each { |identifier| assert_includes identifiers, identifier }
+
+    opened = timeseries_counts(
+      execute(
+        "webhook_events.over_time",
+        interval: "day",
+        start_at: Time.utc(2026, 10, 6),
+        end_at: Time.utc(2026, 10, 10)
+      )
+    )
+    assert_equal events_received_between(Time.utc(2026, 10, 7), Time.utc(2026, 10, 8)), opened["2026-10-07"]
+    assert_equal events_received_between(Time.utc(2026, 10, 8), Time.utc(2026, 10, 9)), opened["2026-10-08"]
+    assert_operator opened["2026-10-07"], :>=, 1
+    assert_operator opened["2026-10-08"], :>=, 2
+
+    provider_counts = breakdown_counts(execute("webhook_events.by_provider"))
+    RecordingStudioWebhooks::InboundEvent.distinct.pluck(:provider_name).each do |provider|
+      assert_equal RecordingStudioWebhooks::InboundEvent.where(provider_name: provider).count,
+                   provider_counts[provider].to_i
+    end
+
+    status_counts = breakdown_counts(execute("webhook_attempts.by_status"))
+    RecordingStudioWebhooks::ActionAttempt::STATUSES.each do |status|
+      assert_equal RecordingStudioWebhooks::ActionAttempt.where(status: status).count, status_counts[status].to_i
+    end
+
+    enabled = RecordingStudioWebhooks::Endpoint.current.where(enabled: true).count
+    assert_equal enabled, execute("webhook_endpoints.enabled").value
+    assert_operator RecordingStudioWebhooks::Endpoint.current.where(enabled: false).count, :>=, 1
   end
 
-  test "non-admin operations token is denied webhook metrics" do
-    get "#{OPERATIONS_ROOT}/metrics/webhook_events/over_time",
-        headers: auth(@workspace_operations_token),
-        as: :json
-    assert_response :forbidden
+  test "api_authorize allows AdminRoot staff and denies non-admins" do
+    authorize = RecordingStudioMetrics.registry.api_authorize_for(:webhook_events)
+    assert_equal RecordingStudioWebhooks::Metrics::AUTHORIZE, authorize
 
-    get "#{OPERATIONS_ROOT}/metrics/webhook_endpoints/enabled",
-        headers: auth(@workspace_operations_token),
-        as: :json
-    assert_response :forbidden
-
-    get "#{OPERATIONS_ROOT}/metrics", headers: auth(@workspace_operations_token), as: :json
-    assert_response :success
-    identifiers = response.parsed_body.fetch("metrics").map { |row| row.fetch("identifier") }
-    refute_includes identifiers, "webhook_events.over_time"
-    refute_includes identifiers, "webhook_endpoints.enabled"
-  end
-
-  test "public API token is denied operations webhook metrics" do
-    get "#{OPERATIONS_ROOT}/metrics/webhook_events/over_time",
-        headers: auth(@public_token),
-        as: :json
-    assert_response :unauthorized
-
-    get "#{OPERATIONS_ROOT}/metrics/webhook_endpoints/enabled",
-        headers: auth(@public_token),
-        as: :json
-    assert_response :unauthorized
-
-    get "#{PUBLIC_ROOT}/metrics/webhook_endpoints/enabled",
-        headers: auth(@public_token),
-        as: :json
-    assert_includes [404, 401, 403], response.status
+    assert authorize.call(GrantContext.new(Grant.new(@staff)))
+    refute authorize.call(GrantContext.new(Grant.new(@outsider)))
+    refute authorize.call(GrantContext.new(Grant.new(nil)))
   end
 
   private
+
+  def execute(identifier, **params)
+    RecordingStudioMetrics.execute(
+      identifier,
+      context: site_context,
+      cache: false,
+      **params
+    )
+  end
+
+  def site_context
+    RecordingStudioMetrics::Context.new(
+      scope: :site,
+      actor: @staff,
+      site_authorized: true,
+      timezone: "UTC"
+    )
+  end
 
   def seed_webhooks!
     demo = create_endpoint!("demo", "Metrics demo #{SecureRandom.hex(4)}", enabled: true)
@@ -212,38 +172,12 @@ class WebhookMetricsApiTest < ActionDispatch::IntegrationTest
     RecordingStudioWebhooks::InboundEvent.where(received_at: start_at...end_at).count
   end
 
-  def breakdown_counts(payload)
-    payload.fetch("data").to_h { |row| [row.fetch("key").to_s, row.fetch("value")] }
+  def breakdown_counts(result)
+    result.data.to_h { |row| [row[:key].to_s, row[:value] || row["value"]] }
   end
 
-  def timeseries_counts(payload)
-    payload.fetch("data").to_h { |row| [row.fetch("date").to_s, row.fetch("value")] }
-  end
-
-  def auth(token)
-    { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
-  end
-
-  def provision_token(access_point:, actor:, role:, name:, api: :public)
-    result = RecordingStudioApi::Services::ProvisionApiClient.call(
-      access_point_recording: access_point,
-      manager_actor: actor,
-      role: role,
-      name: name,
-      api: api
-    )
-    raise result.error unless result.success?
-
-    payload = result.value
-    token_result = RecordingStudioApi::Services::IssueOauthAccessToken.call(
-      grant_type: "client_credentials",
-      client_id: payload.fetch(:credential).oauth_client_id,
-      client_secret: payload.fetch(:token),
-      api: api
-    )
-    raise token_result.error unless token_result.success?
-
-    token_result.value.fetch(:access_token)
+  def timeseries_counts(result)
+    result.data.to_h { |row| [(row[:date] || row["date"]).to_s, row[:value] || row["value"]] }
   end
 
   def bootstrap_owner!(recording, actor)
