@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## [0.5.1] - 2026-10-14
+
+Site-wide metrics deny access when the admin root resolver raises.
+
+### Fixed
+
+- `RecordingStudioWebhooks::Api::Access.can_view?` returns false when the admin
+  root resolver raises. Recording Studio Metrics discovery no longer fails the
+  request with that error.
+
+### Upgrade notes
+
+- Bump to `0.5.1`. No migration and no configuration change.
+
 ## [0.5.0] - 2026-10-14
 
 ### Added

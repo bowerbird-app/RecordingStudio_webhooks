@@ -14,7 +14,11 @@ module RecordingStudioWebhooks
         resolver = config.site_admin_recording_resolver || config.access_recording_resolver
         return unless resolver
 
-        resolver.call(ResolverContext.new(nil))
+        begin
+          resolver.call(ResolverContext.new(nil))
+        rescue StandardError
+          nil
+        end
       end
 
       def actor_for(context)
