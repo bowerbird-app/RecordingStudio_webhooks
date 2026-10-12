@@ -5,6 +5,7 @@ require "i18n"
 require "yaml"
 
 class LocalesTest < Minitest::Test
+  # rubocop:disable Style/FormatStringToken -- I18n interpolation tokens match en.yml
   EXPECTED_ENGLISH = {
     "flashes.endpoint_created" => "Endpoint created.",
     "flashes.endpoint_updated" => "Endpoint updated.",
@@ -17,6 +18,7 @@ class LocalesTest < Minitest::Test
     "form_errors.provide_json_payload" => "Provide a JSON payload and a valid event type.",
     "form_errors.json_object" => "%{label} must be a JSON object."
   }.freeze
+  # rubocop:enable Style/FormatStringToken
 
   def setup
     @previous_load_path = I18n.load_path.dup
