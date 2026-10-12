@@ -45,7 +45,10 @@ module RecordingStudioWebhooks
       def require_flat_pack!
         return if defined?(::FlatPack)
 
-        render plain: "Recording Studio Webhooks administration requires FlatPack.", status: :service_unavailable
+        render plain: Copy.t(
+          "flashes.requires_flat_pack",
+          default: "Recording Studio Webhooks administration requires FlatPack."
+        ), status: :service_unavailable
       end
 
       def admin_context(permission: :view)

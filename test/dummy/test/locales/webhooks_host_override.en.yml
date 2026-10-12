@@ -1,0 +1,11 @@
+# Test-only host override fixture (not under config/locales). Loaded via
+# I18n.backend.load_translations in host-override integration tests so
+# last-file-wins can be asserted without mutating I18n.load_path.
+en:
+  recording_studio:
+    webhooks:
+      flashes:
+        token_revoked: "HOST Token revoked."
+      form_errors:
+        choose_registered_provider: "HOST Choose a registered provider."
+        token_could_not_be_issued: "HOST The token could not be issued."

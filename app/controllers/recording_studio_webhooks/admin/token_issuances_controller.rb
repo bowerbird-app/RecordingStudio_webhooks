@@ -16,14 +16,21 @@ module RecordingStudioWebhooks
           actor: current_admin_actor
         )
 
-        redirect_to "/admin/screens/tokens", notice: "Token issued."
+        redirect_to "/admin/screens/tokens",
+                    notice: Copy.t("flashes.token_issued", default: "Token issued.")
       rescue KeyError, ActiveRecord::RecordNotFound
         load_provider_and_endpoints
-        @form_error = "Choose a valid endpoint."
+        @form_error = Copy.t(
+          "form_errors.choose_valid_endpoint",
+          default: "Choose a valid endpoint."
+        )
         render :new, status: :unprocessable_entity
       rescue ArgumentError, ActiveRecord::RecordInvalid
         load_provider_and_endpoints
-        @form_error = "The token could not be issued."
+        @form_error = Copy.t(
+          "form_errors.token_could_not_be_issued",
+          default: "The token could not be issued."
+        )
         render :new, status: :unprocessable_entity
       end
 

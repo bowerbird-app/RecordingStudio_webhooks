@@ -23,13 +23,17 @@ module RecordingStudioWebhooks
         render :show, status: :created
       rescue ArgumentError, ActiveRecord::RecordInvalid
         load_index_data
-        @form_error = "The token could not be issued."
+        @form_error = Copy.t(
+          "form_errors.token_could_not_be_issued",
+          default: "The token could not be issued."
+        )
         render :index, status: :unprocessable_entity
       end
 
       def destroy
         @endpoint.endpoint_tokens.find(params[:id]).revoke!(actor: current_admin_actor)
-        redirect_to "/admin/screens/tokens", notice: "Token revoked."
+        redirect_to "/admin/screens/tokens",
+                    notice: Copy.t("flashes.token_revoked", default: "Token revoked.")
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"
       end

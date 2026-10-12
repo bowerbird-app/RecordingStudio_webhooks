@@ -1,0 +1,8 @@
+# Host override for a rarely shown Webhooks form-error key (bad provider on create).
+# Kept out of the default happy-path UI so other dummy tests still see gem English.
+# Loaded by Rails from config/locales — do not append this path in tests.
+en:
+  recording_studio:
+    webhooks:
+      form_errors:
+        choose_registered_provider: "HOST Choose a registered provider."

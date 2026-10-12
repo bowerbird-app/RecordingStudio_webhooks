@@ -26,6 +26,17 @@ Host apps should set `token_digest_secret` from encrypted credentials (see
 `recording_studio_webhooks.token_digest_secret` in the dummy credentials file)
 or another secret store. Never commit the value.
 
+## Copy and locales
+
+Non-view admin flashes and form errors live under
+`recording_studio.webhooks.flashes.*` and
+`recording_studio.webhooks.form_errors.*` in the gem's `config/locales/en.yml`.
+Lookups go through `RecordingStudioWebhooks::Copy.t` and always pass an English
+`default:`. Hosts override by defining the same nested keys in their own
+`config/locales`. Admin DSL screen titles, subtitles, column headers, and cell
+values stay English string literals (they are captured at class load). Model
+validation messages and raised routing errors stay English too.
+
 Use `provider_roots`, `action_roots`, and `automatic_discovery = true` only for
 explicit, trusted local directories. Discovery loads Ruby files in lexical
 order; it does not scan arbitrary constants. Ignore those directories from

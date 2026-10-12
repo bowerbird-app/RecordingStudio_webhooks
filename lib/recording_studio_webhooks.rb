@@ -7,6 +7,7 @@ require "openssl"
 require "securerandom"
 
 require "recording_studio_webhooks/version"
+require "recording_studio_webhooks/copy"
 require "recording_studio_webhooks/errors"
 require "recording_studio_webhooks/immutable_snapshot"
 require "recording_studio_webhooks/result"

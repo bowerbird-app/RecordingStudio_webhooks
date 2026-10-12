@@ -24,9 +24,15 @@ module RecordingStudioWebhooks
             @endpoint.issue_token!(actor: current_admin_actor)
           end
 
-          redirect_to "/admin/screens/endpoints", notice: "Endpoint created."
+          redirect_to "/admin/screens/endpoints",
+                      notice: Copy.t("flashes.endpoint_created", default: "Endpoint created.")
         else
-          @form_error ||= "Choose a registered provider." unless registered_provider?
+          unless registered_provider?
+            @form_error ||= Copy.t(
+              "form_errors.choose_registered_provider",
+              default: "Choose a registered provider."
+            )
+          end
           render :new, status: :unprocessable_entity
         end
       rescue ActiveRecord::RecordInvalid
@@ -46,7 +52,8 @@ module RecordingStudioWebhooks
           if params[:auto_save].to_s == "1"
             redirect_to safe_return_to_path(params[:return_to]) || "/admin/screens/endpoints"
           else
-            redirect_to "/admin/screens/endpoints", notice: "Endpoint updated."
+            redirect_to "/admin/screens/endpoints",
+                        notice: Copy.t("flashes.endpoint_updated", default: "Endpoint updated.")
           end
         else
           redirect_to "/admin/screens/endpoints", alert: @form_error
@@ -119,7 +126,12 @@ module RecordingStudioWebhooks
 
         parsed
       rescue JSON::ParserError
-        @form_error = "#{label.capitalize} must be a JSON object."
+        capitalized = label.capitalize
+        @form_error = Copy.t(
+          "form_errors.json_object",
+          label: capitalized,
+          default: "#{capitalized} must be a JSON object."
+        )
         {}
       end
 
