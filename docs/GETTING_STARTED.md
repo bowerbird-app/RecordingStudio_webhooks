@@ -28,7 +28,7 @@ Background action                 # A worker runs your local Ruby code.
 
 ## Install
 
-This engine requires Recording Studio `~> 4.5`. Add the gem, generate its setup files, and apply its migration.
+This engine requires Recording Studio `~> 4.2`. Add the gem, generate its setup files, and apply its migration.
 
 ```bash
 bundle add recording_studio_webhooks                         # Add the engine to the host application.

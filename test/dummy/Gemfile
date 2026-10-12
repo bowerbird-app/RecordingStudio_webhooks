@@ -3,8 +3,8 @@ source "https://rubygems.org"
 # Use the Recording Studio Webhooks engine
 gem "recording_studio_webhooks", path: "../.."
 
-# RecordingStudio 4.5 kit (i18n wave 2 base)
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v4.5.0"
+# RecordingStudio 4.2 kit
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v4.2.2"
 gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.11.1"
 # Admin stays on the unpublished 4.2 branch: v2.0.4 does not contain
 # 51579fa59545a28b62d710a4547b9f062b8ea46a (merge-base --is-ancestor is false).

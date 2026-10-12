@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## Unreleased
 
 ## [0.4.0] - 2026-10-12
 
@@ -26,8 +26,6 @@
 
 - Admin controller flashes and form errors resolve through
   `RecordingStudioWebhooks::Copy.t` with English `default:`.
-- Gemspec depends on `recording_studio`, `~> 4.5`. Dummy and root Gemfiles pin
-  Recording Studio git tag `v4.5.0`.
 
 ### Upgrade notes
 
@@ -39,8 +37,6 @@
   titles/subtitles/column headers, Admin cell values, raised routing errors,
   and sandbox check result hashes stay main's literal English; translate only
   at controller/view render sites.
-- Point host and dummy Gemfiles at Recording Studio `v4.5.0` (or newer compatible
-  `~> 4.5`).
 
 ## [0.3.0] - 2026-10-09
 
