@@ -30,7 +30,10 @@ module RecordingStudioWebhooks
         @sandbox_result = build_sandbox_result(provider, payload, event_type, headers)
         render :show
       rescue ArgumentError, JSON::ParserError, InvalidEventPatternError
-        @form_error = "Provide a JSON payload and a valid event type."
+        @form_error = Copy.t(
+          "form_errors.provide_json_payload",
+          default: "Provide a JSON payload and a valid event type."
+        )
         render :show, status: :unprocessable_entity
       end
 

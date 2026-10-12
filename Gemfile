@@ -5,7 +5,7 @@ source "https://rubygems.org"
 gemspec
 
 # recording_studio is not published to RubyGems; resolve the gemspec pin from GitHub.
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v4.2.2"
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v4.5.0"
 gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.198"
 gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.11.1"
 # Admin stays on the unpublished 4.2 branch: v2.0.4 does not contain

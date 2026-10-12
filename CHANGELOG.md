@@ -1,6 +1,46 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
+
+## [0.4.0] - 2026-10-12
+
+### Added
+
+- English Rails I18n keys for non-view copy under `recording_studio.webhooks`
+  (controller flashes and form errors). Every lookup passes an English
+  `default:` so a host locale with no fallback never shows "translation missing".
+- Host English override coverage: test-only fixture
+  `test/dummy/test/locales/webhooks_host_override.en.yml` loaded via
+  `I18n.backend.load_translations` (no `I18n.load_path` mutation) plus a
+  real-page revoke flash assert.
+- Always-loaded boot-order guard
+  `test/dummy/config/locales/recording_studio_webhooks_host.en.yml` for the
+  rarely shown `form_errors.choose_registered_provider` key, with a render
+  assert on the bad-provider create path.
+- Locale regression: every `lib/**/*.rb` file must not mention
+  `i18n.load_path` / `I18n.load_path`.
+- Render-level asserts for endpoint create, token issue, and token revoke
+  English flashes.
+
+### Changed
+
+- Admin controller flashes and form errors resolve through
+  `RecordingStudioWebhooks::Copy.t` with English `default:`.
+- Gemspec depends on `recording_studio`, `~> 4.5`. Dummy and root Gemfiles pin
+  Recording Studio git tag `v4.5.0`.
+
+### Upgrade notes
+
+- Bump to `0.4.0`. No migration.
+- English hosts need no change. Copy new `recording_studio.webhooks.flashes.*`
+  and `form_errors.*` keys into host locale files when translating.
+- Hosts override by defining the same nested keys in their own
+  `config/locales`. Public constants, model validation messages, Admin DSL
+  titles/subtitles/column headers, Admin cell values, raised routing errors,
+  and sandbox check result hashes stay main's literal English; translate only
+  at controller/view render sites.
+- Point host and dummy Gemfiles at Recording Studio `v4.5.0` (or newer compatible
+  `~> 4.5`).
 
 ## [0.3.0] - 2026-10-09
 
@@ -114,3 +154,10 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
+
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/releases/tag/v0.1.0

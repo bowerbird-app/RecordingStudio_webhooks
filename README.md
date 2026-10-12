@@ -223,10 +223,16 @@ Tests use a no-op dispatcher so CI can run without Redis; development uses
 Sidekiq. Sign in as `admin@admin.com` with password `Password`, then open
 **Webhook endpoints** from Admin webhooks. The demo never sends outbound requests.
 
-The dummy is on the Recording Studio 4.2 kit: core `v4.2.2`, Accessible `v0.11.1`,
+The dummy is on the Recording Studio 4.5 kit: core `v4.5.0`, Accessible `v0.11.1`,
 Root Switchable `v0.5.3`, and FlatPack `v0.1.198`. Authenticated dummy screens
 use Recording Studio's shared default layout plus FlatPack CSS/JS. Dummy Accessible
 setup uses string roles and Accessible `0.8`–`0.11` migrations.
+
+Controller flashes and form errors resolve under `recording_studio.webhooks.*`
+with English `default:` on every lookup. Hosts override by defining the same
+keys in their own `config/locales`. Admin DSL titles, column headers, cell
+values, model validation messages, and raised routing errors stay English
+literals.
 
 Dummy credentials (`test/dummy/config/credentials.yml.enc`) are encrypted with the shared RecordingStudio_* development master key. Set `RAILS_MASTER_KEY` or put that key in `test/dummy/config/master.key` (gitignored). Keep the encrypted file; do not generate a per-repo dummy key.
 

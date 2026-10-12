@@ -1,0 +1,17 @@
+# English copy for Recording Studio Webhooks (wave 2 non-view strings).
+# Hosts override by defining the same nested keys in their own config/locales.
+en:
+  recording_studio:
+    webhooks:
+      flashes:
+        endpoint_created: "Endpoint created."
+        endpoint_updated: "Endpoint updated."
+        token_issued: "Token issued."
+        token_revoked: "Token revoked."
+        requires_flat_pack: "Recording Studio Webhooks administration requires FlatPack."
+      form_errors:
+        choose_registered_provider: "Choose a registered provider."
+        choose_valid_endpoint: "Choose a valid endpoint."
+        token_could_not_be_issued: "The token could not be issued."
+        provide_json_payload: "Provide a JSON payload and a valid event type."
+        json_object: "%{label} must be a JSON object."
