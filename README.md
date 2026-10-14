@@ -196,6 +196,54 @@ The admin interface is under `/admin` inside the engine mount. It provides:
 The UI uses FlatPack components. Token issuance renders a no-store,
 one-response page instead of a flash or redirect.
 
+## Metrics
+
+`RecordingStudioWebhooks::Metrics.register!` registers site-wide metrics with
+RecordingStudio Metrics (`~> 0.3`). Every metric uses `blast_radius: :site`,
+is exposed on the `:operations` API only, and is visible over the API only to
+actors with `:view` on the Admin root (`Api::Access.can_view?`).
+
+| Metric | Type | Unit | `group_by` | Filters |
+| --- | --- | --- | --- | --- |
+| `webhook_events.over_time` | time series on `received_at` | count | none | none |
+| `webhook_events.by_provider` | breakdown on `provider_name` | count | not supported | none |
+| `webhook_attempts.by_status` | breakdown on `status` | count | not supported | none |
+| `webhook_attempts.stuck` | count | count | `action_name` | `provider`, `endpoint`, `action_name`, `event_id` |
+| `webhook_attempts.oldest_stuck_age` | custom scalar | seconds | not supported | `provider`, `endpoint`, `action_name`, `event_id` |
+| `webhook_endpoints.enabled` | count | count | none | none |
+
+### Stuck retries
+
+An attempt is **retry due** when `ActionAttempt.due` selects it: status
+`pending` or `retrying` and `next_attempt_at` is null or at/before now. Only
+retries carry a schedule (`fail_and_schedule_retry!` and
+`schedule_dispatch_retry!` set `retrying` with `next_attempt_at`; claiming or
+queueing clears it), so a **pending retry** is a `pending`/`retrying` attempt
+with a non-null `next_attempt_at`.
+
+`webhook_attempts.stuck` counts pending retries that are still due at
+`now - grace`, i.e. `next_attempt_at <= now - 300 seconds`. The grace period
+(`Metrics::STUCK_RETRY_GRACE`) is the default policy `max_retry_backoff`
+(300 seconds), the longest delay the gem schedules between attempts under
+default policy. An attempt past that point has missed both its own dispatch
+(`wait_until: next_attempt_at`) and has had a full backoff window for a
+scheduled `dispatch_due` run to pick it up. Endpoints that override
+`max_retry_backoff` still use the 300 second grace.
+
+`webhook_attempts.oldest_stuck_age` is the number of whole seconds since the
+earliest `next_attempt_at` among the same stuck attempts (`null` when nothing
+is stuck). It is one `MIN(next_attempt_at)` over the
+`(status, next_attempt_at)` index.
+
+Both are point-in-time values for "now", so they take no `from`, `to`, or
+`interval`. `group_by: action_name` follows RecordingStudio Metrics
+`min_group_size` (default 5): smaller groups are folded into `other`.
+Attempts do not store an endpoint or event type column, so neither is
+offered as a `group_by`; use the `endpoint` filter instead. Filters use the
+names and matching rules of the Admin "Action attempts" screen: `provider`
+(inbound event provider name), `endpoint` (endpoint label), `action_name`
+(`all` means no filter), and `event_id` (inbound event id).
+
 ## Operations
 
 ```bash

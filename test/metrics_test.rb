@@ -19,6 +19,10 @@ class MetricsTest < Minitest::Test
     assert_includes metrics, ":webhook_attempts"
     assert_includes metrics, "breakdown :by_status"
     assert_includes metrics, "field: :status"
+    assert_includes metrics, "count :stuck"
+    assert_includes metrics, "ActionAttempt.due(Time.current - STUCK_RETRY_GRACE)"
+    assert_includes metrics, "custom :oldest_stuck_age"
+    assert_includes metrics, 'unit: "seconds"'
     assert_includes metrics, ":webhook_endpoints"
     assert_includes metrics, "count :enabled"
     assert_includes metrics, "relation.where(enabled: true)"
@@ -37,7 +41,7 @@ class MetricsTest < Minitest::Test
     assert_includes engine, "RecordingStudioWebhooks::Metrics.register!"
     refute_includes engine, "RecordingStudioMetrics::Api.register!"
 
-    assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", "~> 0.2"'
+    assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", "~> 0.3"'
     refute_includes dummy_metrics, "RecordingStudioMetrics::Api.register!"
   end
 end
