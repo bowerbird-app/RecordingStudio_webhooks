@@ -132,6 +132,54 @@ class WebhookMetricsTest < ActiveSupport::TestCase
     assert_equal %i[provider endpoint action_name event_id], age[:filters].map { |filter| filter[:name] }
   end
 
+  test "failed attempts over time buckets failed attempts by completed_at" do
+    window = { interval: "day", start_at: Time.utc(2026, 10, 6), end_at: Time.utc(2026, 10, 10) }
+    counts = timeseries_counts(execute("webhook_attempts.failed_over_time", **window))
+    expected = RecordingStudioWebhooks::ActionAttempt.where(status: "failed")
+                                                     .where(completed_at: Time.utc(2026, 10, 8)...Time.utc(2026, 10, 9))
+                                                     .count
+    assert_operator expected, :>=, 1
+    assert_equal expected, counts["2026-10-08"]
+    assert_equal 0, counts["2026-10-07"]
+
+    billing = timeseries_counts(execute("webhook_attempts.failed_over_time", **window, filters: { provider: "billing" }))
+    assert_equal 0, billing["2026-10-08"]
+
+    assert_raises(RecordingStudioMetrics::Errors::InvalidGroupBy) do
+      execute("webhook_attempts.failed_over_time", **window, group_by: "status")
+    end
+    execute("webhook_attempts.failed_over_time", **window, group_by: "action_name")
+  end
+
+  test "events by status counts events per status and honors list filters" do
+    counts = breakdown_counts(execute("webhook_events.by_status"))
+    RecordingStudioWebhooks::InboundEvent::STATUSES.each do |status|
+      assert_equal RecordingStudioWebhooks::InboundEvent.where(status: status).count, counts[status].to_i
+    end
+
+    billing = breakdown_counts(execute("webhook_events.by_status", filters: { provider_name: "billing" }))
+    assert_equal RecordingStudioWebhooks::InboundEvent.where(provider_name: "billing", status: "accepted").count,
+                 billing["accepted"].to_i
+    by_endpoint = breakdown_counts(execute("webhook_events.by_status", filters: { endpoint_id: @demo.id }))
+    assert_equal RecordingStudioWebhooks::InboundEvent.where(endpoint_id: @demo.id).count, by_endpoint.values.sum
+  end
+
+  test "failed and status catalog entries carry unit, title, description and list filters" do
+    failed = RecordingStudioMetrics.find("webhook_attempts.failed_over_time").catalog_metadata
+    assert_equal "count", failed[:unit]
+    assert_equal "Failed webhook attempts over time", failed[:title]
+    assert failed[:description].present?
+    assert_equal [:action_name], failed[:group_by]
+    assert_equal 5, failed[:min_group_size]
+    assert_equal %i[provider endpoint action_name event_id], failed[:filters].map { |filter| filter[:name] }
+    assert_equal [:operations], failed[:exposed_apis]
+
+    status = RecordingStudioMetrics.find("webhook_events.by_status").catalog_metadata
+    assert_equal "count", status[:unit]
+    assert status[:description].present?
+    assert_equal %i[provider_name endpoint_id event_type], status[:filters].map { |filter| filter[:name] }
+  end
+
   test "api_authorize allows AdminRoot staff and denies non-admins" do
     authorize = RecordingStudioMetrics.registry.api_authorize_for(:webhook_events)
     assert_equal RecordingStudioWebhooks::Metrics::AUTHORIZE, authorize
