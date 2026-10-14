@@ -207,7 +207,9 @@ actors with `:view` on the Admin root (`Api::Access.can_view?`).
 | --- | --- | --- | --- | --- |
 | `webhook_events.over_time` | time series on `received_at` | count | none | none |
 | `webhook_events.by_provider` | breakdown on `provider_name` | count | not supported | none |
+| `webhook_events.by_status` | breakdown on `status` | count | not supported | `provider_name`, `endpoint_id`, `event_type` (Events screen names) |
 | `webhook_attempts.by_status` | breakdown on `status` | count | not supported | none |
+| `webhook_attempts.failed_over_time` | time series on `completed_at`, `status = failed` | count | `action_name` | `provider`, `endpoint`, `action_name`, `event_id` |
 | `webhook_attempts.stuck` | count | count | `action_name` | `provider`, `endpoint`, `action_name`, `event_id` |
 | `webhook_attempts.oldest_stuck_age` | custom scalar | seconds | not supported | `provider`, `endpoint`, `action_name`, `event_id` |
 | `webhook_endpoints.enabled` | count | count | none | none |

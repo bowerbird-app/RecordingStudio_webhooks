@@ -20,6 +20,8 @@ class MetricsTest < Minitest::Test
     assert_includes metrics, "breakdown :by_status"
     assert_includes metrics, "field: :status"
     assert_includes metrics, "count :stuck"
+    assert_includes metrics, "timeseries :failed_over_time"
+    assert_includes metrics, "field: :completed_at"
     assert_includes metrics, "ActionAttempt.due(Time.current - STUCK_RETRY_GRACE)"
     assert_includes metrics, "custom :oldest_stuck_age"
     assert_includes metrics, 'unit: "seconds"'
@@ -43,5 +45,9 @@ class MetricsTest < Minitest::Test
 
     assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", "~> 0.3"'
     refute_includes dummy_metrics, "RecordingStudioMetrics::Api.register!"
+  end
+
+  def test_version_pin
+    assert_equal "0.6.0", RecordingStudioWebhooks::VERSION
   end
 end

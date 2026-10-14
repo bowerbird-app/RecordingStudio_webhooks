@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "api/access"
+require_relative "metric_filters"
 require "recording_studio_metrics"
 
 module RecordingStudioWebhooks
@@ -21,16 +22,8 @@ module RecordingStudioWebhooks
       relation.merge(RecordingStudioWebhooks::ActionAttempt.due(Time.current - STUCK_RETRY_GRACE))
               .where.not(next_attempt_at: nil)
     }
-    FILTER_BY_PROVIDER = lambda { |relation, value, _context|
-      relation.joins(:inbound_event).where(recording_studio_webhooks_inbound_events: { provider_name: value })
-    }
-    FILTER_BY_ENDPOINT = lambda { |relation, value, _context|
-      relation.joins(inbound_event: :endpoint).where(recording_studio_webhooks_endpoints: { label: value })
-    }
-    FILTER_BY_ACTION_NAME = lambda { |relation, value, _context|
-      all = RecordingStudioWebhooks::AdminWebhooksTrafficDefinition::ACTION_FILTER_ALL
-      value == all ? relation : relation.where(action_name: value)
-    }
+    FAILED = ->(relation) { relation.where(status: "failed").where.not(completed_at: nil) }
+    FAILED_GROUP_BY = %i[action_name].freeze
     OLDEST_STUCK_AGE = lambda { |relation, _context|
       oldest = relation.minimum(:next_attempt_at)
       oldest ? (Time.current - oldest).floor : nil
@@ -77,16 +70,27 @@ module RecordingStudioWebhooks
     def define_events(dsl)
       dsl.timeseries :over_time, title: "Webhook events over time", field: :received_at, expose: EXPOSE
       dsl.breakdown :by_provider, title: "Webhook events by provider", field: :provider_name, expose: EXPOSE
+      dsl.breakdown :by_status, title: "Webhook events by status", unit: "count",
+                                description: "Inbound webhook events per status (accepted, planned).",
+                                field: :status, expose: EXPOSE, filters: event_filters
     end
 
     def define_attempts(dsl)
       dsl.breakdown :by_status, title: "Webhook attempts by status", field: :status, expose: EXPOSE
+      define_failed(dsl)
       dsl.count :stuck, title: "Stuck webhook retries", description: stuck_description,
                         expose: EXPOSE, scope: STUCK, group_by: STUCK_GROUP_BY,
                         filters: attempt_filters
       dsl.custom :oldest_stuck_age, title: "Oldest stuck webhook retry age", description: oldest_stuck_description,
                                     result_type: :scalar, unit: "seconds", expose: EXPOSE, scope: STUCK,
                                     filters: attempt_filters, &OLDEST_STUCK_AGE
+    end
+
+    def define_failed(dsl)
+      dsl.timeseries :failed_over_time, title: "Failed webhook attempts over time", unit: "count",
+                                        description: "Action attempts that ended in failed, bucketed by completed_at.",
+                                        field: :completed_at, expose: EXPOSE, scope: FAILED,
+                                        group_by: FAILED_GROUP_BY, filters: attempt_filters
     end
 
     def stuck_description
@@ -101,14 +105,8 @@ module RecordingStudioWebhooks
       dsl.count :enabled, title: "Enabled webhook endpoints", expose: EXPOSE, scope: ENABLED
     end
 
-    # Same names and matching rules as the Admin "Action attempts" screen filters.
-    def attempt_filters
-      [
-        RecordingStudioMetrics::Filter.new(:provider, type: :string, handler: FILTER_BY_PROVIDER),
-        RecordingStudioMetrics::Filter.new(:endpoint, type: :string, handler: FILTER_BY_ENDPOINT),
-        RecordingStudioMetrics::Filter.new(:action_name, type: :string, handler: FILTER_BY_ACTION_NAME),
-        RecordingStudioMetrics::Filter.new(:event_id, type: :string, field: :inbound_event_id)
-      ]
-    end
+    def event_filters = MetricFilters.event_filters
+
+    def attempt_filters = MetricFilters.attempt_filters
   end
 end

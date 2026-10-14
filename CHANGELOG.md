@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## [0.6.0] - 2026-10-14
+
+### Added
+
+- `webhook_attempts.failed_over_time`: time series of attempts that ended in
+  `failed`, bucketed by `completed_at`. Unit `count`. Takes `from` / `to` /
+  `interval`, `group_by=action_name` (groups under `min_group_size` 5 fold into
+  `other`), and the Action attempts screen filters `provider`, `endpoint`,
+  `action_name`, `event_id`.
+- `webhook_events.by_status`: inbound events per status (`accepted`,
+  `planned`). Unit `count`. Takes the Events screen filters `provider_name`,
+  `endpoint_id`, `event_type`. A breakdown, so no date window or `group_by`.
+- Both use the same site scope, `:operations` exposure, and Admin root `:view`
+  check as the Events and Action attempts screens. No migration.
+
 ## [0.5.1] - 2026-10-14
 
 Site-wide metrics deny access when the admin root resolver raises.
