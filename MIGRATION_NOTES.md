@@ -41,6 +41,10 @@ Do not edit a copied migration to add plaintext token, provider secret, raw
 header, or raw payload columns. Use host credentials for verifier material and
 the engine's safe metadata/policy fields only.
 
+## 0.7.0
+
+No migration. Action attempts gains `completed_from` / `completed_to` filters on `completed_at` (`from <= completed_at < to`, matching `webhook_attempts.failed_over_time`). The screen's `created_at` date range still applies, so a drill-down link should pass a `start_date`/`end_date` that covers the window.
+
 ## 0.6.0
 
 No migration. Adds `webhook_attempts.failed_over_time` and `webhook_events.by_status`.

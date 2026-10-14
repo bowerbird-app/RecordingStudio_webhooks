@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [0.7.0] - 2026-10-14
+
+### Added
+- Action attempts admin list `completed_from` / `completed_to` filters (ISO date or timestamp) on `completed_at`, with the same `from <= completed_at < to` window as `webhook_attempts.failed_over_time`, so the metric can drill into the list. No migration.
+
 ## [0.6.0] - 2026-10-14
 
 ### Added

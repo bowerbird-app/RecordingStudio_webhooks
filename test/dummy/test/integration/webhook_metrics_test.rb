@@ -189,6 +189,20 @@ class WebhookMetricsTest < ActiveSupport::TestCase
     refute authorize.call(GrantContext.new(Grant.new(nil)))
   end
 
+  test "action attempts completed_from and completed_to match the failed_over_time window" do
+    RecordingStudioWebhooks::AdminWebhooksTrafficDefinition.ensure_definitions!
+    screen = RecordingStudioWebhooks::AdminWebhooksActionAttemptsScreen
+    from = screen.filters.find { |definition| definition.key == :completed_from }
+    to = screen.filters.find { |definition| definition.key == :completed_to }
+    relation = RecordingStudioWebhooks::ActionAttempt.all
+
+    sql = to.apply(from.apply(relation, "2025-03-05", nil), "2025-03-06T00:00:00Z", nil).to_sql
+    assert_includes sql, "completed_at\" >= '#{Date.new(2025, 3, 5).in_time_zone.utc.to_fs(:db)}"
+    assert_includes sql, "completed_at\" < '2025-03-06 00:00:00"
+    assert_equal relation.to_sql, from.apply(relation, "not-a-date", nil).to_sql
+    assert_equal relation.to_sql, to.apply(relation, "", nil).to_sql
+  end
+
   private
 
   def seed_stuck_retries!
