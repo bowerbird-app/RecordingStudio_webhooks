@@ -5,8 +5,19 @@ module RecordingStudioWebhooks
     module_function
 
     FILTERABLE_GROUPINGS = %i[hour day week month].freeze
+
     ACTION_FILTER_ALL = "all"
     ENDPOINT_LABEL_TRUNCATE_LENGTH = 40
+
+    # ISO 8601 date (start of that day in Time.zone) or timestamp; nil when blank or invalid.
+    def completed_at_bound(value)
+      text = value.to_s.strip
+      return if text.empty?
+
+      text.match?(/\A\d{4}-\d{2}-\d{2}\z/) ? Date.iso8601(text).in_time_zone : Time.iso8601(text)
+    rescue ArgumentError
+      nil
+    end
 
     def ensure_definitions!
       return unless defined?(::RecordingStudioAdmin::Screen) && defined?(::RecordingStudioAdmin::Widget)
@@ -950,6 +961,23 @@ module RecordingStudioWebhooks
                  next relation if inbound_event_id.empty?
 
                  relation.where(recording_studio_webhooks_action_attempts: { inbound_event_id: inbound_event_id })
+               }
+        # Same window as webhook_attempts.failed_over_time: completed_from <= completed_at < completed_to.
+        filter :completed_from,
+               title: "Completed from",
+               apply: lambda { |relation, value, _context|
+                 bound = AdminWebhooksTrafficDefinition.completed_at_bound(value)
+                 next relation unless bound
+
+                 relation.where(recording_studio_webhooks_action_attempts: { completed_at: bound.. })
+               }
+        filter :completed_to,
+               title: "Completed to",
+               apply: lambda { |relation, value, _context|
+                 bound = AdminWebhooksTrafficDefinition.completed_at_bound(value)
+                 next relation unless bound
+
+                 relation.where(recording_studio_webhooks_action_attempts: { completed_at: ...bound })
                }
         filter_presentation :modal, inline_count: 2
 
