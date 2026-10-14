@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+## [0.5.0] - 2026-10-14
+
+### Added
+
+- `webhook_attempts.stuck` (count, unit `count`): attempts that
+  `ActionAttempt.due(now - 300.seconds)` still selects and that have a
+  `next_attempt_at`, i.e. scheduled retries at least 300 seconds overdue.
+  The grace is `RecordingStudioWebhooks::Metrics::STUCK_RETRY_GRACE`, the
+  default policy `max_retry_backoff`. Supports `group_by: action_name`
+  (RecordingStudio Metrics `min_group_size` applies).
+- `webhook_attempts.oldest_stuck_age` (custom scalar, unit `seconds`): whole
+  seconds since the earliest `next_attempt_at` among stuck attempts, `null`
+  when none.
+- Both take the Admin "Action attempts" filter names: `provider`, `endpoint`,
+  `action_name`, and `event_id`. Same site scope, `:operations` exposure, and
+  `Api::Access.can_view?` check as the existing webhook metrics.
+- README "Metrics" section documenting every webhook metric.
+
+### Changed
+
+- Runtime dependency `recording_studio_metrics` `~> 0.3` (GitHub tag `v0.3.1`;
+  the gem reports version `0.3.0`) for `group_by`.
+
+### Upgrade notes
+
+- Bump to `0.5.0`. No migration.
+- Pin `recording_studio_metrics` to tag `v0.3.1`.
+
 ## [0.4.0] - 2026-10-12
 
 ### Added
