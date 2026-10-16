@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## [0.6.1] - 2026-10-16
+
+MCP 0.17.0 lists one tool per metric this gem already registers.
+
+### Changed
+
+- Runtime dependency `recording_studio_metrics` is `>= 0.3.0, < 0.4`.
+- README Metrics names each MCP tool (the identifier's one dot becomes a hyphen)
+  and says `from` / `to` / `interval` apply only to timeseries metrics.
+
+### Upgrade notes
+
+- Bump to `0.6.1`. No migration.
+- Pin `recording_studio_metrics` to `>= 0.3.0, < 0.4` (git tag `v0.3.1`).
+- This gem still does not call `RecordingStudioMetrics::Api.register!`. When
+  RecordingStudio API is present, the host still registers Metrics endpoints
+  once with `RecordingStudioMetrics::Api.register!(api: :operations)`.
+
 ## [0.6.0] - 2026-10-14
 
 ### Added

@@ -41,6 +41,12 @@ Do not edit a copied migration to add plaintext token, provider secret, raw
 header, or raw payload columns. Use host credentials for verifier material and
 the engine's safe metadata/policy fields only.
 
+## 0.6.1
+
+No migration. Pin `recording_studio_metrics` to `>= 0.3.0, < 0.4`. MCP 0.17.0
+lists one tool per registered metric. Timeseries tools take `from`, `to`, and
+`interval`. Other webhook metrics do not.
+
 ## 0.6.0
 
 No migration. Adds `webhook_attempts.failed_over_time` and `webhook_events.by_status`.
