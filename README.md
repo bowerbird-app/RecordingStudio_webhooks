@@ -199,20 +199,33 @@ one-response page instead of a flash or redirect.
 ## Metrics
 
 `RecordingStudioWebhooks::Metrics.register!` registers site-wide metrics with
-RecordingStudio Metrics (`~> 0.3`). Every metric uses `blast_radius: :site`,
-is exposed on the `:operations` API only, and is visible over the API only to
-actors with `:view` on the Admin root (`Api::Access.can_view?`).
+RecordingStudio Metrics (`>= 0.3.0, < 0.4`) at boot. Every metric uses
+`blast_radius: :site`, is exposed on the `:operations` API only, and is visible
+over the API only to actors with `:view` on the Admin root
+(`Api::Access.can_view?`). This gem does not call
+`RecordingStudioMetrics::Api.register!`. When RecordingStudio API is present,
+the host registers Metrics endpoints once:
 
-| Metric | Type | Unit | `group_by` | Filters |
-| --- | --- | --- | --- | --- |
-| `webhook_events.over_time` | time series on `received_at` | count | none | none |
-| `webhook_events.by_provider` | breakdown on `provider_name` | count | not supported | none |
-| `webhook_events.by_status` | breakdown on `status` | count | not supported | `provider_name`, `endpoint_id`, `event_type` (Events screen names) |
-| `webhook_attempts.by_status` | breakdown on `status` | count | not supported | none |
-| `webhook_attempts.failed_over_time` | time series on `completed_at`, `status = failed` | count | `action_name` | `provider`, `endpoint`, `action_name`, `event_id` |
-| `webhook_attempts.stuck` | count | count | `action_name` | `provider`, `endpoint`, `action_name`, `event_id` |
-| `webhook_attempts.oldest_stuck_age` | custom scalar | seconds | not supported | `provider`, `endpoint`, `action_name`, `event_id` |
-| `webhook_endpoints.enabled` | count | count | none | none |
+```ruby
+RecordingStudioMetrics::Api.register!(api: :operations)
+```
+
+RecordingStudio MCP `0.17.0` lists one read-only tool per exposed metric. The
+tool name is the identifier with its one dot replaced by a hyphen. Only
+timeseries tools take `from`, `to`, and `interval`. `start` and `start_at` are
+the same as `from`. `end` and `end_at` are the same as `to`. Counts, breakdowns,
+and the oldest-stuck-age scalar do not take a date window.
+
+| Metric | MCP tool | Type | Unit | Window | `group_by` | Filters |
+| --- | --- | --- | --- | --- | --- | --- |
+| `webhook_events.over_time` | `webhook_events-over_time` | time series on `received_at` | count | `from`, `to`, `interval` | none | none |
+| `webhook_events.by_provider` | `webhook_events-by_provider` | breakdown on `provider_name` | count | none | not supported | none |
+| `webhook_events.by_status` | `webhook_events-by_status` | breakdown on `status` | count | none | not supported | `provider_name`, `endpoint_id`, `event_type` (Events screen names) |
+| `webhook_attempts.by_status` | `webhook_attempts-by_status` | breakdown on `status` | count | none | not supported | none |
+| `webhook_attempts.failed_over_time` | `webhook_attempts-failed_over_time` | time series on `completed_at`, `status = failed` | count | `from`, `to`, `interval` | `action_name` | `provider`, `endpoint`, `action_name`, `event_id` |
+| `webhook_attempts.stuck` | `webhook_attempts-stuck` | count | count | none | `action_name` | `provider`, `endpoint`, `action_name`, `event_id` |
+| `webhook_attempts.oldest_stuck_age` | `webhook_attempts-oldest_stuck_age` | custom scalar | seconds | none | not supported | `provider`, `endpoint`, `action_name`, `event_id` |
+| `webhook_endpoints.enabled` | `webhook_endpoints-enabled` | count | count | none | none | none |
 
 ### Stuck retries
 

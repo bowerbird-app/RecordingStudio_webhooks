@@ -5,6 +5,16 @@ require "test_helper"
 class WebhookMetricsTest < ActiveSupport::TestCase
   GrantContext = Struct.new(:access_grant)
   Grant = Struct.new(:actor)
+  MCP_TOOL_NAMES = {
+    "webhook_events.over_time" => "webhook_events-over_time",
+    "webhook_events.by_provider" => "webhook_events-by_provider",
+    "webhook_events.by_status" => "webhook_events-by_status",
+    "webhook_attempts.by_status" => "webhook_attempts-by_status",
+    "webhook_attempts.failed_over_time" => "webhook_attempts-failed_over_time",
+    "webhook_attempts.stuck" => "webhook_attempts-stuck",
+    "webhook_attempts.oldest_stuck_age" => "webhook_attempts-oldest_stuck_age",
+    "webhook_endpoints.enabled" => "webhook_endpoints-enabled"
+  }.freeze
 
   setup do
     @staff = User.create!(
@@ -189,6 +199,57 @@ class WebhookMetricsTest < ActiveSupport::TestCase
     refute authorize.call(GrantContext.new(Grant.new(nil)))
   end
 
+  test "execute handler is unauthorized when access denies" do
+    error = assert_raises(RecordingStudioMetrics::Errors::AuthorizationError) do
+      RecordingStudioMetrics::Api::ExecuteHandler.call(build_api_context(@outsider))
+    end
+
+    assert_match(/not authorized/i, error.message)
+  end
+
+  test "execute handler returns the value when access allows" do
+    payload = RecordingStudioMetrics::Api::ExecuteHandler.call(
+      build_api_context(@staff, resource: "webhook_endpoints", name: "enabled")
+    )
+
+    assert_equal "webhook_endpoints.enabled", payload[:metric]
+    assert_equal RecordingStudioWebhooks::Endpoint.current.where(enabled: true).count, payload[:value]
+  end
+
+  test "discovery hides metrics from denied callers" do
+    denied = RecordingStudioMetrics::Api::DiscoveryHandler.call(build_api_context(@outsider))
+    denied_ids = denied.fetch(:metrics).map { |row| row[:identifier] }
+    refute_includes denied_ids, "webhook_events.over_time"
+
+    allowed = RecordingStudioMetrics::Api::DiscoveryHandler.call(build_api_context(@staff))
+    allowed_ids = allowed.fetch(:metrics).map { |row| row[:identifier] }
+    assert_includes allowed_ids, "webhook_events.over_time"
+  end
+
+  test "only timeseries catalog entries support a date window" do
+    timeseries = %w[webhook_events.over_time webhook_attempts.failed_over_time]
+    others = %w[
+      webhook_events.by_provider
+      webhook_events.by_status
+      webhook_attempts.by_status
+      webhook_attempts.stuck
+      webhook_attempts.oldest_stuck_age
+      webhook_endpoints.enabled
+    ]
+
+    timeseries.each do |identifier|
+      meta = RecordingStudioMetrics.find(identifier).catalog_metadata
+      assert_equal true, meta.dig(:date_range, :supported), identifier
+      assert_equal identifier.sub(".", "-"), MCP_TOOL_NAMES.fetch(identifier)
+    end
+
+    others.each do |identifier|
+      meta = RecordingStudioMetrics.find(identifier).catalog_metadata
+      assert_equal false, meta.dig(:date_range, :supported), identifier
+      assert_equal identifier.sub(".", "-"), MCP_TOOL_NAMES.fetch(identifier)
+    end
+  end
+
   private
 
   def seed_stuck_retries!
@@ -239,6 +300,29 @@ class WebhookMetricsTest < ActiveSupport::TestCase
       site_authorized: true,
       timezone: "UTC"
     )
+  end
+
+  def build_api_context(actor, resource: "webhook_events", name: "over_time")
+    grant = Struct.new(:actor).new(actor)
+    params = {
+      resource: resource,
+      name: name,
+      interval: nil,
+      start: nil,
+      start_at: nil,
+      end: nil,
+      end_at: nil,
+      timezone: "UTC",
+      filters: {}
+    }
+    context = Object.new
+    context.define_singleton_method(:access_grant) { grant }
+    context.define_singleton_method(:api_client) { actor }
+    context.define_singleton_method(:access_recording) { nil }
+    context.define_singleton_method(:root_recording) { nil }
+    context.define_singleton_method(:api_key) { :operations }
+    context.define_singleton_method(:params) { params }
+    context
   end
 
   def seed_webhooks!

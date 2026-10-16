@@ -43,11 +43,24 @@ class MetricsTest < Minitest::Test
     assert_includes engine, "RecordingStudioWebhooks::Metrics.register!"
     refute_includes engine, "RecordingStudioMetrics::Api.register!"
 
-    assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", "~> 0.3"'
+    assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", ">= 0.3.0", "< 0.4"'
     refute_includes dummy_metrics, "RecordingStudioMetrics::Api.register!"
+
+    readme = File.read(File.expand_path("../README.md", __dir__))
+    %w[
+      webhook_events-over_time
+      webhook_events-by_provider
+      webhook_events-by_status
+      webhook_attempts-by_status
+      webhook_attempts-failed_over_time
+      webhook_attempts-stuck
+      webhook_attempts-oldest_stuck_age
+      webhook_endpoints-enabled
+    ].each { |tool| assert_includes readme, "`#{tool}`" }
+    assert_includes readme, "timeseries tools take `from`, `to`, and `interval`."
   end
 
   def test_version_pin
-    assert_equal "0.6.0", RecordingStudioWebhooks::VERSION
+    assert_equal "0.6.1", RecordingStudioWebhooks::VERSION
   end
 end
