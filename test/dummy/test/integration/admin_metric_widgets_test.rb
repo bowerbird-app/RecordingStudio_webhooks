@@ -57,7 +57,7 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
 
     stuck_resolved = stuck.resolve(context)
     assert_equal :chart, stuck_resolved.type
-    assert_equal 1, stuck_resolved.value
+    assert_equal 5, stuck_resolved.value
     assert_match(/Oldest wait is \d+ seconds past due/, stuck_resolved.info)
     refute_empty stuck_resolved.series
     assert_includes stuck_series_labels(stuck_resolved), "demo.record"
@@ -71,18 +71,21 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     assert_includes texts, "accepted"
   end
 
-  test "action attempts screen is reachable when AdminRoot enables the webhooks section" do
-    original = RecordingStudioAdmin.configuration.access_recording_resolver
-    admin_root = @admin_root
-    RecordingStudioAdmin.configuration.access_recording_resolver = ->(_context) { admin_root }
+  test "action attempts screen is enabled from the Admin Webhooks section links" do
+    RecordingStudioWebhooks::Admin::Registration.register!
+
+    assert_includes RecordingStudioWebhooks::AdminWebhooksSection.links.map(&:name), :action_attempts
+    assert RecordingStudioAdmin.screen_enabled?(
+      key: "action_attempts",
+      recording: @admin_root,
+      context: admin_path_context
+    )
 
     sign_in @user
     get "/admin/screens/action_attempts"
 
     assert_response :success
     assert_includes response.body, "Action attempts"
-  ensure
-    RecordingStudioAdmin.configuration.access_recording_resolver = original
   end
 
   private
@@ -104,23 +107,25 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
         attempt_history: []
       )
 
-      stuck_event = create_event!("invoice.retry")
-      stuck = stuck_event.action_attempts.create!(
-        action_name: "demo.record",
-        execution_position: 0,
-        status: "retrying",
-        attempts: 1,
-        completed_at: nil,
-        last_error: nil,
-        endpoint_snapshot: stuck_event.endpoint_snapshot,
-        token_snapshot: stuck_event.token_snapshot,
-        policy_snapshot: stuck_event.policy_snapshot,
-        action_snapshot: { "name" => "demo.record" },
-        attempt_history: []
-      )
-      stuck.update_columns(
-        next_attempt_at: Time.current - RecordingStudioWebhooks::Metrics::STUCK_RETRY_GRACE - 30.seconds
-      )
+      5.times do
+        stuck_event = create_event!("invoice.retry")
+        stuck = stuck_event.action_attempts.create!(
+          action_name: "demo.record",
+          execution_position: 0,
+          status: "retrying",
+          attempts: 1,
+          completed_at: nil,
+          last_error: nil,
+          endpoint_snapshot: stuck_event.endpoint_snapshot,
+          token_snapshot: stuck_event.token_snapshot,
+          policy_snapshot: stuck_event.policy_snapshot,
+          action_snapshot: { "name" => "demo.record" },
+          attempt_history: []
+        )
+        stuck.update_columns(
+          next_attempt_at: Time.current - RecordingStudioWebhooks::Metrics::STUCK_RETRY_GRACE - 30.seconds
+        )
+      end
     end
   end
 
@@ -141,6 +146,14 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
       received_at: Time.current,
       status: "accepted"
     )
+  end
+
+  def admin_path_context
+    Object.new.tap do |context|
+      def context.admin_screen_path(key)
+        "/admin/screens/#{key}"
+      end
+    end
   end
 
   def stuck_series_labels(resolved)

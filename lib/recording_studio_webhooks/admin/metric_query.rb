@@ -28,7 +28,17 @@ module RecordingStudioWebhooks
         points = Array(result&.groups).map do |row|
           { x: (row[:key] || row["key"]).to_s, y: (row[:value] || row["value"]).to_i }
         end
+        other = other_bucket_value(result)
+        points << { x: "other", y: other } if other.positive?
         [{ name: "Stuck retries", data: points }]
+      end
+
+      def other_bucket_value(result)
+        other = result&.other
+        return 0 if other.nil?
+        return other.to_i unless other.respond_to?(:[])
+
+        (other[:value] || other["value"]).to_i
       end
 
       def current_failed_window
