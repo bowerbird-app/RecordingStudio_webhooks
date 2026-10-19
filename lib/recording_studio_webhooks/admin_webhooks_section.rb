@@ -323,6 +323,10 @@ module RecordingStudioWebhooks
       )
     end
 
+    def event_status_filter_values
+      InboundEvent::STATUSES
+    end
+
     def action_status_filter_values
       ActionAttempt::STATUSES
     end
@@ -559,12 +563,26 @@ module RecordingStudioWebhooks
       start_date.beginning_of_day..end_date.end_of_day
     end
 
+    def last_4_weeks_range(reference_time = Time.current)
+      period = RecordingStudioAdmin::Period.from_preset_key(:last_4_weeks, reference_date: reference_time.to_date)
+      period.start_date.beginning_of_day..period.end_date.end_of_day
+    end
+
     def previous_trailing_4_week_range(reference_time = Time.current)
       current_start_date = reference_time.to_date - 27.days
       previous_end_date = current_start_date - 1.day
       previous_start_date = previous_end_date - 27.days
 
       previous_start_date.beginning_of_day..previous_end_date.end_of_day
+    end
+
+    def previous_last_4_weeks_range(reference_time = Time.current)
+      current = last_4_weeks_range(reference_time)
+      span_days = (current.end.to_date - current.begin.to_date).to_i
+      previous_end = current.begin.to_date - 1
+      previous_start = previous_end - span_days
+
+      previous_start.beginning_of_day..previous_end.end_of_day
     end
 
     def percent_change_label(current_count:, previous_count:)
@@ -590,13 +608,15 @@ module RecordingStudioWebhooks
       end
     end
 
-    def action_attempt_date_series(relation, frequency)
+    def action_attempt_date_series(relation, frequency, field: :created_at)
       bucket = frequency.to_sym
+      timestamp = %i[created_at completed_at].include?(field.to_sym) ? field.to_s : "created_at"
+      column = "recording_studio_webhooks_action_attempts.#{timestamp}"
       expression = case bucket
-                   when :hour then "DATE_TRUNC('hour', recording_studio_webhooks_action_attempts.created_at)"
-                   when :week then "DATE_TRUNC('week', recording_studio_webhooks_action_attempts.created_at)"
-                   when :month then "DATE_TRUNC('month', recording_studio_webhooks_action_attempts.created_at)"
-                   else "DATE(recording_studio_webhooks_action_attempts.created_at)"
+                   when :hour then "DATE_TRUNC('hour', #{column})"
+                   when :week then "DATE_TRUNC('week', #{column})"
+                   when :month then "DATE_TRUNC('month', #{column})"
+                   else "DATE(#{column})"
                    end
       grouped = Arel.sql(expression)
 
@@ -635,6 +655,11 @@ module RecordingStudioWebhooks
         end
         filter :date_range, field: :received_at, default: :last_4_weeks
         filter :group_by, values: FILTERABLE_GROUPINGS, default: :day
+        filter :status,
+               options: -> { AdminWebhooksTrafficDefinition.event_status_filter_values },
+               apply: lambda { |relation, value, _context|
+                 relation.where(recording_studio_webhooks_inbound_events: { status: value })
+               }
         filter :provider,
                options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
                apply: ->(relation, value, _context) { relation.where(provider_name: value) }
@@ -643,7 +668,7 @@ module RecordingStudioWebhooks
                apply: lambda { |relation, value, _context|
                  relation.joins(:endpoint).where(recording_studio_webhooks_endpoints: { label: value })
                }
-        filter_presentation :inline
+        filter_presentation :modal, inline_count: 2
 
         chart do
           title "Webhook traffic"
@@ -910,7 +935,7 @@ module RecordingStudioWebhooks
         blast_radius :root
 
         query { |context| AdminWebhooksTrafficDefinition.action_attempt_relation(context) }
-        filter :date_range, field: :created_at, default: :last_4_weeks
+        filter :date_range, field: :completed_at, default: :last_4_weeks
         filter :group_by, values: FILTERABLE_GROUPINGS, default: :day
         filter :provider,
                options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
@@ -964,7 +989,8 @@ module RecordingStudioWebhooks
               name: "Action attempts",
               data: AdminWebhooksTrafficDefinition.action_attempt_date_series(
                 context.query_result.relation,
-                context.filter_value(:group_by) || :day
+                context.filter_value(:group_by) || :day,
+                field: :completed_at
               )
             }]
           end

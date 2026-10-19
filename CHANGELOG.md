@@ -17,8 +17,11 @@ Admin Webhooks hub cards now read registered RecordingStudio Metrics.
 ### Changed
 
 - Failed attempts chart (`widgets.admin_webhooks.action_errors`) uses
-  `webhook_attempts.failed_over_time` bucketed on `completed_at`, not a
-  local `created_at` query.
+  `webhook_attempts.failed_over_time` bucketed on `completed_at`, scoped to the
+  current root, over Admin `last_4_weeks`. Action attempts uses the same
+  `completed_at` window so the card and `status=failed` screen match.
+- Webhook traffic keeps date range and group-by inline. Status, provider, and
+  endpoint sit in the filter modal.
 
 ### Upgrade notes
 

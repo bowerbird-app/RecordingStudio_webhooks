@@ -469,8 +469,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "name=\"start_date\" value=\"#{(Date.current - 27.days).iso8601}\""
     assert_includes response.body, "name=\"end_date\" value=\"#{Date.current.iso8601}\""
     assert_includes response.body, "Group by"
+    assert_includes response.body, "Status"
     assert_includes response.body, "Provider"
     assert_includes response.body, "Endpoint"
+    assert_equal :modal, RecordingStudioWebhooks::AdminWebhooksTrafficScreen.filter_presentation
+    assert_equal 2, RecordingStudioWebhooks::AdminWebhooksTrafficScreen.inline_filter_count
 
     get "/admin/screens/webhook_traffic/chart", params: { provider: "demo", endpoint: @endpoint.label, group_by: "week" }
     assert_response :success
@@ -487,6 +490,48 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "start_date=#{week_start}"
     assert_includes response.body, "end_date=#{week_end}"
     assert_includes response.body, "group_by=week"
+  end
+
+  test "webhook traffic status filter keeps accepted events and hides planned events" do
+    token = @endpoint.issue_token!.plaintext_token
+    post inbound_path(token), params: JSON.generate(id: "evt_status_planned", type: "demo.received"), headers: intake_headers
+    assert_response :accepted
+    planned = @endpoint.inbound_events.find_by!(provider_event_id: "evt_status_planned")
+    accepted = RecordingStudioWebhooks::InboundEvent.create!(
+      endpoint: @endpoint,
+      endpoint_token: planned.endpoint_token,
+      provider_name: @endpoint.provider_name,
+      event_type: "demo.accepted",
+      provider_event_id: "evt_status_accepted",
+      payload_digest: SecureRandom.hex(16),
+      deduplication_key: "event:#{SecureRandom.uuid}",
+      payload: { "type" => "demo.accepted" },
+      provenance: { "request_id" => SecureRandom.uuid },
+      endpoint_snapshot: @endpoint.snapshot,
+      token_snapshot: planned.endpoint_token.snapshot,
+      policy_snapshot: planned.policy_snapshot,
+      received_at: Time.current,
+      status: "accepted"
+    )
+    assert_equal "planned", planned.status
+    assert_equal "accepted", accepted.status
+    status_filter = RecordingStudioWebhooks::AdminWebhooksTrafficScreen.filters_value.find { |filter| filter.key == :status }
+    relation = RecordingStudioWebhooks::InboundEvent.where(id: [ accepted.id, planned.id ])
+
+    assert_equal %w[accepted planned], RecordingStudioWebhooks::AdminWebhooksTrafficDefinition.event_status_filter_values
+    assert_equal [ accepted.id ], status_filter.apply(relation, "accepted", nil).order(:id).pluck(:id)
+    assert_equal [ planned.id ], status_filter.apply(relation, "planned", nil).order(:id).pluck(:id)
+
+    sign_in @user
+    get "/admin/screens/webhook_traffic/table", params: { status: "accepted", endpoint: @endpoint.label }
+    assert_response :success
+    assert_includes response.body, "event_id=#{accepted.id}"
+    refute_includes response.body, "event_id=#{planned.id}"
+
+    get "/admin/screens/webhook_traffic/table", params: { status: "planned", endpoint: @endpoint.label }
+    assert_response :success
+    assert_includes response.body, "event_id=#{planned.id}"
+    refute_includes response.body, "event_id=#{accepted.id}"
   end
 
   test "explicit week date range is preserved even when preset param is stale" do

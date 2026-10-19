@@ -42,11 +42,11 @@ module RecordingStudioWebhooks
       end
 
       def current_failed_window
-        AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
+        AdminWebhooksTrafficDefinition.last_4_weeks_range(Time.current)
       end
 
       def previous_failed_window
-        AdminWebhooksTrafficDefinition.previous_trailing_4_week_range(Time.current)
+        AdminWebhooksTrafficDefinition.previous_last_4_weeks_range(Time.current)
       end
 
       def failed_count(admin_context, range)
@@ -77,7 +77,8 @@ module RecordingStudioWebhooks
           admin_context,
           interval: "week",
           start_at: range.begin,
-          end_at: exclusive_end(range)
+          end_at: exclusive_end(range),
+          authorized_relation: AdminWebhooksTrafficDefinition.action_attempt_relation(admin_context)
         )
       end
 
