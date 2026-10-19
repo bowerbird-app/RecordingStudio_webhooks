@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+## [0.6.2] - 2026-10-19
+
+Admin Webhooks hub cards now read registered RecordingStudio Metrics.
+
+### Added
+
+- Stuck retries number card (`webhook_attempts.stuck`) with oldest wait
+  (`webhook_attempts.oldest_stuck_age`). Links to Action attempts.
+- Event status list (`webhook_events.by_status`). Links to Webhook traffic.
+
+### Changed
+
+- Failed attempts chart (`widgets.admin_webhooks.action_errors`) uses
+  `webhook_attempts.failed_over_time` bucketed on `completed_at`, not a
+  local `created_at` query.
+
+### Upgrade notes
+
+- Bump to `0.6.2`. No migration.
+- Admin stays optional. Hosts without `recording_studio_admin` skip the cards.
+
 ## [0.6.1] - 2026-10-16
 
 MCP 0.17.0 lists one tool per metric this gem already registers.

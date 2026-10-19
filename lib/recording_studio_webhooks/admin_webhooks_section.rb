@@ -19,10 +19,6 @@ module RecordingStudioWebhooks
       [RecordingStudioWebhooks::AdminWebhooksTrafficScreen, RecordingStudioWebhooks::AdminWebhooksTrafficWidget]
     end
 
-    def action_error_relation(context)
-      action_attempt_relation(context).where(recording_studio_webhooks_action_attempts: { status: "failed" })
-    end
-
     def traffic_events(context)
       root_recording = context.root_recording
       return InboundEvent.none unless root_recording
@@ -1320,59 +1316,6 @@ module RecordingStudioWebhooks
       RecordingStudioWebhooks.const_set(:AdminWebhooksActionAttemptsWidget, widget)
     end
 
-    def ensure_action_errors_widget_definition!
-      if RecordingStudioWebhooks.const_defined?(:AdminWebhooksActionErrorsWidget, false)
-        return RecordingStudioWebhooks.const_get(:AdminWebhooksActionErrorsWidget)
-      end
-
-      widget = ::RecordingStudioAdmin::Widget.new("widgets.admin_webhooks.action_errors") do
-        type :chart
-        title "Action errors"
-        description "Failed action attempts over the last 4 weeks."
-        change_good_when :down
-        metadata { { period_label: "Last 4 weeks" } }
-        value do |context|
-          range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
-          AdminWebhooksTrafficDefinition.action_error_relation(context)
-                                        .where(created_at: range)
-                                        .count
-        end
-        change do |context|
-          reference_time = Time.current
-          relation = AdminWebhooksTrafficDefinition.action_error_relation(context)
-          current_count = relation.where(created_at: AdminWebhooksTrafficDefinition.trailing_4_week_range(reference_time)).count
-          previous_count = relation.where(created_at: AdminWebhooksTrafficDefinition.previous_trailing_4_week_range(reference_time)).count
-          AdminWebhooksTrafficDefinition.percent_change_label(current_count: current_count,
-                                                              previous_count: previous_count)
-        end
-        chart_type :area
-        series do |context|
-          range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
-          relation = AdminWebhooksTrafficDefinition.action_error_relation(context)
-                                                   .where(created_at: range)
-          [{ name: "Failed action attempts",
-             data: AdminWebhooksTrafficDefinition.action_attempt_date_series(relation, :week) }]
-        end
-        chart_options do
-          {
-            height: 220,
-            xaxis: {
-              labels: { show: false },
-              axisBorder: { show: false },
-              axisTicks: { show: false }
-            },
-            yaxis: {
-              labels: { show: false }
-            },
-            grid: { show: false }
-          }
-        end
-        link_to { |_context| "/admin/screens/action_attempts?status=failed" }
-      end
-
-      RecordingStudioWebhooks.const_set(:AdminWebhooksActionErrorsWidget, widget)
-    end
-
     def ensure_actions_widget_definition!
       if RecordingStudioWebhooks.const_defined?(:AdminWebhooksActionsWidget, false)
         return RecordingStudioWebhooks.const_get(:AdminWebhooksActionsWidget)
@@ -1437,7 +1380,9 @@ module RecordingStudioWebhooks
       AdminWebhooksTrafficDefinition.ensure_endpoint_widget_definition!
       AdminWebhooksTrafficDefinition.ensure_actions_widget_definition!
       AdminWebhooksTrafficDefinition.ensure_action_attempts_widget_definition!
-      AdminWebhooksTrafficDefinition.ensure_action_errors_widget_definition!
+      RecordingStudioWebhooks::Admin::MetricWidgets.ensure_failed_widget!
+      RecordingStudioWebhooks::Admin::MetricWidgets.ensure_stuck_widget!
+      RecordingStudioWebhooks::Admin::MetricWidgets.ensure_event_status_widget!
       if section_class_defined?
         ensure_section_widget_usages!(RecordingStudioWebhooks::AdminWebhooksSection)
         return RecordingStudioWebhooks::AdminWebhooksSection
@@ -1477,6 +1422,8 @@ module RecordingStudioWebhooks
                                                       params: { preset_key: :last_4_weeks, group_by: :week } },
         "widgets.admin_webhooks.action_errors" => { view_variant: :card,
                                                     params: { preset_key: :last_4_weeks, group_by: :week } },
+        "widgets.admin_webhooks.stuck_retries" => { view_variant: :card },
+        "widgets.admin_webhooks.event_status" => { view_variant: :card },
         "widgets.admin_webhooks.actions" => { view_variant: :card, params: { preset_key: :last_4_weeks } },
         "widgets.admin_webhooks.providers" => { view_variant: :card, params: { preset_key: :last_4_weeks } },
         "widgets.admin_webhooks.endpoints" => { view_variant: :card, params: { preset_key: :last_4_weeks } }
