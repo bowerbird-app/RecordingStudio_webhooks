@@ -8,8 +8,10 @@ Admin Webhooks hub cards now read registered RecordingStudio Metrics.
 
 ### Added
 
-- Stuck retries number card (`webhook_attempts.stuck`) with oldest wait
-  (`webhook_attempts.oldest_stuck_age`). Links to Action attempts.
+- Stuck retries card (`webhook_attempts.stuck`) with a count, a bar chart by
+  action, and oldest wait (`webhook_attempts.oldest_stuck_age`). Links to
+  Action attempts. The Admin Webhooks section links that screen so hosts that
+  enable sections on the Admin root can open it.
 - Event status list (`webhook_events.by_status`). Links to Webhook traffic.
 
 ### Changed

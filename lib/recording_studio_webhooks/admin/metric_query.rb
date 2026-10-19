@@ -23,6 +23,14 @@ module RecordingStudioWebhooks
         "Oldest wait is #{seconds.to_i} seconds past due."
       end
 
+      def stuck_series(admin_context)
+        result = grouped_execute(STUCK, admin_context, group_by: "action_name")
+        points = Array(result&.groups).map do |row|
+          { x: (row[:key] || row["key"]).to_s, y: (row[:value] || row["value"]).to_i }
+        end
+        [{ name: "Stuck retries", data: points }]
+      end
+
       def current_failed_window
         AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
       end
@@ -76,6 +84,15 @@ module RecordingStudioWebhooks
           **SITE,
           **params
         )
+      rescue RecordingStudioMetrics::Errors::AuthorizationError
+        nil
+      end
+
+      def grouped_execute(identifier, admin_context, group_by:)
+        return unless defined?(RecordingStudioMetrics::Admin)
+
+        context = RecordingStudioMetrics::Admin.context_from_admin(admin_context, **SITE)
+        RecordingStudioMetrics.execute(identifier, context: context, group_by: group_by)
       rescue RecordingStudioMetrics::Errors::AuthorizationError
         nil
       end

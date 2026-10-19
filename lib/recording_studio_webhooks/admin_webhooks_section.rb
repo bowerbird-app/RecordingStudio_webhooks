@@ -1384,6 +1384,7 @@ module RecordingStudioWebhooks
       RecordingStudioWebhooks::Admin::MetricWidgets.ensure_stuck_widget!
       RecordingStudioWebhooks::Admin::MetricWidgets.ensure_event_status_widget!
       if section_class_defined?
+        ensure_section_links!(RecordingStudioWebhooks::AdminWebhooksSection)
         ensure_section_widget_usages!(RecordingStudioWebhooks::AdminWebhooksSection)
         return RecordingStudioWebhooks::AdminWebhooksSection
       end
@@ -1393,14 +1394,9 @@ module RecordingStudioWebhooks
         title "Admin Webhooks"
         subtitle "Webhook health, providers, endpoints, activity, failures, policies, and sandbox."
         blast_radius :root
-        link :webhook_traffic,
-             text: "View traffic",
-             url: ->(context) { context.admin_screen_path("webhook_traffic") }
-        link :tokens,
-             text: "Tokens",
-             url: ->(context) { context.admin_screen_path("tokens") }
       end
 
+      ensure_section_links!(section_class)
       ensure_section_widget_usages!(section_class)
 
       RecordingStudioWebhooks.const_set(:AdminWebhooksSection, section_class)
@@ -1409,6 +1405,23 @@ module RecordingStudioWebhooks
     def section_class_defined?
       RecordingStudioWebhooks.const_defined?(:AdminWebhooksSection, false) &&
         RecordingStudioWebhooks.const_get(:AdminWebhooksSection).is_a?(Class)
+    end
+
+    def ensure_section_links!(section_class)
+      existing = section_class.links.map(&:name)
+      {
+        webhook_traffic: "View traffic",
+        action_attempts: "Action attempts",
+        tokens: "Tokens"
+      }.each do |name, text|
+        next if existing.include?(name)
+
+        section_class.link(
+          name,
+          text: text,
+          url: ->(context) { context.admin_screen_path(name.to_s) }
+        )
+      end
     end
 
     def ensure_section_widget_usages!(section_class)

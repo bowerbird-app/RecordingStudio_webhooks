@@ -14,13 +14,16 @@ module RecordingStudioWebhooks
       }.freeze
 
       STUCK = proc do
-        type :number
+        type :chart
         title "Stuck retries"
-        description "Retries that should already have run."
+        description "Retries that should already have run, by action."
         info { |context| MetricQuery.oldest_stuck_info(context) }
         change_good_when :down
         hide_change
         value { |context| MetricQuery.scalar(MetricQuery::STUCK, context) }
+        chart_type :bar
+        series { |context| MetricQuery.stuck_series(context) }
+        chart_options { CHART_OPTIONS }
         link_to { |context| context.admin_screen_path("action_attempts") }
       end
 

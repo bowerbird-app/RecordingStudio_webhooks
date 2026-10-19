@@ -56,8 +56,11 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     context = admin_context
 
     stuck_resolved = stuck.resolve(context)
+    assert_equal :chart, stuck_resolved.type
     assert_equal 1, stuck_resolved.value
     assert_match(/Oldest wait is \d+ seconds past due/, stuck_resolved.info)
+    refute_empty stuck_resolved.series
+    assert_includes stuck_series_labels(stuck_resolved), "demo.record"
 
     failed_resolved = failed.resolve(context)
     assert_operator failed_resolved.value.to_i, :>=, 1
@@ -66,6 +69,20 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     status_resolved = status.resolve(context)
     texts = status_resolved.items.map { |item| item[:text] || item["text"] }
     assert_includes texts, "accepted"
+  end
+
+  test "action attempts screen is reachable when AdminRoot enables the webhooks section" do
+    original = RecordingStudioAdmin.configuration.access_recording_resolver
+    admin_root = @admin_root
+    RecordingStudioAdmin.configuration.access_recording_resolver = ->(_context) { admin_root }
+
+    sign_in @user
+    get "/admin/screens/action_attempts"
+
+    assert_response :success
+    assert_includes response.body, "Action attempts"
+  ensure
+    RecordingStudioAdmin.configuration.access_recording_resolver = original
   end
 
   private
@@ -124,6 +141,12 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
       received_at: Time.current,
       status: "accepted"
     )
+  end
+
+  def stuck_series_labels(resolved)
+    Array(resolved.series).flat_map do |series|
+      Array(series[:data] || series["data"]).map { |point| point[:x] || point["x"] }
+    end
   end
 
   def admin_context
