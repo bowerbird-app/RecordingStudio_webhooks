@@ -41,6 +41,12 @@ Do not edit a copied migration to add plaintext token, provider secret, raw
 header, or raw payload columns. Use host credentials for verifier material and
 the engine's safe metadata/policy fields only.
 
+## 0.6.4
+
+No migration. Action attempts `stuck=1` uses the same `Metrics::STUCK` rule as
+the Stuck retries card and skips the `completed_at` window. The Event status
+card is gone; `webhook_events.by_status` is unchanged.
+
 ## 0.6.3
 
 No migration. The Admin Webhooks section now links Providers, Endpoints, and

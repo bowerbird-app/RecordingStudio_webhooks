@@ -5,7 +5,6 @@ module RecordingStudioWebhooks
     module MetricWidgets
       STUCK_KEY = "widgets.admin_webhooks.stuck_retries"
       FAILED_KEY = "widgets.admin_webhooks.action_errors"
-      STATUS_KEY = "widgets.admin_webhooks.event_status"
       CHART_OPTIONS = {
         height: 220,
         xaxis: { labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
@@ -24,7 +23,7 @@ module RecordingStudioWebhooks
         chart_type :bar
         series { |context| MetricQuery.stuck_series(context) }
         chart_options { CHART_OPTIONS }
-        link_to { |context| context.admin_screen_path("action_attempts") }
+        link_to { |context| "#{context.admin_screen_path('action_attempts')}?stuck=1" }
       end
 
       FAILED = proc do
@@ -41,17 +40,6 @@ module RecordingStudioWebhooks
         link_to { |context| "#{context.admin_screen_path('action_attempts')}?status=failed" }
       end
 
-      EVENT_STATUS = proc do
-        type :list
-        title "Event status"
-        description "Inbound events by status."
-        list_options divider: true, hover: true, compact_preview: :text_summary
-        hide_change
-        hide_metric
-        items { |context| MetricQuery.event_status_items(context) }
-        link_to { |context| context.admin_screen_path("webhook_traffic") }
-      end
-
       module_function
 
       def ensure_stuck_widget!
@@ -60,10 +48,6 @@ module RecordingStudioWebhooks
 
       def ensure_failed_widget!
         define_widget(:AdminWebhooksActionErrorsWidget, FAILED_KEY, &FAILED)
-      end
-
-      def ensure_event_status_widget!
-        define_widget(:AdminWebhooksEventStatusWidget, STATUS_KEY, &EVENT_STATUS)
       end
 
       def failed_change(context)
