@@ -632,9 +632,7 @@ module RecordingStudioWebhooks
     def action_attempt_chart_relation(context)
       relation = context.query_result.relation
       status = context.filter_value(:status)
-      if status.present?
-        relation = relation.where(recording_studio_webhooks_action_attempts: { status: status })
-      end
+      relation = relation.where(recording_studio_webhooks_action_attempts: { status: status }) if status.present?
       relation
     end
 
