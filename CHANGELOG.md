@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+## [0.6.3] - 2026-10-20
+
+Admin Webhooks section links include every screen the hub widgets open.
+
+### Changed
+
+- The Admin Webhooks section lists Providers, Endpoints, and Actions alongside
+  Webhook traffic, Action attempts, and Tokens. RecordingStudio Admin enables
+  those screens wherever the section is enabled, including hosts that turn the
+  section on for the Admin root.
+- The Action attempts hub card counts `completed_at` over Admin `last_4_weeks`,
+  the same set as `/admin/screens/action_attempts`.
+- The Action attempts chart keeps the status filter when it buckets by
+  `completed_at`, so `status=failed` changes the chart as well as the table.
+
+### Upgrade notes
+
+- Bump to `0.6.3`. No migration.
+- Hosts that already enable `admin_webhooks` get the extra screens. No host
+  config change.
+
 ## [0.6.2] - 2026-10-19
 
 Admin Webhooks hub cards now read registered RecordingStudio Metrics.
