@@ -41,6 +41,12 @@ Do not edit a copied migration to add plaintext token, provider secret, raw
 header, or raw payload columns. Use host credentials for verifier material and
 the engine's safe metadata/policy fields only.
 
+## 0.6.6
+
+No migration. Action attempts charts ignore nil `completed_at`. Engine admin
+pages use the Admin engine's Webhooks section path instead of a host
+`recording_studio_admin_webhooks_path`.
+
 ## 0.6.5
 
 No migration. Runtime `recording_studio_metrics` is `>= 0.3.0, < 0.6`. Dummy

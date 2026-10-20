@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## [0.6.6] - 2026-10-20
+
+Admin Action attempts chart and engine admin pages no longer 500.
+
+### Fixed
+
+- Action attempts chart skips attempts with a blank `completed_at` (pending,
+  retrying, queued, running). Finished-attempt counts are unchanged.
+- Engine pages under the webhooks mount close to the Admin Webhooks section
+  through the Admin engine helper, not a host
+  `recording_studio_admin_webhooks_path`.
+
+### Upgrade notes
+
+- Bump to `0.6.6`. No migration.
+- Hosts that mount Admin as `:admin` (not `:webhooks`) can open the engine's
+  own pages without defining `recording_studio_admin_webhooks_path`.
+
 ## [0.6.5] - 2026-10-20
 
 Runtime Metrics range now includes 0.5.x.

@@ -12,7 +12,9 @@ module RecordingStudioWebhooks
       before_action :authorize_admin_webhooks_read!
       before_action :require_flat_pack!
 
-      helper_method :available_recordings, :webhook_configuration
+      include RecordingStudioWebhooks::AdminHelper
+
+      helper_method :available_recordings, :webhook_configuration, :admin_webhooks_section_path
 
       private
 

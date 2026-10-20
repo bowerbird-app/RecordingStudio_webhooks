@@ -194,7 +194,11 @@ The admin interface is under `/admin` inside the engine mount. It provides:
   persisting the sample or executing an action.
 
 The UI uses FlatPack components. Token issuance renders a no-store,
-one-response page instead of a flash or redirect.
+one-response page instead of a flash or redirect. Close links on those
+engine pages use the RecordingStudio Admin engine's Webhooks section path
+(`section_path("admin_webhooks")` on the Admin mount, or
+`/admin/sections/admin_webhooks` when Admin is at the default mount). They
+do not call a host helper named `recording_studio_admin_webhooks_path`.
 
 When RecordingStudio Admin is loaded, the Admin Webhooks hub shows metric
 cards that call `RecordingStudioMetrics::Admin.execute` (site scope). Stuck
@@ -208,7 +212,9 @@ restricts Admin to named sections. Failed attempts uses
 `webhook_attempts.failed_over_time` (week buckets on `completed_at`, current
 root, Admin `last_4_weeks`) and links to Action attempts with `status=failed`.
 That screen filters the same window on `completed_at`. The Action attempts
-card uses that same `completed_at` window. Webhook traffic
+card uses that same `completed_at` window. The Action attempts chart buckets
+finished attempts on `completed_at` and omits rows where that column is
+blank, so pending and retrying attempts do not crash the series. Webhook traffic
 filters status, provider, and endpoint in the filter modal.
 
 ## Metrics
