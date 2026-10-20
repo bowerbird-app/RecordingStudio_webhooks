@@ -16,7 +16,7 @@ module RecordingStudioWebhooks
 
     def admin_webhooks_section_path
       proxy = recording_studio_admin_engine_proxy
-      return proxy.section_path("admin_webhooks") if proxy&.respond_to?(:section_path)
+      return proxy.section_path("admin_webhooks") if proxy.respond_to?(:section_path)
 
       mount = if defined?(RecordingStudioAdmin)
                 RecordingStudioAdmin.configuration.default_mount_path.to_s.chomp("/")
