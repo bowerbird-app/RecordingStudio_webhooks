@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+## [0.6.4] - 2026-10-20
+
+Admin Webhooks Stuck retries opens Action attempts with the same stuck set.
+
+### Added
+
+- Action attempts accepts `stuck=1`. That uses `Metrics::STUCK` (the Stuck retries
+  card's rule). The default `completed_at` window is skipped so overdue retries
+  still show.
+
+### Changed
+
+- The Stuck retries card's More link opens Action attempts with `stuck=1`.
+
+### Removed
+
+- Event status card (`widgets.admin_webhooks.event_status`). The
+  `webhook_events.by_status` metric is unchanged.
+
+### Upgrade notes
+
+- Bump to `0.6.4`. No migration.
+- Staff who used the Event status card should open Webhook traffic and filter
+  by status. The metric is still on the operations API and MCP.
+
 ## [0.6.3] - 2026-10-20
 
 Admin Webhooks section links include every screen the hub widgets open.

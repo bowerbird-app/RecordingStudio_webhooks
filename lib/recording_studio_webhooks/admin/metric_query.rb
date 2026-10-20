@@ -6,7 +6,6 @@ module RecordingStudioWebhooks
       STUCK = "webhook_attempts.stuck"
       OLDEST_STUCK_AGE = "webhook_attempts.oldest_stuck_age"
       FAILED_OVER_TIME = "webhook_attempts.failed_over_time"
-      EVENTS_BY_STATUS = "webhook_events.by_status"
       SITE = { scope: :site, site_authorized: true }.freeze
 
       module_function
@@ -63,12 +62,6 @@ module RecordingStudioWebhooks
           { x: (row[:date] || row["date"]).to_s, y: (row[:value] || row["value"]).to_i }
         end
         [{ name: "Failed attempts", data: points }]
-      end
-
-      def event_status_items(admin_context)
-        Array(execute(EVENTS_BY_STATUS, admin_context)&.data).map do |row|
-          { text: (row[:key] || row["key"]).to_s.tr("_", " "), trailing: (row[:value] || row["value"]).to_i.to_s }
-        end
       end
 
       def execute_failed(admin_context, range)

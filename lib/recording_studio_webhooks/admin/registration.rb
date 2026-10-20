@@ -22,7 +22,6 @@ module RecordingStudioWebhooks
         action_attempts_widget = RecordingStudioWebhooks::AdminWebhooksTrafficDefinition.ensure_action_attempts_widget_definition!
         action_errors_widget = RecordingStudioWebhooks::Admin::MetricWidgets.ensure_failed_widget!
         stuck_widget = RecordingStudioWebhooks::Admin::MetricWidgets.ensure_stuck_widget!
-        event_status_widget = RecordingStudioWebhooks::Admin::MetricWidgets.ensure_event_status_widget!
 
         RecordingStudioAdmin.register_section(section_class)
         RecordingStudioAdmin.register_screen(traffic_screen)
@@ -39,7 +38,6 @@ module RecordingStudioWebhooks
         RecordingStudioAdmin.register_widget(action_attempts_widget)
         RecordingStudioAdmin.register_widget(action_errors_widget)
         RecordingStudioAdmin.register_widget(stuck_widget)
-        RecordingStudioAdmin.register_widget(event_status_widget)
       end
     end
   end

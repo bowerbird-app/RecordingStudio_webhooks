@@ -245,6 +245,22 @@ module RecordingStudioWebhooks
               )
     end
 
+    STUCK_FILTER_ON = %w[1 true yes on].freeze
+
+    def stuck_filter_on?(value)
+      STUCK_FILTER_ON.include?(value.to_s.strip.downcase)
+    end
+
+    def apply_stuck_scope(relation, value)
+      return relation unless stuck_filter_on?(value)
+
+      RecordingStudioWebhooks::Metrics::STUCK.call(relation)
+    end
+
+    def skip_completed_at_range?(context)
+      stuck_filter_on?(context.filter_value(:stuck))
+    end
+
     def action_attempt_relation(context)
       root_recording = context.root_recording
       return ActionAttempt.none unless root_recording
@@ -949,6 +965,11 @@ module RecordingStudioWebhooks
 
         query { |context| AdminWebhooksTrafficDefinition.action_attempt_relation(context) }
         filter :date_range, field: :completed_at, default: :last_4_weeks
+        filter :stuck,
+               values: %w[1],
+               apply: lambda { |relation, value, _context|
+                 AdminWebhooksTrafficDefinition.apply_stuck_scope(relation, value)
+               }
         filter :group_by, values: FILTERABLE_GROUPINGS, default: :day
         filter :provider,
                options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
@@ -1421,7 +1442,6 @@ module RecordingStudioWebhooks
       AdminWebhooksTrafficDefinition.ensure_action_attempts_widget_definition!
       RecordingStudioWebhooks::Admin::MetricWidgets.ensure_failed_widget!
       RecordingStudioWebhooks::Admin::MetricWidgets.ensure_stuck_widget!
-      RecordingStudioWebhooks::Admin::MetricWidgets.ensure_event_status_widget!
       if section_class_defined?
         ensure_section_links!(RecordingStudioWebhooks::AdminWebhooksSection)
         ensure_section_widget_usages!(RecordingStudioWebhooks::AdminWebhooksSection)
@@ -1478,13 +1498,12 @@ module RecordingStudioWebhooks
         "widgets.admin_webhooks.action_errors" => { view_variant: :card,
                                                     params: { preset_key: :last_4_weeks, group_by: :week } },
         "widgets.admin_webhooks.stuck_retries" => { view_variant: :card },
-        "widgets.admin_webhooks.event_status" => { view_variant: :card },
         "widgets.admin_webhooks.actions" => { view_variant: :card, params: { preset_key: :last_4_weeks } },
         "widgets.admin_webhooks.providers" => { view_variant: :card, params: { preset_key: :last_4_weeks } },
         "widgets.admin_webhooks.endpoints" => { view_variant: :card, params: { preset_key: :last_4_weeks } }
       }
       desired_keys = desired_defaults.keys
-      removed_keys = ["widgets.admin_webhooks.tokens"]
+      removed_keys = ["widgets.admin_webhooks.tokens", "widgets.admin_webhooks.event_status"]
 
       ordered_usages = desired_keys.map do |key|
         existing = existing_by_key[key]

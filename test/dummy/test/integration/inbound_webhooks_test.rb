@@ -374,7 +374,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Action attempts"
     assert_includes response.body, "Failed attempts"
     assert_includes response.body, "Stuck retries"
-    assert_includes response.body, "Event status"
+    refute_includes response.body, "Event status"
     # Admin 2.0 still passes FlatPack Button `url:` (not `href:`), so the
     # actions screen is present as a widget path rather than an <a href>.
     assert_includes response.body, "/admin/screens/actions"

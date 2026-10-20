@@ -45,14 +45,14 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Stuck retries"
     assert_includes response.body, "Failed attempts"
-    assert_includes response.body, "Event status"
+    refute_includes response.body, "Event status"
     assert_includes response.body, "/admin/screens/action_attempts"
     assert_includes response.body, "status=failed"
-    assert_includes response.body, "/admin/screens/webhook_traffic"
+    assert_includes response.body, "stuck=1"
+    refute_includes RecordingStudioWebhooks::Admin::MetricWidgets.methods(false), :ensure_event_status_widget!
 
     stuck = RecordingStudioWebhooks::Admin::MetricWidgets.ensure_stuck_widget!
     failed = RecordingStudioWebhooks::Admin::MetricWidgets.ensure_failed_widget!
-    status = RecordingStudioWebhooks::Admin::MetricWidgets.ensure_event_status_widget!
     context = admin_context
 
     stuck_resolved = stuck.resolve(context)
@@ -61,14 +61,35 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     assert_match(/Oldest wait is \d+ seconds past due/, stuck_resolved.info)
     refute_empty stuck_resolved.series
     assert_includes stuck_series_labels(stuck_resolved), "demo.record"
+    assert_equal "/admin/screens/action_attempts?stuck=1", stuck_resolved.link_to
 
     failed_resolved = failed.resolve(context)
     assert_operator failed_resolved.value.to_i, :>=, 1
     refute_empty failed_resolved.series
+  end
 
-    status_resolved = status.resolve(context)
-    texts = status_resolved.items.map { |item| item[:text] || item["text"] }
-    assert_includes texts, "accepted"
+  test "stuck filter list matches the stuck retries widget count" do
+    context = admin_context
+    widget_count = RecordingStudioWebhooks::Admin::MetricWidgets.ensure_stuck_widget!.resolve(context).value
+    stuck_scope = RecordingStudioWebhooks::Metrics::STUCK.call(
+      RecordingStudioWebhooks::AdminWebhooksTrafficDefinition.action_attempt_relation(context)
+    )
+
+    assert_equal 5, widget_count
+    assert_equal widget_count, stuck_scope.count
+
+    sign_in @user
+    period = RecordingStudioAdmin::Period.from_preset_key(:last_4_weeks)
+    get "/admin/screens/action_attempts/table", params: {
+      stuck: "1",
+      date_range_preset: "last_4_weeks",
+      start_date: period.start_date.iso8601,
+      end_date: period.end_date.iso8601
+    }
+
+    assert_response :success
+    assert_equal widget_count, response.body.scan("demo.record").size
+    refute_includes response.body, "invoice.failed"
   end
 
   test "action attempts screen is enabled from the Admin Webhooks section links" do

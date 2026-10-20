@@ -200,14 +200,15 @@ When RecordingStudio Admin is loaded, the Admin Webhooks hub shows metric
 cards that call `RecordingStudioMetrics::Admin.execute` (site scope). Stuck
 retries uses `webhook_attempts.stuck` (count plus a bar chart grouped by
 `action_name`) and `webhook_attempts.oldest_stuck_age`, and links to Action
-attempts. The section lists Webhook traffic, Providers, Endpoints, Actions,
+attempts with `stuck=1`. That filter is the same `Metrics::STUCK` rule and
+skips the default `completed_at` window so overdue retries still appear.
+The section lists Webhook traffic, Providers, Endpoints, Actions,
 Action attempts, and Tokens so those screens are enabled when the host
 restricts Admin to named sections. Failed attempts uses
 `webhook_attempts.failed_over_time` (week buckets on `completed_at`, current
 root, Admin `last_4_weeks`) and links to Action attempts with `status=failed`.
 That screen filters the same window on `completed_at`. The Action attempts
-card uses that same `completed_at` window. Event status uses
-`webhook_events.by_status` and links to Webhook traffic. Webhook traffic
+card uses that same `completed_at` window. Webhook traffic
 filters status, provider, and endpoint in the filter modal.
 
 ## Metrics

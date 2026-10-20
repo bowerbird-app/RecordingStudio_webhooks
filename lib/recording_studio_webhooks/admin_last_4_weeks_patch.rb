@@ -3,6 +3,15 @@
 module RecordingStudioWebhooks
   module AdminLast4WeeksPatch
     module DateRangeFilter
+      def apply(relation, value, context)
+        if @definition.options[:field].to_s == "completed_at" &&
+           AdminWebhooksTrafficDefinition.skip_completed_at_range?(context)
+          return relation
+        end
+
+        super
+      end
+
       private
 
       # Keep "last_4_weeks" aligned with FlatPack's 28-day inclusive preset.
