@@ -214,7 +214,7 @@ filters status, provider, and endpoint in the filter modal.
 ## Metrics
 
 `RecordingStudioWebhooks::Metrics.register!` registers site-wide metrics with
-RecordingStudio Metrics (`>= 0.3.0, < 0.4`) at boot. Every metric uses
+RecordingStudio Metrics (`>= 0.3.0, < 0.6`) at boot. Every metric uses
 `blast_radius: :site`, is exposed on the `:operations` API only, and is visible
 over the API only to actors with `:view` on the Admin root
 (`Api::Access.can_view?`). This gem does not call
