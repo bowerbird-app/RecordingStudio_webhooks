@@ -637,11 +637,14 @@ module RecordingStudioWebhooks
       grouped = Arel.sql(expression)
 
       chart_count_relation(relation)
+        .where.not(recording_studio_webhooks_action_attempts: { timestamp => nil })
         .group(grouped)
         .order(grouped)
         .count
-        .map do |timestamp, count|
-        { x: format_bucket(timestamp, bucket), y: count.to_i }
+        .filter_map do |bucket_at, count|
+        next if bucket_at.nil?
+
+        { x: format_bucket(bucket_at, bucket), y: count.to_i }
       end
     end
 

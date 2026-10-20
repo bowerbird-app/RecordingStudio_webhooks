@@ -175,6 +175,40 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "demo.succeeded_for_chart"
   end
 
+  test "action attempts chart skips pending and retrying attempts with blank completed_at" do
+    seed_action_attempt_status_chart_rows!
+    %w[pending retrying].each do |status|
+      event = create_event!("invoice.#{status}_chart")
+      event.action_attempts.create!(
+        action_name: "demo.#{status}_for_chart",
+        execution_position: 0,
+        status: status,
+        attempts: 1,
+        completed_at: nil,
+        last_error: nil,
+        endpoint_snapshot: event.endpoint_snapshot,
+        token_snapshot: event.token_snapshot,
+        policy_snapshot: event.policy_snapshot,
+        action_snapshot: { "name" => "demo.#{status}_for_chart" },
+        attempt_history: []
+      )
+    end
+
+    sign_in @user
+    period = RecordingStudioAdmin::Period.from_preset_key(:last_4_weeks)
+    chart_params = {
+      date_range_preset: "last_4_weeks",
+      start_date: period.start_date.iso8601,
+      end_date: period.end_date.iso8601,
+      group_by: "week",
+      stuck: "1"
+    }
+
+    get "/admin/screens/action_attempts/chart", params: chart_params
+    assert_response :success
+    assert_equal 6, chart_series_total(response.body)
+  end
+
   test "failed attempts widget matches the action attempts screen on root and completed_at" do
     seed_failed_count_mismatch_rows!
     context = admin_context

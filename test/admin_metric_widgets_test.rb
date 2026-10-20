@@ -35,6 +35,7 @@ class AdminMetricWidgetsTest < Minitest::Test
     assert_includes section, "Metrics::STUCK.call"
     assert_includes section, "def last_4_weeks_range"
     assert_includes section, "action_attempt_chart_relation"
+    assert_includes section, ".where.not(recording_studio_webhooks_action_attempts: { timestamp => nil })"
     assert_includes section, ".where(completed_at: range)"
     assert_includes section, "field: :completed_at"
     assert_includes query, "last_4_weeks_range"
