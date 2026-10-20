@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## [0.6.5] - 2026-10-20
+
+Runtime Metrics range now includes 0.5.x.
+
+### Changed
+
+- Runtime dependency `recording_studio_metrics` is `>= 0.3.0, < 0.6`.
+- Dummy and development pin git tag `v0.5.0`.
+
+### Upgrade notes
+
+- Bump to `0.6.5`. No migration.
+- Hosts on Metrics 0.3.x stay valid. Hosts can move to Metrics `0.5.0`.
+- Admin chart callers that still index `[date, value]` pairs must read `x` and
+  `y` (Metrics 0.5.0). This gem already emits `{ x:, y: }`.
+
 ## [0.6.4] - 2026-10-20
 
 Admin Webhooks Stuck retries opens Action attempts with the same stuck set.

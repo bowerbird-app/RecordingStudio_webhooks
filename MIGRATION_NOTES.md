@@ -41,6 +41,11 @@ Do not edit a copied migration to add plaintext token, provider secret, raw
 header, or raw payload columns. Use host credentials for verifier material and
 the engine's safe metadata/policy fields only.
 
+## 0.6.5
+
+No migration. Runtime `recording_studio_metrics` is `>= 0.3.0, < 0.6`. Dummy
+and development pin git tag `v0.5.0`.
+
 ## 0.6.4
 
 No migration. Action attempts `stuck=1` uses the same `Metrics::STUCK` rule as

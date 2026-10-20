@@ -43,7 +43,7 @@ class MetricsTest < Minitest::Test
     assert_includes engine, "RecordingStudioWebhooks::Metrics.register!"
     refute_includes engine, "RecordingStudioMetrics::Api.register!"
 
-    assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", ">= 0.3.0", "< 0.4"'
+    assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", ">= 0.3.0", "< 0.6"'
     refute_includes dummy_metrics, "RecordingStudioMetrics::Api.register!"
 
     readme = File.read(File.expand_path("../README.md", __dir__))
@@ -61,6 +61,6 @@ class MetricsTest < Minitest::Test
   end
 
   def test_version_pin
-    assert_equal "0.6.4", RecordingStudioWebhooks::VERSION
+    assert_equal "0.6.5", RecordingStudioWebhooks::VERSION
   end
 end
