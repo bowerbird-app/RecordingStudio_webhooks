@@ -41,6 +41,17 @@ Do not edit a copied migration to add plaintext token, provider secret, raw
 header, or raw payload columns. Use host credentials for verifier material and
 the engine's safe metadata/policy fields only.
 
+## 0.6.2
+
+No migration. Admin Webhooks hub cards read `webhook_attempts.stuck`,
+`webhook_attempts.oldest_stuck_age`, `webhook_attempts.failed_over_time`, and
+`webhook_events.by_status`. The Admin Webhooks section links Action attempts
+so that screen is enabled on hosts that list sections on the Admin root.
+Failed attempts and Action attempts (`status=failed`) both use the current
+root, `completed_at`, and Admin `last_4_weeks`. Webhook traffic puts status,
+provider, and endpoint in the filter modal. Admin stays optional and is not a
+gemspec dependency.
+
 ## 0.6.1
 
 No migration. Pin `recording_studio_metrics` to `>= 0.3.0, < 0.4`. MCP 0.17.0
