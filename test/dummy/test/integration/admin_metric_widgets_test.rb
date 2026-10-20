@@ -88,6 +88,30 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Action attempts"
   end
 
+  test "every screen linked from admin webhooks widgets returns 200 when the section is enabled" do
+    RecordingStudioWebhooks::Admin::Registration.register!
+    context = admin_path_context
+    linked_keys = widget_linked_screen_keys(admin_context)
+
+    assert_includes linked_keys, "providers"
+    assert_includes linked_keys, "actions"
+    assert_includes linked_keys, "endpoints"
+    refute_empty linked_keys
+
+    sign_in @user
+    linked_keys.each do |key|
+      assert_includes RecordingStudioWebhooks::AdminWebhooksSection.links.map(&:name), key.to_sym
+      assert RecordingStudioAdmin.screen_enabled?(
+        key: key,
+        recording: @admin_root,
+        context: context
+      ), "#{key} should be enabled on the Admin root"
+
+      get "/admin/screens/#{key}"
+      assert_response :success, "#{key} expected 200, got #{response.status}"
+    end
+  end
+
   test "failed attempts widget matches the action attempts screen on root and completed_at" do
     seed_failed_count_mismatch_rows!
     context = admin_context
@@ -232,6 +256,17 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
         "/admin/screens/#{key}"
       end
     end
+  end
+
+  def widget_linked_screen_keys(context)
+    RecordingStudioWebhooks::AdminWebhooksSection.widget_usages.filter_map do |usage|
+      widget = RecordingStudioAdmin.widget_for(usage.key)
+      next unless widget
+
+      href = widget.resolve(context).link_to.to_s
+      match = href.match(%r{/admin/screens/([^/?#]+)})
+      match&.captures&.first
+    end.uniq
   end
 
   def stuck_series_labels(resolved)

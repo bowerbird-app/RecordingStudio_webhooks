@@ -41,6 +41,12 @@ Do not edit a copied migration to add plaintext token, provider secret, raw
 header, or raw payload columns. Use host credentials for verifier material and
 the engine's safe metadata/policy fields only.
 
+## 0.6.3
+
+No migration. The Admin Webhooks section now links Providers, Endpoints, and
+Actions as well as Webhook traffic, Action attempts, and Tokens, so those
+screens are enabled on hosts that list sections on the Admin root.
+
 ## 0.6.2
 
 No migration. Admin Webhooks hub cards read `webhook_attempts.stuck`,

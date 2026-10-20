@@ -1437,6 +1437,9 @@ module RecordingStudioWebhooks
       existing = section_class.links.map(&:name)
       {
         webhook_traffic: "View traffic",
+        providers: "Providers",
+        endpoints: "Endpoints",
+        actions: "Actions",
         action_attempts: "Action attempts",
         tokens: "Tokens"
       }.each do |name, text|
