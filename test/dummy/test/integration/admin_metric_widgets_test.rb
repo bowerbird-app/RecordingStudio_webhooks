@@ -204,9 +204,13 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
       stuck: "1"
     }
 
-    get "/admin/screens/action_attempts/chart", params: chart_params
+    get "/admin/screens/action_attempts/chart", params: chart_params.except(:stuck)
     assert_response :success
     assert_equal 6, chart_series_total(response.body)
+
+    get "/admin/screens/action_attempts/chart", params: chart_params
+    assert_response :success
+    assert_equal 0, chart_series_total(response.body)
   end
 
   test "failed attempts widget matches the action attempts screen on root and completed_at" do
