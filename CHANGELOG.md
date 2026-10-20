@@ -12,6 +12,10 @@ Admin Webhooks section links include every screen the hub widgets open.
   Webhook traffic, Action attempts, and Tokens. RecordingStudio Admin enables
   those screens wherever the section is enabled, including hosts that turn the
   section on for the Admin root.
+- The Action attempts hub card counts `completed_at` over Admin `last_4_weeks`,
+  the same set as `/admin/screens/action_attempts`.
+- The Action attempts chart keeps the status filter when it buckets by
+  `completed_at`, so `status=failed` changes the chart as well as the table.
 
 ### Upgrade notes
 

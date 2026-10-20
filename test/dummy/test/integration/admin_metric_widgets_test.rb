@@ -112,6 +112,48 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "action attempts widget matches the action attempts screen on completed_at last 4 weeks" do
+    seed_action_attempt_count_mismatch_rows!
+    context = admin_context
+    range = RecordingStudioWebhooks::AdminWebhooksTrafficDefinition.last_4_weeks_range(Time.current)
+    screen_count = RecordingStudioWebhooks::AdminWebhooksTrafficDefinition
+                   .action_attempt_relation(context)
+                   .where(completed_at: range)
+                   .count
+    widget_count = RecordingStudioWebhooks::AdminWebhooksTrafficDefinition
+                   .ensure_action_attempts_widget_definition!
+                   .resolve(context)
+                   .value
+
+    assert_equal 3, screen_count
+    assert_equal screen_count, widget_count
+  end
+
+  test "action attempts chart follows the status filter" do
+    seed_action_attempt_status_chart_rows!
+    sign_in @user
+    period = RecordingStudioAdmin::Period.from_preset_key(:last_4_weeks)
+    chart_params = {
+      date_range_preset: "last_4_weeks",
+      start_date: period.start_date.iso8601,
+      end_date: period.end_date.iso8601,
+      group_by: "week"
+    }
+
+    get "/admin/screens/action_attempts/chart", params: chart_params
+    assert_response :success
+    assert_equal 6, chart_series_total(response.body)
+
+    get "/admin/screens/action_attempts/chart", params: chart_params.merge(status: "failed")
+    assert_response :success
+    assert_equal 3, chart_series_total(response.body)
+
+    get "/admin/screens/action_attempts/table", params: chart_params.merge(status: "failed")
+    assert_response :success
+    assert_includes response.body, "demo.failed_for_chart"
+    refute_includes response.body, "demo.succeeded_for_chart"
+  end
+
   test "failed attempts widget matches the action attempts screen on root and completed_at" do
     seed_failed_count_mismatch_rows!
     context = admin_context
@@ -179,6 +221,69 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
           next_attempt_at: Time.current - RecordingStudioWebhooks::Metrics::STUCK_RETRY_GRACE - 30.seconds
         )
       end
+    end
+  end
+
+  def seed_action_attempt_count_mismatch_rows!
+    create_failed_attempt!("invoice.window", created_at: Time.current, completed_at: Time.current, action_name: "demo.window")
+    create_failed_attempt!("invoice.created_outside", created_at: 40.days.ago, completed_at: Time.current, action_name: "demo.created_outside")
+    create_failed_attempt!("invoice.finished_outside", created_at: Time.current, completed_at: 40.days.ago, action_name: "demo.finished_outside")
+    event = create_event!("invoice.retrying")
+    event.action_attempts.create!(
+      action_name: "demo.retrying",
+      execution_position: 0,
+      status: "retrying",
+      attempts: 1,
+      completed_at: nil,
+      last_error: nil,
+      endpoint_snapshot: event.endpoint_snapshot,
+      token_snapshot: event.token_snapshot,
+      policy_snapshot: event.policy_snapshot,
+      action_snapshot: { "name" => "demo.retrying" },
+      attempt_history: []
+    )
+  end
+
+  def seed_action_attempt_status_chart_rows!
+    3.times do |index|
+      create_attempt_with_status!(
+        "invoice.succeeded_#{index}",
+        status: "succeeded",
+        action_name: "demo.succeeded_for_chart"
+      )
+    end
+    2.times do |index|
+      create_attempt_with_status!(
+        "invoice.failed_#{index}",
+        status: "failed",
+        action_name: "demo.failed_for_chart"
+      )
+    end
+  end
+
+  def create_attempt_with_status!(event_type, status:, action_name:)
+    event = create_event!(event_type)
+    event.action_attempts.create!(
+      action_name: action_name,
+      execution_position: 0,
+      status: status,
+      attempts: 1,
+      completed_at: Time.current,
+      last_error: (status == "failed" ? "action_execution_failed" : nil),
+      endpoint_snapshot: event.endpoint_snapshot,
+      token_snapshot: event.token_snapshot,
+      policy_snapshot: event.policy_snapshot,
+      action_snapshot: { "name" => action_name },
+      attempt_history: []
+    )
+  end
+
+  def chart_series_total(body)
+    match = body.match(/data-flat-pack--chart-series-value="([^"]+)"/)
+    assert match, "expected a Flatpack chart series in the response"
+    series = JSON.parse(CGI.unescapeHTML(match[1]))
+    Array(series).sum do |entry|
+      Array(entry["data"] || entry[:data]).sum { |point| (point["y"] || point[:y]).to_i }
     end
   end
 

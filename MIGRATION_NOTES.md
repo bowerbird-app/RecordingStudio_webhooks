@@ -45,7 +45,9 @@ the engine's safe metadata/policy fields only.
 
 No migration. The Admin Webhooks section now links Providers, Endpoints, and
 Actions as well as Webhook traffic, Action attempts, and Tokens, so those
-screens are enabled on hosts that list sections on the Admin root.
+screens are enabled on hosts that list sections on the Admin root. The Action
+attempts hub card and screen both count `completed_at` in Admin `last_4_weeks`.
+The Action attempts chart applies the status filter.
 
 ## 0.6.2
 

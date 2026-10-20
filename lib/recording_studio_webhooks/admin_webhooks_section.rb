@@ -620,13 +620,28 @@ module RecordingStudioWebhooks
                    end
       grouped = Arel.sql(expression)
 
-      relation.except(:order)
-              .group(grouped)
-              .order(grouped)
-              .count
-              .map do |timestamp, count|
+      chart_count_relation(relation)
+        .group(grouped)
+        .order(grouped)
+        .count
+        .map do |timestamp, count|
         { x: format_bucket(timestamp, bucket), y: count.to_i }
       end
+    end
+
+    def action_attempt_chart_relation(context)
+      relation = context.query_result.relation
+      status = context.filter_value(:status)
+      if status.present?
+        relation = relation.where(recording_studio_webhooks_action_attempts: { status: status })
+      end
+      relation
+    end
+
+    def chart_count_relation(relation)
+      return relation unless relation.respond_to?(:unscope)
+
+      relation.unscope(:includes, :eager_load, :preload, :order)
     end
 
     def format_bucket(timestamp, frequency)
@@ -988,7 +1003,7 @@ module RecordingStudioWebhooks
             [{
               name: "Action attempts",
               data: AdminWebhooksTrafficDefinition.action_attempt_date_series(
-                context.query_result.relation,
+                AdminWebhooksTrafficDefinition.action_attempt_chart_relation(context),
                 context.filter_value(:group_by) || :day,
                 field: :completed_at
               )
@@ -1301,26 +1316,26 @@ module RecordingStudioWebhooks
         change_good_when :up
         metadata { { period_label: "Last 4 weeks" } }
         value do |context|
-          range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
+          range = AdminWebhooksTrafficDefinition.last_4_weeks_range(Time.current)
           AdminWebhooksTrafficDefinition.action_attempt_relation(context)
-                                        .where(created_at: range)
+                                        .where(completed_at: range)
                                         .count
         end
         change do |context|
           reference_time = Time.current
           relation = AdminWebhooksTrafficDefinition.action_attempt_relation(context)
-          current_count = relation.where(created_at: AdminWebhooksTrafficDefinition.trailing_4_week_range(reference_time)).count
-          previous_count = relation.where(created_at: AdminWebhooksTrafficDefinition.previous_trailing_4_week_range(reference_time)).count
+          current_count = relation.where(completed_at: AdminWebhooksTrafficDefinition.last_4_weeks_range(reference_time)).count
+          previous_count = relation.where(completed_at: AdminWebhooksTrafficDefinition.previous_last_4_weeks_range(reference_time)).count
           AdminWebhooksTrafficDefinition.percent_change_label(current_count: current_count,
                                                               previous_count: previous_count)
         end
         chart_type :area
         series do |context|
-          range = AdminWebhooksTrafficDefinition.trailing_4_week_range(Time.current)
+          range = AdminWebhooksTrafficDefinition.last_4_weeks_range(Time.current)
           relation = AdminWebhooksTrafficDefinition.action_attempt_relation(context)
-                                                   .where(created_at: range)
+                                                   .where(completed_at: range)
           [{ name: "Action attempts",
-             data: AdminWebhooksTrafficDefinition.action_attempt_date_series(relation, :week) }]
+             data: AdminWebhooksTrafficDefinition.action_attempt_date_series(relation, :week, field: :completed_at) }]
         end
         chart_options do
           {

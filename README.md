@@ -205,7 +205,8 @@ Action attempts, and Tokens so those screens are enabled when the host
 restricts Admin to named sections. Failed attempts uses
 `webhook_attempts.failed_over_time` (week buckets on `completed_at`, current
 root, Admin `last_4_weeks`) and links to Action attempts with `status=failed`.
-That screen filters the same window on `completed_at`. Event status uses
+That screen filters the same window on `completed_at`. The Action attempts
+card uses that same `completed_at` window. Event status uses
 `webhook_events.by_status` and links to Webhook traffic. Webhook traffic
 filters status, provider, and endpoint in the filter modal.
 
