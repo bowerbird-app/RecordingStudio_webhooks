@@ -9,6 +9,7 @@ Runtime Metrics range is now `>= 0.3.0, < 1.0` (CI tested with 0.5.0). No code c
 ### Changed
 
 - Runtime dependency `recording_studio_metrics` is `>= 0.3.0, < 1.0`.
+- `.ruby-version` is `3.3.12` so CI can install Ruby on ubuntu-26.04.
 
 ### Upgrade notes
 
