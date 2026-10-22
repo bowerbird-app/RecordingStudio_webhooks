@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## [0.6.7] - 2026-10-22
+
+Runtime Metrics range is now `>= 0.3.0, < 1.0` (CI tested with 0.5.0). No code change.
+
+### Changed
+
+- Runtime dependency `recording_studio_metrics` is `>= 0.3.0, < 1.0`.
+
+### Upgrade notes
+
+- Bump to `0.6.7`. No migration.
+- No code change.
+
 ## [0.6.6] - 2026-10-20
 
 Admin Action attempts chart and engine admin pages no longer 500.
@@ -332,7 +345,8 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.6.7...HEAD
+[0.6.7]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.6.6...v0.6.7
 [0.4.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.2.0...v0.2.1
