@@ -1,13 +1,6 @@
-<%= render FlatPack::PageNav::Component.new(
-  anchor_url: admin_webhooks_section_path,
-  anchor_tooltip: "Close"
-) %>
-
-<%= render FlatPack::PageTitle::Component.new(
-  title: @action_attempt.action_name,
-  subtitle: "Persisted action attempt and sanitized attempt history.",
-  variant: :h1
-) %>
+<% content_for :title, @action_attempt.action_name %>
+<% content_for :subtitle, "Persisted action attempt and sanitized attempt history." %>
+<% flat_pack_page_nav(round: true, style: :default, anchor_href: admin_webhooks_section_path, anchor_tooltip: "Close") %>
 
 <div class="grid gap-6">
   <section class="space-y-3">

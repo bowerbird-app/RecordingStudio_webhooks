@@ -1,17 +1,8 @@
-<%= render FlatPack::PageNav::Component.new(
-  anchor_url: admin_webhooks_section_path,
-  anchor_tooltip: "Close"
-) %>
+<% content_for :title, "Providers" %>
+<% content_for :subtitle, "Code-defined provider definitions and their endpoint footprint." %>
+<% flat_pack_page_nav(round: true, style: :default, anchor_href: admin_webhooks_section_path, anchor_tooltip: "Close") %>
 
-<div class="flex items-center justify-between gap-4">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Providers",
-    subtitle: "Code-defined provider definitions and their endpoint footprint.",
-    variant: :h1
-  ) %>
-</div>
-
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+<%= render FlatPack::Card::Component.new do |card| %>
   <% card.body do %>
     <% if @providers.any? %>
       <div class="overflow-x-auto">

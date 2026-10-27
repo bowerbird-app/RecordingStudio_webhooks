@@ -1,12 +1,5 @@
-<%= render FlatPack::PageNav::Component.new(
-  anchor_url: admin_webhooks_section_path,
-  anchor_tooltip: "Close"
-) %>
-
-<%= render FlatPack::PageTitle::Component.new(
-  title: "Token history",
-  variant: :h1
-) %>
+<% content_for :title, "Token history" %>
+<% flat_pack_page_nav(round: true, style: :default, anchor_href: admin_webhooks_section_path, anchor_tooltip: "Close") %>
 
 <% if @form_error.present? %>
   <%= render FlatPack::Alert::Component.new(description: @form_error, style: :danger) %>

@@ -1,18 +1,7 @@
-<%= render FlatPack::PageNav::Component.new(
-  anchor_url: admin_webhooks_section_path,
-  anchor_tooltip: "Close"
-) %>
-
-<div class="flex items-center justify-between gap-4">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Endpoints",
-    subtitle: "Managed endpoint identities under Admin Webhooks providers.",
-    variant: :h1
-  ) %>
-  <div class="flex gap-2">
-    <%= render FlatPack::Button::Component.new(text: "New", style: :primary, size: :md, href: new_admin_endpoint_path) %>
-  </div>
-</div>
+<% content_for :title, "Endpoints" %>
+<% content_for :subtitle, "Managed endpoint identities under Admin Webhooks providers." %>
+<% flat_pack_page_nav(round: true, style: :default, anchor_href: admin_webhooks_section_path, anchor_tooltip: "Close") %>
+<% register_page_nav("New", new_admin_endpoint_path, role: :primary) %>
 
 <%= form_with url: admin_endpoints_path, method: :get, class: "flex flex-wrap items-end gap-3" do |form| %>
   <%= render FlatPack::Select::Component.new(
@@ -25,7 +14,7 @@
   <%= render FlatPack::Button::Component.new(text: "Apply", style: :secondary, size: :md, type: "submit") %>
 <% end %>
 
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+<%= render FlatPack::Card::Component.new do |card| %>
   <% card.body do %>
     <% if @endpoints.any? %>
       <div class="overflow-x-auto">

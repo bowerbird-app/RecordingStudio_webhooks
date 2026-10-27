@@ -1,14 +1,7 @@
-<%= render FlatPack::PageNav::Component.new(
-  anchor_url: admin_webhooks_section_path,
-  anchor_tooltip: "Close"
-) %>
+<% content_for :title, "Inbound events" %>
+<% flat_pack_page_nav(round: true, style: :default, anchor_href: admin_webhooks_section_path, anchor_tooltip: "Close") %>
 
-<%= render FlatPack::PageTitle::Component.new(
-  title: "Inbound events",
-  variant: :h1
-) %>
-
-<%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+<%= render FlatPack::Card::Component.new(border: :strong) do |card| %>
   <% card.body do %>
     <%= form_with url: params[:endpoint_id].present? ? admin_endpoint_events_path(@endpoint) : admin_events_path, method: :get, class: "grid gap-3 md:grid-cols-4" do |_form| %>
       <%= render FlatPack::Select::Component.new(
@@ -78,7 +71,7 @@
   <% end %>
 <% end %>
 
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+<%= render FlatPack::Card::Component.new do |card| %>
   <% card.body do %>
     <% if @events.any? %>
       <ul class="space-y-3">

@@ -1,13 +1,6 @@
-<%= render FlatPack::PageNav::Component.new(
-  anchor_url: admin_webhooks_section_path,
-  anchor_tooltip: "Close"
-) %>
-
-<%= render FlatPack::PageTitle::Component.new(
-  title: "Webhook Sandbox",
-  subtitle: "Dry-run endpoint/provider resolution, signatures, parsing, and action attemptning without persistence or execution.",
-  variant: :h1
-) %>
+<% content_for :title, "Webhook Sandbox" %>
+<% content_for :subtitle, "Dry-run endpoint/provider resolution, signatures, parsing, and action attemptning without persistence or execution." %>
+<% flat_pack_page_nav(round: true, style: :default, anchor_href: admin_webhooks_section_path, anchor_tooltip: "Close") %>
 
 <% if @form_error.present? %>
   <%= render FlatPack::Alert::Component.new(description: @form_error, style: :danger) %>
@@ -37,7 +30,7 @@
   payload_value = params.dig(:sandbox, :payload).to_s.presence || default_payload_json
 %>
 
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+<%= render FlatPack::Card::Component.new do |card| %>
   <% card.body do %>
     <%= form_with url: admin_webhook_sandbox_path, scope: :sandbox, class: "space-y-4" do |form| %>
       <div class="grid gap-4 md:grid-cols-2">
@@ -80,7 +73,7 @@
 
 <% if @sandbox_result %>
   <div class="grid gap-6 lg:grid-cols-2">
-    <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <%= render FlatPack::Card::Component.new do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(title: "Resolution checks", variant: :h3, class: "mb-0 pb-0") %>
       <% end %>
@@ -97,7 +90,7 @@
       <% end %>
     <% end %>
 
-    <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+    <%= render FlatPack::Card::Component.new(border: :strong) do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(title: "Redacted sample", variant: :h3, class: "mb-0 pb-0") %>
       <% end %>
@@ -105,7 +98,7 @@
         <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@sandbox_result.fetch("payload")) %></pre>
       <% end %>
     <% end %>
-    <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+    <%= render FlatPack::Card::Component.new(border: :strong) do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(title: "Matched actions", variant: :h3, class: "mb-0 pb-0") %>
       <% end %>

@@ -1,13 +1,6 @@
-<%= render FlatPack::PageNav::Component.new(
-  anchor_url: "/admin/screens/tokens",
-  anchor_tooltip: "Close"
-) %>
-
-<%= render FlatPack::PageTitle::Component.new(
-  title: "Issue token",
-  subtitle: "Create a new token for a selected endpoint.",
-  variant: :h1
-) %>
+<% content_for :title, "Issue token" %>
+<% content_for :subtitle, "Create a new token for a selected endpoint." %>
+<% flat_pack_page_nav(round: true, style: :default, anchor_href: "/admin/screens/tokens", anchor_tooltip: "Close") %>
 
 <% if @form_error.present? %>
   <%= render FlatPack::Alert::Component.new(description: @form_error, style: :danger) %>

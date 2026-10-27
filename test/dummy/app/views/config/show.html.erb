@@ -1,4 +1,8 @@
-<% dummy_page_nav(title: "Config", back_url: main_app.root_path) %>
+<% dummy_page_nav(
+     title: "Config",
+     subtitle: "Setup reference for configuration, providers, endpoints, tokens, and actions.",
+     back_url: main_app.root_path
+   ) %>
 
 <div class="mx-auto flex w-full max-w-6xl flex-col gap-8">
   <% configure_example = [
@@ -121,12 +125,6 @@
     "",
     "Webhooks::Actions::Stripe::PaymentIntentSucceededAction.register!"
   ].join("\n") %>
-
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Config",
-    subtitle: "Setup reference for configuration, providers, endpoints, tokens, and actions.",
-    variant: :h1
-  ) %>
 
   <section class="space-y-3">
     <h2 class="text-lg font-semibold">1. RecordingStudioWebhooks.configure</h2>
