@@ -7,9 +7,8 @@ module RecordingStudioWebhooks
 
       AdminContext = Struct.new(:controller, :actor, :section_key, :permission, keyword_init: true)
 
-      layout :admin_layout
-
       before_action :authorize_admin_webhooks_read!
+      before_action :keep_admin_pages_out_of_indexes
       before_action :require_flat_pack!
 
       include RecordingStudioWebhooks::AdminHelper
@@ -126,8 +125,9 @@ module RecordingStudioWebhooks
         Endpoint.none
       end
 
-      def admin_layout
-        "recording_studio_webhooks/application"
+      # The shared Recording Studio layout does not emit a robots meta tag.
+      def keep_admin_pages_out_of_indexes
+        response.headers["X-Robots-Tag"] = "noindex, nofollow"
       end
     end
   end

@@ -6,7 +6,7 @@ module RecordingStudioWebhooks
 
     protect_from_forgery with: :exception
 
-    layout "recording_studio_webhooks/application"
+    recording_studio_layout { RecordingStudioWebhooks.configuration.layout }
 
     private
 
