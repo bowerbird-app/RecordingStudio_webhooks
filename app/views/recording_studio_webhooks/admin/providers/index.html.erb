@@ -1,43 +1,29 @@
-<%= render FlatPack::PageNav::Component.new(
-  anchor_url: admin_webhooks_section_path,
-  anchor_tooltip: "Close"
-) %>
+<% content_for :title, "Providers" %>
+<% content_for :subtitle, "Code-defined provider definitions and their endpoint footprint." %>
+<% flat_pack_page_nav(round: true, style: :default, anchor_href: admin_webhooks_section_path, anchor_tooltip: "Close") %>
 
-<div class="flex items-center justify-between gap-4">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Providers",
-    subtitle: "Code-defined provider definitions and their endpoint footprint.",
-    variant: :h1
-  ) %>
-</div>
-
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-  <% card.body do %>
-    <% if @providers.any? %>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead>
-            <tr>
-              <th class="p-2">Provider</th>
-              <th class="p-2">Source</th>
-              <th class="p-2">Endpoints</th>
-              <th class="p-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @providers.each do |provider| %>
-              <tr class="border-t">
-                <td class="p-2"><%= provider.name %></td>
-                <td class="p-2"><%= provider.source %></td>
-                <td class="p-2"><%= @provider_endpoint_counts.fetch(provider.name, 0) %></td>
-                <td class="p-2 text-right"><%= link_to "Open", "/admin/screens/providers?#{ { provider: provider.name }.to_query }" %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    <% else %>
-      <p class="text-sm">No providers are registered.</p>
-    <% end %>
+<% if @providers.any? %>
+  <% rows = @providers.map do |provider|
+       {
+         name: provider.name,
+         source: provider.source,
+         endpoints: @provider_endpoint_counts.fetch(provider.name, 0),
+         href: "/admin/screens/providers?#{ { provider: provider.name }.to_query }"
+       }
+     end %>
+  <%= render FlatPack::Table::Component.new(data: rows, min_width: :sm) do |table| %>
+    <% table.column(title: "Provider") { |row| row[:name] } %>
+    <% table.column(title: "Source") { |row| row[:source] } %>
+    <% table.column(title: "Endpoints") { |row| row[:endpoints].to_s } %>
+    <% table.column(title: "Open", align: :end, html: ->(row) {
+         render(FlatPack::Link::Component.new(href: row[:href])) { "Open" }
+       }) %>
   <% end %>
+<% else %>
+  <%= render FlatPack::EmptyState::Component.new(
+    title: "No providers",
+    description: "No providers are registered.",
+    size: :sm,
+    width: :full
+  ) %>
 <% end %>

@@ -1,12 +1,10 @@
-<meta name="robots" content="noindex,nofollow">
+<% content_for :head do %>
+  <meta name="robots" content="noindex,nofollow">
+<% end %>
+<% content_for :title, "Webhook endpoint ready" %>
+<% content_for :subtitle, "Use this URL in your provider to start receiving inbound webhooks." %>
 
-<%= render FlatPack::PageTitle::Component.new(
-  title: "Webhook endpoint ready",
-  subtitle: "Use this URL in your provider to start receiving inbound webhooks.",
-  variant: :h1
-) %>
-
-<%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+<%= render FlatPack::Card::Component.new(border: :strong) do |card| %>
   <% card.body do %>
     <%= render FlatPack::TextInput::Component.new(
       name: "endpoint_url",

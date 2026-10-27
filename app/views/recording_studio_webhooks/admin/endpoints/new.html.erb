@@ -1,12 +1,5 @@
-<%= render FlatPack::PageNav::Component.new(
-  anchor_url: admin_webhooks_section_path,
-  anchor_tooltip: "Close"
-) %>
-
-<%= render FlatPack::PageTitle::Component.new(
-  title: "New webhook endpoint",
-  subtitle: "Create a public intake address linked to a stable Recording Studio recording.",
-  variant: :h1
-) %>
+<% content_for :title, "New webhook endpoint" %>
+<% content_for :subtitle, "Create a public intake address linked to a stable Recording Studio recording." %>
+<% flat_pack_page_nav(round: true, style: :default, anchor_href: admin_webhooks_section_path, anchor_tooltip: "Close") %>
 
 <%= render "form" %>

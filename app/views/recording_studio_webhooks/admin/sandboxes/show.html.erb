@@ -1,13 +1,6 @@
-<%= render FlatPack::PageNav::Component.new(
-  anchor_url: admin_webhooks_section_path,
-  anchor_tooltip: "Close"
-) %>
-
-<%= render FlatPack::PageTitle::Component.new(
-  title: "Webhook Sandbox",
-  subtitle: "Dry-run endpoint/provider resolution, signatures, parsing, and action attemptning without persistence or execution.",
-  variant: :h1
-) %>
+<% content_for :title, "Webhook Sandbox" %>
+<% content_for :subtitle, "Dry-run endpoint/provider resolution, signatures, parsing, and action attemptning without persistence or execution." %>
+<% flat_pack_page_nav(round: true, style: :default, anchor_href: admin_webhooks_section_path, anchor_tooltip: "Close") %>
 
 <% if @form_error.present? %>
   <%= render FlatPack::Alert::Component.new(description: @form_error, style: :danger) %>
@@ -37,31 +30,28 @@
   payload_value = params.dig(:sandbox, :payload).to_s.presence || default_payload_json
 %>
 
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+<% selected_provider = @selected_provider_name || params.dig(:sandbox, :provider_name).to_s %>
+<% selected_endpoint = (@endpoint&.id || params.dig(:sandbox, :endpoint_id)).to_s %>
+
+<%= render FlatPack::Card::Component.new do |card| %>
   <% card.body do %>
-    <%= form_with url: admin_webhook_sandbox_path, scope: :sandbox, class: "space-y-4" do |form| %>
-      <div class="grid gap-4 md:grid-cols-2">
-        <div>
-          <label class="block text-sm font-medium" for="sandbox_provider_name">Provider</label>
-          <select id="sandbox_provider_name" name="sandbox[provider_name]" class="mt-1 block w-full rounded border p-2 text-sm">
-            <option value="">Select provider</option>
-            <% @providers.each do |provider| %>
-              <% selected_provider = @selected_provider_name || params.dig(:sandbox, :provider_name).to_s %>
-              <option value="<%= provider.name %>" <%= "selected" if selected_provider == provider.name %>><%= provider.name %></option>
-            <% end %>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium" for="sandbox_endpoint_id">Endpoint (optional)</label>
-          <select id="sandbox_endpoint_id" name="sandbox[endpoint_id]" class="mt-1 block w-full rounded border p-2 text-sm">
-            <option value="">Auto-select first matching endpoint</option>
-            <% @endpoints.each do |endpoint| %>
-              <% selected_endpoint = (@endpoint&.id || params.dig(:sandbox, :endpoint_id)).to_s %>
-              <option value="<%= endpoint.id %>" <%= "selected" if selected_endpoint == endpoint.id %>><%= endpoint.provider_name %> / <%= endpoint.label %></option>
-            <% end %>
-          </select>
-        </div>
-      </div>
+    <%= form_with url: admin_webhook_sandbox_path, scope: :sandbox, class: "space-y-4" do |_form| %>
+      <%= render FlatPack::Grid::Component.new(cols: 2, gap: :md, align: :start) do %>
+        <%= render FlatPack::Select::Component.new(
+          name: "sandbox[provider_name]",
+          label: "Provider",
+          options: [["Select provider", ""]] + @providers.map { |provider| [provider.name, provider.name] },
+          value: selected_provider,
+          class: "w-full"
+        ) %>
+        <%= render FlatPack::Select::Component.new(
+          name: "sandbox[endpoint_id]",
+          label: "Endpoint (optional)",
+          options: [["Auto-select first matching endpoint", ""]] + @endpoints.map { |endpoint| ["#{endpoint.provider_name} / #{endpoint.label}", endpoint.id] },
+          value: selected_endpoint,
+          class: "w-full"
+        ) %>
+      <% end %>
       <%= render FlatPack::TextInput::Component.new(
         name: "sandbox[event_type]",
         label: "Event type",
@@ -69,62 +59,90 @@
         required: false,
         placeholder: "invoice.paid"
       ) %>
-      <label class="block text-sm font-medium" for="sandbox_headers_json">Test headers JSON</label>
-      <%= form.text_area :headers_json, value: headers_value, rows: 6, class: "block w-full rounded border p-2 font-mono text-sm", placeholder: '{"authorization":"Bearer rswh_...","x-webhook-timestamp":"2026-07-29T00:00:00Z"}' %>
-      <label class="block text-sm font-medium" for="sandbox_payload">Sample JSON payload</label>
-      <%= form.text_area :payload, value: payload_value, rows: 10, class: "block w-full rounded border p-2 font-mono text-sm", required: true %>
+      <%= render FlatPack::TextArea::Component.new(
+        name: "sandbox[headers_json]",
+        label: "Test headers JSON",
+        value: headers_value,
+        rows: 6,
+        autogrow: false,
+        placeholder: '{"authorization":"Bearer rswh_...","x-webhook-timestamp":"2026-07-29T00:00:00Z"}'
+      ) %>
+      <%= render FlatPack::TextArea::Component.new(
+        name: "sandbox[payload]",
+        label: "Sample JSON payload",
+        value: payload_value,
+        rows: 10,
+        autogrow: false,
+        required: true
+      ) %>
       <%= render FlatPack::Button::Component.new(text: "Run dry-run validation", style: :primary, size: :md, type: "submit") %>
     <% end %>
   <% end %>
 <% end %>
 
 <% if @sandbox_result %>
-  <div class="grid gap-6 lg:grid-cols-2">
-    <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+  <% checks = @sandbox_result.fetch("checks") %>
+  <%= render FlatPack::Grid::Component.new(cols: 2, gap: :lg, align: :start) do %>
+    <%= render FlatPack::Card::Component.new do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(title: "Resolution checks", variant: :h3, class: "mb-0 pb-0") %>
       <% end %>
       <% card.body do %>
-        <% checks = @sandbox_result.fetch("checks") %>
-        <ul class="space-y-2 text-sm">
-          <li>Endpoint resolved: <strong><%= checks.fetch("endpoint_resolved") ? "yes" : "no" %></strong></li>
-          <li>Timestamp: <strong><%= checks.fetch("timestamp_valid") ? "valid" : "invalid" %></strong> · <%= checks.fetch("timestamp_message") %></li>
-          <li>Signature: <strong><%= checks.fetch("signature_verified") ? "verified" : "not verified" %></strong> · <%= checks.fetch("signature_message") %></li>
-          <li>Event extraction: <strong><%= checks.fetch("event_type") %></strong></li>
-          <li>Dispatcher: <strong><%= @sandbox_result.fetch("dispatcher") %></strong></li>
-          <li>Persistence: <strong>disabled (dry-run only)</strong></li>
-        </ul>
+        <%= render FlatPack::List::Component.new(layout: :key_value, divider: true) do %>
+          <%= render FlatPack::List::Item.new(key: "Endpoint resolved") do %>
+            <%= checks.fetch("endpoint_resolved") ? "yes" : "no" %>
+          <% end %>
+          <%= render FlatPack::List::Item.new(key: "Timestamp") do %>
+            <%= checks.fetch("timestamp_valid") ? "valid" : "invalid" %> · <%= checks.fetch("timestamp_message") %>
+          <% end %>
+          <%= render FlatPack::List::Item.new(key: "Signature") do %>
+            <%= checks.fetch("signature_verified") ? "verified" : "not verified" %> · <%= checks.fetch("signature_message") %>
+          <% end %>
+          <%= render FlatPack::List::Item.new(key: "Event extraction") do %>
+            <%= checks.fetch("event_type") %>
+          <% end %>
+          <%= render FlatPack::List::Item.new(key: "Dispatcher") do %>
+            <%= @sandbox_result.fetch("dispatcher") %>
+          <% end %>
+          <%= render FlatPack::List::Item.new(key: "Persistence") do %>
+            disabled (dry-run only)
+          <% end %>
+        <% end %>
       <% end %>
     <% end %>
 
-    <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
-      <% card.header do %>
-        <%= render FlatPack::PageTitle::Component.new(title: "Redacted sample", variant: :h3, class: "mb-0 pb-0") %>
-      <% end %>
-      <% card.body do %>
-        <pre class="overflow-auto rounded bg-black/5 p-3 text-xs"><%= pretty_webhook_json(@sandbox_result.fetch("payload")) %></pre>
-      <% end %>
-    <% end %>
-    <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+    <%= render FlatPack::CodeBlock::Component.new(
+      code: pretty_webhook_json(@sandbox_result.fetch("payload")),
+      language: "json",
+      title: "Redacted sample"
+    ) %>
+
+    <%= render FlatPack::Card::Component.new(border: :strong) do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(title: "Matched actions", variant: :h3, class: "mb-0 pb-0") %>
       <% end %>
       <% card.body do %>
-        <% if @sandbox_result.fetch("actions").any? %>
-          <ul class="space-y-3 text-sm">
-            <% @sandbox_result.fetch("actions").each do |action| %>
-              <li>
-                <strong><%= action.fetch("name") %></strong>
+        <% actions = @sandbox_result.fetch("actions") %>
+        <% if actions.any? %>
+          <%= render FlatPack::List::Component.new(divider: true) do %>
+            <% actions.each do |action| %>
+              <%= render FlatPack::List::Item.new do %>
+                <%= action.fetch("name") %>
                 · <%= action.fetch("execution_mode") %>
                 · retries: <%= action.fetch("max_retries") %>
                 · source: <%= action.fetch("source") %>
-              </li>
+              <% end %>
             <% end %>
-          </ul>
+          <% end %>
         <% else %>
-          <p class="text-sm">No registered action matches this event type.</p>
+          <%= render FlatPack::EmptyState::Component.new(
+            title: "No matching actions",
+            description: "No registered action matches this event type.",
+            size: :sm,
+            width: :full
+          ) %>
         <% end %>
       <% end %>
     <% end %>
-  </div>
+  <% end %>
 <% end %>

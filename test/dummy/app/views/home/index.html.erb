@@ -1,14 +1,12 @@
-<% dummy_page_nav(title: "Inbound webhook demo", back_url: main_app.root_path) %>
+<% dummy_page_nav(
+     title: "Inbound webhook demo",
+     subtitle: "A safe browser surface for Recording Studio Webhooks administration.",
+     back_url: main_app.root_path
+   ) %>
 
 <div class="mx-auto flex w-full max-w-6xl flex-col gap-6">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Inbound webhook demo",
-    subtitle: "A safe browser surface for Recording Studio Webhooks administration.",
-    variant: :h1
-  ) %>
-
   <div class="grid gap-6 lg:grid-cols-2">
-    <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <%= render FlatPack::Card::Component.new do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
           title: "Secure intake",
@@ -28,7 +26,7 @@
       <% end %>
     <% end %>
 
-    <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+    <%= render FlatPack::Card::Component.new(border: :strong) do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
           title: "Try the admin hierarchy",
@@ -48,7 +46,7 @@
       <% end %>
     <% end %>
 
-    <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
+    <%= render FlatPack::Card::Component.new(border: :strong) do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
           title: "Provider registry",
@@ -74,7 +72,7 @@
       <% end %>
     <% end %>
 
-    <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+    <%= render FlatPack::Card::Component.new do |card| %>
       <% card.header do %>
         <%= render FlatPack::PageTitle::Component.new(
           title: "Host installation",

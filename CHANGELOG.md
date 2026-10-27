@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+## [0.7.0] - 2026-10-27
+
+Admin pages use Recording Studio 6.1's shared layout. The host chooses that
+layout with `config.layout`.
+
+### Changed
+
+- `recording_studio` is `>= 6.1.0`. Development pins tag `v6.1.0`.
+- `flat_pack` is `>= 0.1.315`. Development pins ref `1fcbafe94f8eb118f0a22182f63f5110fcc97a56` (`0.1.319`).
+- `view_component` is `>= 4.14, < 5`.
+- `RecordingStudioWebhooks.configuration.layout` accepts `nil`, `false`, a layout name, or a keyword callable.
+- Engine and dummy controllers call `recording_studio_layout` instead of `RecordingStudio::UsesDefaultLayout`.
+- Admin views set `content_for :title` and `:subtitle`, `flat_pack_page_nav`, and `register_page_nav`.
+- Admin tables, lists, empty states, sandbox fields, and the endpoint switch use Flatpack components.
+- Cards use `background`, `border`, and `shadow`. Layouts load Flatpack stylesheets before Tailwind.
+
+### Upgrade notes
+
+- Bump to `0.7.0`. No database migration. The four webhook tables are unchanged.
+- Set `config.layout = nil` to keep the shared default layout. Set a layout name, `false`, or `->(controller:) { ... }` to override it.
+- Remove `include RecordingStudio::UsesDefaultLayout` and `layout "recording_studio/default_layout"` from host controllers. Call `recording_studio_layout`.
+- Replace `recording_studio_page_nav` and `FlatPack::PageNav::Component.new(back_href:)` with `flat_pack_page_nav` and `register_page_nav`. Put the page heading in `content_for :title`.
+- Sibling gems that still declare `recording_studio ~> 4.x` do not resolve next to `6.1.0`. This repository widens those requirements in `test/support/widen_recording_studio_requirement.rb` before Bundler setup. Hosts should move those gems forward, or load the same widen helper before `Bundler.setup`.
+- Admin 4.2 still passes `FlatPack::Card` `style:`. Flatpack 0.1.319 rejects that keyword. The dummy maps `:outlined` to `border: :strong`. Hosts should move Admin forward, or apply the same mapping, before those cards render.
+
 ## [0.6.7] - 2026-10-22
 
 Runtime Metrics range is now `>= 0.3.0, < 1.0` (CI tested with 0.5.0). No code change.
@@ -346,7 +371,8 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.6.7...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.6.7...v0.7.0
 [0.6.7]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.6.6...v0.6.7
 [0.4.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.2.1...v0.3.0

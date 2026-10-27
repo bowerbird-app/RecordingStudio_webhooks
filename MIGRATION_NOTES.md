@@ -1,6 +1,43 @@
 # Migration Notes
 
-This engine currently requires Recording Studio `~> 4.2`.
+This engine requires Recording Studio `>= 6.1.0` and Flatpack `>= 0.1.315`.
+
+## 0.7.0
+
+No database migration. The generated migration still creates exactly four
+PostgreSQL UUID tables.
+
+`config.layout` defaults to `nil`. `nil` uses the host Recording Studio
+layout, then `recording_studio/default_layout`. `false` renders with no
+layout. A String is a layout name. A callable must accept `controller:` and
+return a String, `nil`, or `false`.
+
+```ruby
+RecordingStudioWebhooks.configure do |config|
+  config.layout = nil
+end
+```
+
+Engine controllers call `recording_studio_layout`. Do not include
+`RecordingStudio::UsesDefaultLayout` and do not set
+`layout "recording_studio/default_layout"`.
+
+Page headings belong in `content_for :title` and `content_for :subtitle`.
+Back and close belong in `flat_pack_page_nav`. Right-side actions belong in
+`register_page_nav` or `recording_studio_page_nav_right`.
+
+Development Gemfiles pin Recording Studio `v6.1.0` and Flatpack ref
+`1fcbafe94f8eb118f0a22182f63f5110fcc97a56`. Accessible `v0.11.1`, Metrics
+`v0.5.0`, and Root Switchable `v0.5.3` still declare `recording_studio` below
+5. `test/support/widen_recording_studio_requirement.rb` relaxes that
+requirement before Bundler setup so this repository can boot. The dummy app
+also maps Admin's `FlatPack::Card` `style: :outlined` to `border: :strong`.
+Admin 4.2 still passes the removed keyword.
+
+## Earlier notes
+
+Hosts on Recording Studio 4.2 used the notes below. 0.7.0 replaces that
+requirement.
 
 Install the engine migration after the host application's
 `recording_studio_recordings` table exists:

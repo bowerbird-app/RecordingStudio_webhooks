@@ -1,13 +1,29 @@
+<%
+  heading = content_for(:title).to_s.strip.presence
+  subtitle = content_for(:subtitle).to_s.strip.presence
+  back_row = flat_pack_page_nav_tag
+  page_buttons = page_nav_button_group(
+    styles: {
+      primary: { style: :ghost, size: :sm },
+      secondary: { style: :ghost, size: :sm },
+      destructive: { style: :ghost, size: :sm }
+    },
+    variant: :outlined,
+    collapse: :menu
+  )
+  page_nav_right = content_for(:page_nav_right).presence
+%>
 <!DOCTYPE html>
-<html data-theme="rounded">
+<html>
   <head>
-    <title>Recording Studio Webhooks</title>
+    <title><%= heading || "Recording Studio Webhooks" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= yield :head %>
     <%= stylesheet_link_tag "flat_pack/variables", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "flat_pack/application", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "flat_pack/rich_text", "data-turbo-track": "reload" %>
     <% tailwind_asset = if Rails.application.assets&.respond_to?(:find_asset)
                           Rails.application.assets.find_asset("tailwind.css")
@@ -21,6 +37,18 @@
   </head>
   <body class="bg-(--surface-page-background-color) text-(--surface-content-color)">
     <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
+      <% if back_row || page_buttons || page_nav_right %>
+        <div class="flex items-center justify-between gap-2">
+          <%= back_row %>
+          <div class="flex items-center justify-end gap-2">
+            <%= page_nav_right %>
+            <%= page_buttons %>
+          </div>
+        </div>
+      <% end %>
+      <% if heading %>
+        <%= render FlatPack::PageTitle::Component.new(title: heading, subtitle: subtitle) %>
+      <% end %>
       <% flash.each do |type, message| %>
         <%= render FlatPack::Alert::Component.new(
           description: message,
@@ -30,6 +58,5 @@
 
       <%= yield %>
     </main>
-
   </body>
 </html>

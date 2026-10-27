@@ -307,10 +307,13 @@ Tests use a no-op dispatcher so CI can run without Redis; development uses
 Sidekiq. Sign in as `admin@admin.com` with password `Password`, then open
 **Webhook endpoints** from Admin webhooks. The demo never sends outbound requests.
 
-The dummy is on the Recording Studio 4.2 kit: core `v4.2.2`, Accessible `v0.11.1`,
-Root Switchable `v0.5.3`, and FlatPack `v0.1.198`. Authenticated dummy screens
-use Recording Studio's shared default layout plus FlatPack CSS/JS. Dummy Accessible
-setup uses string roles and Accessible `0.8`–`0.11` migrations.
+The dummy is on the Recording Studio 6.1 kit: core `v6.1.0`, Accessible `v0.11.1`,
+Root Switchable `v0.5.3`, Metrics `v0.5.0`, and Flatpack `0.1.319`
+(`1fcbafe94f8eb118f0a22182f63f5110fcc97a56`). Authenticated dummy screens use
+Recording Studio's shared default layout. `config.layout` overrides it. Flatpack
+stylesheets load before Tailwind. Dummy Accessible setup uses string roles and
+Accessible `0.8`–`0.11` migrations. Sibling gems that still require
+`recording_studio` below 5 are widened in `test/support/widen_recording_studio_requirement.rb`.
 
 Controller flashes and form errors resolve under `recording_studio.webhooks.*`
 with English `default:` on every lookup. Hosts override by defining the same

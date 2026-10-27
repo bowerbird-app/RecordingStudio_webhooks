@@ -1,10 +1,12 @@
 source "https://rubygems.org"
 
+require_relative "../support/widen_recording_studio_requirement"
+
 # Use the Recording Studio Webhooks engine
 gem "recording_studio_webhooks", path: "../.."
 
-# RecordingStudio 4.2 kit
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v4.2.2"
+# RecordingStudio 6.1 kit. Sibling tags still cap recording_studio below 5.
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.1.0"
 gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.11.1"
 # Admin stays on the unpublished 4.2 branch: v2.0.4 does not contain
 # 51579fa59545a28b62d710a4547b9f062b8ea46a (merge-base --is-ancestor is false).
@@ -41,7 +43,7 @@ gem "jbuilder"
 gem "tailwindcss-rails"
 
 # FlatPack UI component library [https://github.com/bowerbird-app/flatpack]
-gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.198"
+gem "flat_pack", github: "bowerbird-app/flatpack", ref: "1fcbafe94f8eb118f0a22182f63f5110fcc97a56"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"

@@ -17,6 +17,7 @@ module RecordingStudioWebhooks
       :provider_roots, :action_roots, :framework_policy_overrides,
       :default_policy_overrides, :global_policy_overrides, :endpoint_token_bytesize
     attr_reader :automatic_discovery
+    attr_reader :layout
 
     def initialize
       @providers = Registry.new(ProviderDefinition)
@@ -40,6 +41,15 @@ module RecordingStudioWebhooks
       @provider_roots = [].freeze
       @action_roots = [].freeze
       @automatic_discovery = false
+      @layout = nil
+    end
+
+    # nil follows Recording Studio's own layout, then the shared default.
+    # false renders with no layout. A callable is invoked as call(controller:).
+    def layout=(value)
+      require "recording_studio/layout"
+
+      @layout = RecordingStudio::Layout.accept(value)
     end
 
     def default_policy=(value)

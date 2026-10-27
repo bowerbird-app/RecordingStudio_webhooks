@@ -1,12 +1,10 @@
-<% dummy_page_nav(title: "Install", back_url: main_app.root_path) %>
+<% dummy_page_nav(
+     title: "Install",
+     subtitle: "How to install Recording Studio Webhooks in a host app.",
+     back_url: main_app.root_path
+   ) %>
 
 <div class="mx-auto flex w-full max-w-6xl flex-col gap-6">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Install",
-    subtitle: "How to install Recording Studio Webhooks in a host app.",
-    variant: :h1
-  ) %>
-
   <section class="space-y-3">
     <h2 class="text-lg font-semibold">Install steps</h2>
     <ol class="space-y-2 text-sm leading-6 list-decimal pl-5">

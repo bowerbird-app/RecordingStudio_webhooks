@@ -1,12 +1,10 @@
-<% dummy_page_nav(title: "Recording tree", back_url: main_app.root_path) %>
+<% dummy_page_nav(
+     title: "Recording Tree",
+     subtitle: "Current Recording Studio hierarchy for visible, non-trashed recordings.",
+     back_url: main_app.root_path
+   ) %>
 
-<%= render FlatPack::PageTitle::Component.new(
-  title: "Recording Tree",
-  subtitle: "Current Recording Studio hierarchy for visible, non-trashed recordings.",
-  variant: :h1
-) %>
-
-<%= render FlatPack::Card::Component.new(style: :default) do |card| %>
+<%= render FlatPack::Card::Component.new do |card| %>
   <% card.body do %>
     <% if @roots.any? %>
       <p class="mb-4 text-sm text-gray-600">Root recordings: <strong><%= @roots.size %></strong></p>
