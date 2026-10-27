@@ -2,11 +2,13 @@
 
 source "https://rubygems.org"
 
+require_relative "test/support/widen_recording_studio_requirement"
+
 gemspec
 
 # recording_studio is not published to RubyGems; resolve the gemspec pin from GitHub.
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v4.2.2"
-gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.198"
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.1.0"
+gem "flat_pack", github: "bowerbird-app/flatpack", ref: "1fcbafe94f8eb118f0a22182f63f5110fcc97a56"
 gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.11.1"
 # Admin stays on the unpublished 4.2 branch: v2.0.4 does not contain
 # 51579fa59545a28b62d710a4547b9f062b8ea46a (merge-base --is-ancestor is false).
