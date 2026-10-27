@@ -64,6 +64,34 @@ class ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_layout_accepts_nil_false_name_and_keyword_callable
+    with_fresh_configuration do |configuration|
+      assert_nil configuration.layout
+
+      configuration.layout = nil
+      assert_nil configuration.layout
+
+      configuration.layout = false
+      assert_equal false, configuration.layout
+
+      configuration.layout = "admin"
+      assert_equal "admin", configuration.layout
+
+      callable = ->(controller:) { controller.nil? ? nil : "admin" }
+      configuration.layout = callable
+      assert_same callable, configuration.layout
+    end
+  end
+
+  def test_layout_rejects_blank_names_positional_callables_and_other_values
+    with_fresh_configuration do |configuration|
+      assert_raises(ArgumentError) { configuration.layout = "" }
+      assert_raises(ArgumentError) { configuration.layout = :application }
+      assert_raises(ArgumentError) { configuration.layout = ->(_controller) { "admin" } }
+      assert_raises(ArgumentError) { configuration.layout = Object.new }
+    end
+  end
+
   def test_invalid_configuration_is_rejected
     with_fresh_configuration do |configuration|
       assert_raises(RecordingStudioWebhooks::ConfigurationError) { configuration.max_payload_bytes = 0 }

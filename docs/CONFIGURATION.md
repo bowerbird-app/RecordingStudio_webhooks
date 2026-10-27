@@ -17,6 +17,7 @@ settings.
 | `admin_authorizer` | nil | decides which users can access the webhooks admin UI |
 | `admin_recording_scope` | nil | decides which recordings those users can view and manage |
 | `token_digest_secret` | nil | optional HMAC key from host credentials |
+| `layout` | `nil` | `nil`, `false`, a layout name, or `->(controller:) { ... }` |
 
 Provider callbacks and intake hooks should return `true` to permit work. A
 false value or exception fails closed. Signature verifiers receive request bytes
@@ -25,6 +26,11 @@ only in memory. Authorization and rate-limit hooks receive a redacted payload.
 Host apps should set `token_digest_secret` from encrypted credentials (see
 `recording_studio_webhooks.token_digest_secret` in the dummy credentials file)
 or another secret store. Never commit the value.
+
+`layout` is read by `recording_studio_layout` on the engine base controller.
+`nil` leaves the choice to Recording Studio. `false` skips the layout. A
+callable is invoked as `call(controller:)` and must return a String, `nil`,
+or `false`. Any other value raises `ArgumentError`.
 
 ## Copy and locales
 
