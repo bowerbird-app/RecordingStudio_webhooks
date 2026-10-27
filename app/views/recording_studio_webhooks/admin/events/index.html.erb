@@ -71,22 +71,38 @@
   <% end %>
 <% end %>
 
-<%= render FlatPack::Card::Component.new do |card| %>
-  <% card.body do %>
-    <% if @events.any? %>
-      <ul class="space-y-3">
-        <% @events.each do |event| %>
-          <li class="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
-            <div>
-              <strong><%= event.provider_name %> · <%= event.event_type %></strong><br>
-              <span class="text-sm"><%= event.received_at %> · <%= event.status %> · endpoint <%= event.endpoint.label %> (<%= event.endpoint.recording_studio_recording_id %>)</span><br>
-              <span class="text-xs text-gray-600">token: <%= event.endpoint_token.attributes.fetch("token", nil).to_s.presence || "Unavailable" %> · attempts: <%= event.action_attempts.sum(&:attempts) %></span>
-            </div>
-          </li>
-        <% end %>
-      </ul>
-    <% else %>
-      <p class="text-sm">No events match the current filters.</p>
-    <% end %>
+<% if @events.any? %>
+  <% rows = @events.map do |event|
+       {
+         title: "#{event.provider_name} · #{event.event_type}",
+         received_at: event.received_at,
+         status: event.status.to_s,
+         endpoint: "#{event.endpoint.label} (#{event.endpoint.recording_studio_recording_id})",
+         token: event.endpoint_token.attributes.fetch("token", nil).to_s.presence || "Unavailable",
+         attempts: event.action_attempts.sum(&:attempts)
+       }
+     end %>
+  <%= render FlatPack::Table::Component.new(data: rows, min_width: :none) do |table| %>
+    <% table.column(title: "Event") { |row| row[:title] } %>
+    <% table.column(title: "Received", html: ->(row) {
+         render FlatPack::Timestamp::Component.new(timestamp: row[:received_at])
+       }) %>
+    <% table.column(title: "Status", html: ->(row) {
+         render FlatPack::Badge::Component.new(
+           text: row[:status],
+           style: webhook_status_style(row[:status]),
+           size: :sm
+         )
+       }) %>
+    <% table.column(title: "Endpoint", wrap: :truncate, max_width: "14rem") { |row| row[:endpoint] } %>
+    <% table.column(title: "Token", wrap: :truncate, max_width: "9rem") { |row| row[:token] } %>
+    <% table.column(title: "Attempts", align: :end) { |row| row[:attempts].to_s } %>
   <% end %>
+<% else %>
+  <%= render FlatPack::EmptyState::Component.new(
+    title: "No events",
+    description: "No events match the current filters.",
+    size: :sm,
+    width: :full
+  ) %>
 <% end %>

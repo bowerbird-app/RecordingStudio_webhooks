@@ -13,26 +13,64 @@
   <%= render FlatPack::Button::Component.new(text: "Issue new token", style: :primary, size: :sm, type: "submit") %>
 <% end %>
 
-<div class="overflow-x-auto">
-  <table class="w-full text-left text-sm">
-    <thead><tr><th class="p-2">Token</th><th class="p-2">Issued</th><th class="p-2">Expires</th><th class="p-2">Revoked</th><th class="p-2">State</th><th class="p-2">Logs</th><th></th></tr></thead>
-    <tbody>
-      <% @tokens.each do |token| %>
-        <tr class="border-t">
-          <td class="p-2 font-mono"><%= token.attributes.fetch("token", nil).to_s.presence || "Unavailable" %></td>
-          <td class="p-2"><%= token.created_at.strftime("%b %d %Y") %></td>
-          <td class="p-2"><%= token.expires_at || "Never" %></td>
-          <td class="p-2"><%= token.revoked_at ? token.revoked_at.strftime("%b %d %Y") : "-" %></td>
-          <td class="p-2"><%= token.current? ? "active" : token.revoked_at? ? "revoked" : "expired" %></td>
-          <td class="p-2"><%= @events_by_token_id.fetch(token.id, 0) %> event(s)</td>
-          <td class="p-2 text-right">
-            <% if token.current? %>
-              <%= button_to "Revoke", admin_endpoint_token_path(@endpoint, token), method: :delete, class: "text-sm underline" %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<% if @tokens.any? %>
+  <% rows = @tokens.map do |token|
+       state = if token.current?
+                 ["active", :success]
+               elsif token.revoked_at?
+                 ["revoked", :danger]
+               else
+                 ["expired", :warning]
+               end
+       {
+         token: token,
+         label: token.attributes.fetch("token", nil).to_s.presence || "Unavailable",
+         state_text: state.first,
+         state_style: state.last,
+         events: @events_by_token_id.fetch(token.id, 0)
+       }
+     end %>
+  <%= render FlatPack::Table::Component.new(data: rows, min_width: :lg) do |table| %>
+    <% table.column(title: "Token") { |row| row[:label] } %>
+    <% table.column(title: "Issued", html: ->(row) {
+         render FlatPack::Timestamp::Component.new(timestamp: row[:token].created_at)
+       }) %>
+    <% table.column(title: "Expires", html: lambda { |row|
+         if row[:token].expires_at
+           render FlatPack::Timestamp::Component.new(timestamp: row[:token].expires_at)
+         else
+           "Never"
+         end
+       }) %>
+    <% table.column(title: "Revoked", html: lambda { |row|
+         if row[:token].revoked_at
+           render FlatPack::Timestamp::Component.new(timestamp: row[:token].revoked_at)
+         else
+           "-"
+         end
+       }) %>
+    <% table.column(title: "State", html: ->(row) {
+         render FlatPack::Badge::Component.new(text: row[:state_text], style: row[:state_style], size: :sm)
+       }) %>
+    <% table.column(title: "Logs") { |row| "#{row[:events]} event(s)" } %>
+    <% table.column(title: "Revoke", align: :end, html: lambda { |row|
+         token = row[:token]
+         next unless token.current?
 
+         render FlatPack::Button::Component.new(
+           text: "Revoke",
+           href: admin_endpoint_token_path(@endpoint, token),
+           method: :delete,
+           style: :danger,
+           size: :sm
+         )
+       }) %>
+  <% end %>
+<% else %>
+  <%= render FlatPack::EmptyState::Component.new(
+    title: "No tokens",
+    description: "Issue a token to give a provider a public intake URL.",
+    size: :sm,
+    width: :full
+  ) %>
+<% end %>

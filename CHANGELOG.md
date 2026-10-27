@@ -15,6 +15,7 @@ layout with `config.layout`.
 - `RecordingStudioWebhooks.configuration.layout` accepts `nil`, `false`, a layout name, or a keyword callable.
 - Engine and dummy controllers call `recording_studio_layout` instead of `RecordingStudio::UsesDefaultLayout`.
 - Admin views set `content_for :title` and `:subtitle`, `flat_pack_page_nav`, and `register_page_nav`.
+- Admin tables, lists, empty states, sandbox fields, and the endpoint switch use Flatpack components.
 - Cards use `background`, `border`, and `shadow`. Layouts load Flatpack stylesheets before Tailwind.
 
 ### Upgrade notes

@@ -69,7 +69,12 @@
         <% table.column(title: content_tag(:span, "Error", class: "sr-only"), html: ->(row) { row[:error].presence || "-" }) %>
       <% end %>
     <% else %>
-      <p class="text-sm text-(--surface-muted-content-color)">No attempt history recorded yet.</p>
+      <%= render FlatPack::EmptyState::Component.new(
+        title: "No attempt history",
+        description: "No attempt history recorded yet.",
+        size: :sm,
+        width: :full
+      ) %>
     <% end %>
   </section>
 
