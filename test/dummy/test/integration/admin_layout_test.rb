@@ -44,7 +44,7 @@ class AdminLayoutTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal "noindex, nofollow", response.headers["X-Robots-Tag"]
-    assert_select "html[data-recording-studio-default-layout]"
+    assert_select "body[data-recording-studio-default-layout]"
     assert_select "h1", count: 1, text: "Providers"
     assert_match(/Close/, response.body)
     assert_operator stylesheet_index("flat_pack/variables"), :<, stylesheet_index("tailwind")
@@ -60,7 +60,7 @@ class AdminLayoutTest < ActionDispatch::IntegrationTest
     @configuration.layout = "recording_studio_webhooks/application"
     get "/admin/webhooks/providers"
     assert_response :success
-    assert_select "html[data-recording-studio-default-layout]", count: 0
+    assert_select "body[data-recording-studio-default-layout]", count: 0
     assert_select "h1", count: 1, text: "Providers"
     assert_operator stylesheet_index("flat_pack/variables"), :<, stylesheet_index("flat_pack/application")
 

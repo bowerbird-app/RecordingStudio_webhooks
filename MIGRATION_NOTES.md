@@ -30,7 +30,9 @@ Development Gemfiles pin Recording Studio `v6.1.0` and Flatpack ref
 `1fcbafe94f8eb118f0a22182f63f5110fcc97a56`. Accessible `v0.11.1`, Metrics
 `v0.5.0`, and Root Switchable `v0.5.3` still declare `recording_studio` below
 5. `test/support/widen_recording_studio_requirement.rb` relaxes that
-requirement before Bundler setup so this repository can boot.
+requirement before Bundler setup so this repository can boot. The dummy app
+also maps Admin's `FlatPack::Card` `style: :outlined` to `border: :strong`.
+Admin 4.2 still passes the removed keyword.
 
 ## Earlier notes
 

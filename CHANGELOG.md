@@ -24,6 +24,7 @@ layout with `config.layout`.
 - Remove `include RecordingStudio::UsesDefaultLayout` and `layout "recording_studio/default_layout"` from host controllers. Call `recording_studio_layout`.
 - Replace `recording_studio_page_nav` and `FlatPack::PageNav::Component.new(back_href:)` with `flat_pack_page_nav` and `register_page_nav`. Put the page heading in `content_for :title`.
 - Sibling gems that still declare `recording_studio ~> 4.x` do not resolve next to `6.1.0`. This repository widens those requirements in `test/support/widen_recording_studio_requirement.rb` before Bundler setup. Hosts should move those gems forward, or load the same widen helper before `Bundler.setup`.
+- Admin 4.2 still passes `FlatPack::Card` `style:`. Flatpack 0.1.319 rejects that keyword. The dummy maps `:outlined` to `border: :strong`. Hosts should move Admin forward, or apply the same mapping, before those cards render.
 
 ## [0.6.7] - 2026-10-22
 
