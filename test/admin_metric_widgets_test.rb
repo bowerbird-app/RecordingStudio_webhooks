@@ -7,11 +7,7 @@ class AdminMetricWidgetsTest < Minitest::Test
     query = File.read(File.expand_path("../lib/recording_studio_webhooks/admin/metric_query.rb", __dir__))
     widgets = File.read(File.expand_path("../lib/recording_studio_webhooks/admin/metric_widgets.rb", __dir__))
     registration = File.read(File.expand_path("../lib/recording_studio_webhooks/admin/registration.rb", __dir__))
-    section_root = File.expand_path("../lib/recording_studio_webhooks", __dir__)
-    section = (
-      [File.read(File.join(section_root, "admin_webhooks_section.rb"))] +
-      Dir[File.join(section_root, "admin_webhooks", "*.rb")].map { |path| File.read(path) }
-    ).join
+    section = File.read(File.expand_path("../lib/recording_studio_webhooks/admin_webhooks_section.rb", __dir__))
     gemspec = File.read(File.expand_path("../recording_studio_webhooks.gemspec", __dir__))
 
     assert_includes query, "RecordingStudioMetrics::Admin.execute"

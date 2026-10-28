@@ -5,22 +5,20 @@ require "i18n"
 require "yaml"
 
 class LocalesTest < Minitest::Test
-  EXPECTED_ENGLISH = begin
-    tree = YAML.safe_load_file(File.expand_path("../config/locales/en.yml", __dir__), aliases: true)
-    webhooks = tree.fetch("en").fetch("recording_studio").fetch("webhooks")
-    {
-      "flashes.endpoint_created" => webhooks.fetch("flashes").fetch("endpoint_created"),
-      "flashes.endpoint_updated" => webhooks.fetch("flashes").fetch("endpoint_updated"),
-      "flashes.token_issued" => webhooks.fetch("flashes").fetch("token_issued"),
-      "flashes.token_revoked" => webhooks.fetch("flashes").fetch("token_revoked"),
-      "flashes.requires_flat_pack" => webhooks.fetch("flashes").fetch("requires_flat_pack"),
-      "form_errors.choose_registered_provider" => webhooks.fetch("form_errors").fetch("choose_registered_provider"),
-      "form_errors.choose_valid_endpoint" => webhooks.fetch("form_errors").fetch("choose_valid_endpoint"),
-      "form_errors.token_could_not_be_issued" => webhooks.fetch("form_errors").fetch("token_could_not_be_issued"),
-      "form_errors.provide_json_payload" => webhooks.fetch("form_errors").fetch("provide_json_payload"),
-      "form_errors.json_object" => webhooks.fetch("form_errors").fetch("json_object")
-    }.freeze
-  end
+  # rubocop:disable Style/FormatStringToken -- I18n interpolation tokens match en.yml
+  EXPECTED_ENGLISH = {
+    "flashes.endpoint_created" => "Endpoint created.",
+    "flashes.endpoint_updated" => "Endpoint updated.",
+    "flashes.token_issued" => "Token issued.",
+    "flashes.token_revoked" => "Token revoked.",
+    "flashes.requires_flat_pack" => "Recording Studio Webhooks administration requires FlatPack.",
+    "form_errors.choose_registered_provider" => "Choose a registered provider.",
+    "form_errors.choose_valid_endpoint" => "Choose a valid endpoint.",
+    "form_errors.token_could_not_be_issued" => "The token could not be issued.",
+    "form_errors.provide_json_payload" => "Provide a JSON payload and a valid event type.",
+    "form_errors.json_object" => "%{label} must be a JSON object."
+  }.freeze
+  # rubocop:enable Style/FormatStringToken
 
   def setup
     @previous_load_path = I18n.load_path.dup

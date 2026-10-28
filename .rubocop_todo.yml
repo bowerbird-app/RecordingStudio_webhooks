@@ -101,7 +101,6 @@ Layout/LineLength:
     - 'lib/generators/recording_studio_webhooks/install/install_generator.rb'
     - 'lib/recording_studio_webhooks/action_definition.rb'
     - 'lib/recording_studio_webhooks/admin_webhooks_section.rb'
-    - 'lib/recording_studio_webhooks/admin_webhooks/**/*.rb'
     - 'lib/recording_studio_webhooks/configuration.rb'
     - 'lib/recording_studio_webhooks/policy.rb'
     - 'lib/recording_studio_webhooks/policy_resolver.rb'
@@ -215,7 +214,6 @@ Metrics/AbcSize:
     - 'db/migrate/20260728000000_create_recording_studio_webhooks_tables.rb'
     - 'lib/recording_studio_webhooks/admin/registration.rb'
     - 'lib/recording_studio_webhooks/admin_webhooks_section.rb'
-    - 'lib/recording_studio_webhooks/admin_webhooks/**/*.rb'
     - 'lib/recording_studio_webhooks/canonical_json.rb'
     - 'lib/recording_studio_webhooks/configuration.rb'
     - 'lib/recording_studio_webhooks/policy.rb'
@@ -232,7 +230,6 @@ Metrics/BlockLength:
     - 'app/services/recording_studio_webhooks/build_action_attempts.rb'
     - 'app/services/recording_studio_webhooks/inbound_intake.rb'
     - 'lib/recording_studio_webhooks/admin_webhooks_section.rb'
-    - 'lib/recording_studio_webhooks/admin_webhooks/**/*.rb'
     - 'lib/tasks/recording_studio_webhooks_tasks.rake'
 
 # Offense count: 8
@@ -263,7 +260,6 @@ Metrics/CyclomaticComplexity:
     - 'app/services/recording_studio_webhooks/execute_action_attempt.rb'
     - 'app/services/recording_studio_webhooks/inbound_intake.rb'
     - 'lib/recording_studio_webhooks/admin_webhooks_section.rb'
-    - 'lib/recording_studio_webhooks/admin_webhooks/**/*.rb'
     - 'lib/recording_studio_webhooks/canonical_json.rb'
     - 'lib/recording_studio_webhooks/immutable_snapshot.rb'
     - 'lib/recording_studio_webhooks/policy.rb'
@@ -299,7 +295,6 @@ Metrics/MethodLength:
     - 'lib/recording_studio_webhooks/action_definition.rb'
     - 'lib/recording_studio_webhooks/admin/registration.rb'
     - 'lib/recording_studio_webhooks/admin_webhooks_section.rb'
-    - 'lib/recording_studio_webhooks/admin_webhooks/**/*.rb'
     - 'lib/recording_studio_webhooks/canonical_json.rb'
     - 'lib/recording_studio_webhooks/configuration.rb'
     - 'lib/recording_studio_webhooks/immutable_snapshot.rb'
@@ -314,7 +309,6 @@ Metrics/MethodLength:
 Metrics/ModuleLength:
   Exclude:
     - 'lib/recording_studio_webhooks/admin_webhooks_section.rb'
-    - 'lib/recording_studio_webhooks/admin_webhooks/**/*.rb'
 
 # Offense count: 5
 # Configuration parameters: Max, CountKeywordArgs, MaxOptionalParameters.
@@ -337,7 +331,6 @@ Metrics/PerceivedComplexity:
     - 'app/services/recording_studio_webhooks/execute_action_attempt.rb'
     - 'app/services/recording_studio_webhooks/inbound_intake.rb'
     - 'lib/recording_studio_webhooks/admin_webhooks_section.rb'
-    - 'lib/recording_studio_webhooks/admin_webhooks/**/*.rb'
     - 'lib/recording_studio_webhooks/policy.rb'
     - 'lib/recording_studio_webhooks/policy_resolver.rb'
 

@@ -16,9 +16,6 @@ Cleanup only. No runtime behavior change.
   Admin git branch `cursor/rs41-accessible-06-upgrade-eb59` (lockfile `2.0.0`),
   dummy Rails `~> 8.1.1`, gemspec `rails ~> 8.1.0`, `sidekiq ~> 8.1.6`, and
   `view_component >= 4.14, < 5`.
-- Admin Webhooks screen definitions live in
-  `lib/recording_studio_webhooks/admin_webhooks/` (one file per screen). Public
-  constants and method names are unchanged.
 - Coverage artifacts are gitignored. Template leftovers in Copilot instructions
   and CI’s Postgres database name now say Recording Studio Webhooks.
 - `docs/admin-webhooks-hierarchy.txt` uses a `.txt` suffix.
