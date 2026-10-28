@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+## [0.7.1] - 2026-10-28
+
+Cleanup only. No runtime behavior change.
+
+### Changed
+
+- Dummy kit pins in the README now match `Gemfile`, `test/dummy/Gemfile`,
+  `recording_studio_webhooks.gemspec`, and the lockfiles: Recording Studio
+  `v6.1.0` (`>= 6.1.0`), Accessible `v0.11.1`, Root Switchable `v0.5.3`
+  (lockfile `0.5.1`), Metrics `v0.5.0` (`>= 0.3.0`, `< 1.0`), Flatpack
+  `0.1.319` at `1fcbafe94f8eb118f0a22182f63f5110fcc97a56` (`>= 0.1.315`),
+  Admin git branch `cursor/rs41-accessible-06-upgrade-eb59` (lockfile `2.0.0`),
+  dummy Rails `~> 8.1.1`, gemspec `rails ~> 8.1.0`, `sidekiq ~> 8.1.6`, and
+  `view_component >= 4.14, < 5`.
+- Coverage artifacts are gitignored. Template leftovers in Copilot instructions
+  and CI’s Postgres database name now say Recording Studio Webhooks.
+- `docs/admin-webhooks-hierarchy.txt` uses a `.txt` suffix.
+
+### Upgrade notes
+
+- Bump to `0.7.1`. No database migration. The four webhook tables are unchanged.
+- No host code change.
+
 ## [0.7.0] - 2026-10-27
 
 Admin pages use Recording Studio 6.1's shared layout. The host chooses that
@@ -371,7 +394,8 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.6.7...v0.7.0
 [0.6.7]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.6.6...v0.6.7
 [0.4.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.3.0...v0.4.0
