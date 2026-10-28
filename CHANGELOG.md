@@ -24,7 +24,10 @@ Cleanup only. No runtime behavior change.
   Accessible `v0.21.0`, Metrics `v0.6.1`, Root Switchable `v0.11.0`, Cache
   `v0.5.1`, and Trashable `v0.11.3` (`require: false`). Those Admin and
   Root Switchable tags do not pass `style:` to Card. Dummy tests give
-  AdminRoot `:admin` through `bootstrap_owner_access!`.
+  AdminRoot `:admin` through `bootstrap_owner_access!`. Dummy Root
+  Switchable `config.layout` is `nil` (0.11.0 rejects a Symbol). Dummy
+  Admin `access_recording_resolver` uses `controller&.` so Metrics API
+  calls with no controller do not raise.
 
 ### Upgrade notes
 
