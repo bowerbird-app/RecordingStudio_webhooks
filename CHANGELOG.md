@@ -21,16 +21,17 @@ Cleanup only. No runtime behavior change.
 - `docs/admin-webhooks-hierarchy.txt` uses a `.txt` suffix.
 - Dummy no longer prepends a `FlatPack::Card` `style:` mapping. Development
   pins align with the sibling kit: Flatpack `v0.1.329`, Admin `v2.5.1`,
-  Accessible `v0.21.0`, Metrics `v0.6.1`, Root Switchable `v0.10.0`, Cache
+  Accessible `v0.21.0`, Metrics `v0.6.1`, Root Switchable `v0.11.0`, Cache
   `v0.5.1`, and Trashable `v0.11.3` (`require: false`). Those Admin and
-  Root Switchable tags do not pass `style:` to Card.
+  Root Switchable tags do not pass `style:` to Card. Dummy tests give
+  AdminRoot `:admin` through `bootstrap_owner_access!`.
 
 ### Upgrade notes
 
 - Bump to `0.7.1`. No database migration. The four webhook tables are unchanged.
 - Engine Card calls already use Flatpack keywords. Do not pass `style:` to
   `FlatPack::Card`. Dummy no longer maps that keyword. If you copied the dummy
-  prepend, delete it after Admin `v2.5.1` and Root Switchable `v0.10.0`.
+  prepend, delete it after Admin `v2.5.1` and Root Switchable `v0.11.0`.
   Dummy/dev sibling pins are Accessible `v0.21.0`, Metrics `v0.6.1`, Cache
   `v0.5.1`, and Trashable `v0.11.3`. Runtime gemspec ranges are unchanged.
 

@@ -28,7 +28,7 @@ Back and close belong in `flat_pack_page_nav`. Right-side actions belong in
 
 Development Gemfiles pin Recording Studio `v6.1.0` and Flatpack tag
 `v0.1.329`. Accessible `v0.21.0`, Metrics `v0.6.1`, Admin `v2.5.1`, Root
-Switchable `v0.10.0`, Cache `v0.5.1`, and Trashable `v0.11.3` still
+Switchable `v0.11.0`, Cache `v0.5.1`, and Trashable `v0.11.3` still
 declare `recording_studio` below 5.
 `test/support/widen_recording_studio_requirement.rb` relaxes that
 requirement before Bundler setup so this repository can boot. Dummy and

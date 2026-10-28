@@ -311,7 +311,7 @@ Sidekiq. Sign in as `admin@admin.com` with password `Password`, then open
 
 The dummy is on the Recording Studio 6.1 kit from `Gemfile`, `test/dummy/Gemfile`,
 and `recording_studio_webhooks.gemspec`: core tag `v6.1.0` (runtime `>= 6.1.0`),
-Accessible tag `v0.21.0`, Root Switchable tag `v0.10.0`,
+Accessible tag `v0.21.0`, Root Switchable tag `v0.11.0`,
 Metrics tag `v0.6.1` (runtime `>= 0.3.0`, `< 1.0`), Flatpack tag
 `v0.1.329` (runtime `>= 0.1.315`), Admin tag `v2.5.1`, Cache tag `v0.5.1`,
 and Trashable tag `v0.11.3` (`require: false`).

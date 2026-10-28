@@ -21,7 +21,11 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     raise result.error if result.failure?
 
     @admin_root = RecordingStudio.root_recording_for(AdminRoot.find_or_create_by!(name: "Admin"))
-    grant!(@admin_root, @user, :admin)
+    admin_owner = RecordingStudioAccessible.bootstrap_owner_access!(
+      recording: @admin_root,
+      actor: @user
+    )
+    raise admin_owner.error if admin_owner.failure?
 
     @endpoint = RecordingStudioWebhooks::EndpointLifecycle.create!(
       endpoint: RecordingStudioWebhooks::Endpoint.new(
@@ -449,19 +453,4 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     end.new(actor, root, "UTC", :site)
   end
 
-  def grant!(recording, actor, role)
-    return if RecordingStudioAccessible.authorized?(actor: actor, recording: recording, role: role)
-
-    original = RecordingStudioAccessible.configuration.access_management_authorizer
-    RecordingStudioAccessible.configuration.access_management_authorizer = ->(**) { true }
-    result = RecordingStudioAccessible.grant_access(
-      recording: recording,
-      actor: actor,
-      role: role,
-      manager_actor: actor
-    )
-    raise result.error if result.failure?
-  ensure
-    RecordingStudioAccessible.configuration.access_management_authorizer = original
-  end
 end
