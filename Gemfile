@@ -8,13 +8,14 @@ gemspec
 
 # recording_studio is not published to RubyGems; resolve the gemspec pin from GitHub.
 gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.1.0"
-gem "flat_pack", github: "bowerbird-app/flatpack", ref: "1fcbafe94f8eb118f0a22182f63f5110fcc97a56"
-gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.11.1"
-# Admin stays on the unpublished 4.2 branch: v2.0.4 does not contain
-# 51579fa59545a28b62d710a4547b9f062b8ea46a (merge-base --is-ancestor is false).
-gem "recording_studio_admin", github: "bowerbird-app/RecordingStudio_admin",
-                              branch: "cursor/rs41-accessible-06-upgrade-eb59"
-gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.5.0"
+gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.329"
+gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.21.0"
+gem "recording_studio_admin", github: "bowerbird-app/RecordingStudio_admin", tag: "v2.5.1"
+gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.6.1"
+# Admin and Accessible load Trashable query helpers only; pin for Bundler.
+gem "recording_studio_trashable",
+    github: "bowerbird-app/RecordingStudio_trashable", tag: "v0.11.3",
+    require: false
 
 group :development, :test do
   gem "debug"
