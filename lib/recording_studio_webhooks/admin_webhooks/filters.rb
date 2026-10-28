@@ -69,7 +69,7 @@ module RecordingStudioWebhooks
       [ACTION_FILTER_ALL, *action_names]
     end
 
-    def action_row_view_url(action, context)
+    def action_row_view_url(action, _context)
       params = { action_name: action.name }
       params[:provider] = action.provider_name if action.provider_name.present?
       "/admin/screens/action_attempts?#{params.to_query}"

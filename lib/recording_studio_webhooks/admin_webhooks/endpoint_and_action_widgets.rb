@@ -21,7 +21,7 @@ module RecordingStudioWebhooks
                                     .group(:endpoint_id)
                                     .count
 
-      endpoint_scope.map do |endpoint|
+      rows = endpoint_scope.map do |endpoint|
         {
           endpoint_id: endpoint.id,
           label: endpoint.label,
@@ -29,7 +29,8 @@ module RecordingStudioWebhooks
           last_event_at: last_event_at_by_endpoint_id[endpoint.id],
           events_30d: events_count_by_endpoint_id.fetch(endpoint.id, 0)
         }
-      end.sort_by { |row| [row[:last_event_at] ? 0 : 1, -(row[:last_event_at]&.to_i || 0), row[:label].to_s] }
+      end
+      rows.sort_by { |row| [row[:last_event_at] ? 0 : 1, -row[:last_event_at].to_i, row[:label].to_s] }
     end
 
     def endpoint_widget_items(context)

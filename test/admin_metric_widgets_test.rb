@@ -10,7 +10,7 @@ class AdminMetricWidgetsTest < Minitest::Test
     section_root = File.expand_path("../lib/recording_studio_webhooks", __dir__)
     section = (
       [File.read(File.join(section_root, "admin_webhooks_section.rb"))] +
-      Dir[File.join(section_root, "admin_webhooks", "*.rb")].sort.map { |path| File.read(path) }
+      Dir[File.join(section_root, "admin_webhooks", "*.rb")].map { |path| File.read(path) }
     ).join
     gemspec = File.read(File.expand_path("../recording_studio_webhooks.gemspec", __dir__))
 

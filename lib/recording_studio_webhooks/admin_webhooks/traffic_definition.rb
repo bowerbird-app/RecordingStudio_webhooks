@@ -4,7 +4,6 @@ module RecordingStudioWebhooks
   module AdminWebhooksTrafficDefinition
     module_function
 
-
     FILTERABLE_GROUPINGS = %i[hour day week month].freeze
     ACTION_FILTER_ALL = "all"
     ENDPOINT_LABEL_TRUNCATE_LENGTH = 40
@@ -72,7 +71,7 @@ module RecordingStudioWebhooks
       end
     end
 
-    def provider_widget_link(context)
+    def provider_widget_link(_context)
       "/admin/screens/providers"
     end
   end
