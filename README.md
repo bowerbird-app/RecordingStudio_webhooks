@@ -311,16 +311,16 @@ Sidekiq. Sign in as `admin@admin.com` with password `Password`, then open
 
 The dummy is on the Recording Studio 6.1 kit from `Gemfile`, `test/dummy/Gemfile`,
 and `recording_studio_webhooks.gemspec`: core tag `v6.1.0` (runtime `>= 6.1.0`),
-Accessible tag `v0.11.1`, Root Switchable tag `v0.5.3` (lockfile `0.5.1`),
-Metrics tag `v0.5.0` (runtime `>= 0.3.0`, `< 1.0`), Flatpack ref
-`1fcbafe94f8eb118f0a22182f63f5110fcc97a56` (`0.1.319`, runtime `>= 0.1.315`),
-and Admin git branch `cursor/rs41-accessible-06-upgrade-eb59` (lockfile `2.0.0`).
+Accessible tag `v0.21.0`, Root Switchable tag `v0.11.0`,
+Metrics tag `v0.6.1` (runtime `>= 0.3.0`, `< 1.0`), Flatpack tag
+`v0.1.329` (runtime `>= 0.1.315`), Admin tag `v2.5.1`, Cache tag `v0.5.1`,
+and Trashable tag `v0.11.3` (`require: false`).
 Dummy Rails is `~> 8.1.1`; the gemspec is `rails ~> 8.1.0`, `sidekiq ~> 8.1.6`,
 and `view_component >= 4.14, < 5`. Authenticated dummy screens use
 Recording Studio's shared default layout. `config.layout` overrides it. Flatpack
-stylesheets load before Tailwind. Dummy Accessible setup uses string roles and
-Accessible `0.8`–`0.11` migrations. Sibling gems that still require
-`recording_studio` below 5 are widened in `test/support/widen_recording_studio_requirement.rb`.
+stylesheets load before Tailwind. Dummy Accessible setup uses string roles.
+Sibling gems that still require `recording_studio` below 5 are widened in
+`test/support/widen_recording_studio_requirement.rb`.
 
 Controller flashes and form errors resolve under `recording_studio.webhooks.*`
 with English `default:` on every lookup. Hosts override by defining the same

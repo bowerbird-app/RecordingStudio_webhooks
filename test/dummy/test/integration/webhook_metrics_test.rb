@@ -17,11 +17,10 @@ class WebhookMetricsTest < ActiveSupport::TestCase
   }.freeze
 
   setup do
-    @staff = User.create!(
-      email: "metrics-staff-#{SecureRandom.hex(4)}@example.com",
-      password: "Password",
-      password_confirmation: "Password"
-    )
+    @staff = User.find_or_create_by!(email: "metrics-staff@example.com") do |user|
+      user.password = "Password"
+      user.password_confirmation = "Password"
+    end
     @outsider = User.create!(
       email: "metrics-outsider-#{SecureRandom.hex(4)}@example.com",
       password: "Password",
@@ -31,7 +30,7 @@ class WebhookMetricsTest < ActiveSupport::TestCase
     @workspace = Workspace.create!(name: "Metrics #{SecureRandom.hex(4)}")
     @root = RecordingStudio.root_recording_for(@workspace)
     @admin_root = RecordingStudio.root_recording_for(AdminRoot.find_or_create_by!(name: "Admin"))
-    grant!(@admin_root, @staff, :admin)
+    bootstrap_owner!(@admin_root, @staff)
     bootstrap_owner!(@root, @staff)
     seed_webhooks!
     Current.actor = nil
@@ -417,21 +416,5 @@ class WebhookMetricsTest < ActiveSupport::TestCase
       actor: actor
     )
     raise result.error if result.failure?
-  end
-
-  def grant!(recording, actor, role)
-    return if RecordingStudioAccessible.authorized?(actor: actor, recording: recording, role: role)
-
-    original = RecordingStudioAccessible.configuration.access_management_authorizer
-    RecordingStudioAccessible.configuration.access_management_authorizer = ->(**) { true }
-    result = RecordingStudioAccessible.grant_access(
-      recording: recording,
-      actor: actor,
-      role: role,
-      manager_actor: @staff
-    )
-    raise result.error if result.failure?
-  ensure
-    RecordingStudioAccessible.configuration.access_management_authorizer = original
   end
 end

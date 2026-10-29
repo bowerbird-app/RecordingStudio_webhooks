@@ -26,13 +26,14 @@ Page headings belong in `content_for :title` and `content_for :subtitle`.
 Back and close belong in `flat_pack_page_nav`. Right-side actions belong in
 `register_page_nav` or `recording_studio_page_nav_right`.
 
-Development Gemfiles pin Recording Studio `v6.1.0` and Flatpack ref
-`1fcbafe94f8eb118f0a22182f63f5110fcc97a56`. Accessible `v0.11.1`, Metrics
-`v0.5.0`, and Root Switchable `v0.5.3` still declare `recording_studio` below
-5. `test/support/widen_recording_studio_requirement.rb` relaxes that
-requirement before Bundler setup so this repository can boot. The dummy app
-also maps Admin's `FlatPack::Card` `style: :outlined` to `border: :strong`.
-Admin 4.2 still passes the removed keyword.
+Development Gemfiles pin Recording Studio `v6.1.0` and Flatpack tag
+`v0.1.329`. Accessible `v0.21.0`, Metrics `v0.6.1`, Admin `v2.5.1`, Root
+Switchable `v0.11.0`, Cache `v0.5.1`, and Trashable `v0.11.3` still
+declare `recording_studio` below 5.
+`test/support/widen_recording_studio_requirement.rb` relaxes that
+requirement before Bundler setup so this repository can boot. Dummy and
+engine Cards use Flatpack `background`, `border`, `shadow`, and the rest
+of the Card keywords. Do not pass `style:` to `FlatPack::Card`.
 
 ## Earlier notes
 
