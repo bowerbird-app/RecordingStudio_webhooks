@@ -36,27 +36,29 @@
     <%= javascript_importmap_tags %>
   </head>
   <body class="bg-(--surface-page-background-color) text-(--surface-content-color)">
-    <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
-      <% if back_row || page_buttons || page_nav_right %>
-        <div class="flex items-center justify-between gap-2">
-          <%= back_row %>
-          <div class="flex items-center justify-end gap-2">
-            <%= page_nav_right %>
-            <%= page_buttons %>
-          </div>
-        </div>
-      <% end %>
-      <% if heading %>
-        <%= render FlatPack::PageTitle::Component.new(title: heading, subtitle: subtitle) %>
-      <% end %>
-      <% flash.each do |type, message| %>
-        <%= render FlatPack::Alert::Component.new(
-          description: message,
-          style: type.to_s == "alert" ? :danger : :info
-        ) %>
-      <% end %>
+    <main class="mx-auto w-full max-w-6xl p-6">
+      <%= render FlatPack::Stack::Component.new(gap: :lg) do %>
+        <% if back_row || page_buttons || page_nav_right %>
+          <%= render FlatPack::Cluster::Component.new(justify: :between, gap: :sm) do %>
+            <%= back_row %>
+            <%= render FlatPack::Cluster::Component.new(justify: :end, gap: :sm) do %>
+              <%= page_nav_right %>
+              <%= page_buttons %>
+            <% end %>
+          <% end %>
+        <% end %>
+        <% if heading %>
+          <%= render FlatPack::PageTitle::Component.new(title: heading, subtitle: subtitle) %>
+        <% end %>
+        <% flash.each do |type, message| %>
+          <%= render FlatPack::Alert::Component.new(
+            description: message,
+            style: type.to_s == "alert" ? :danger : :info
+          ) %>
+        <% end %>
 
-      <%= yield %>
+        <%= yield %>
+      <% end %>
     </main>
   </body>
 </html>

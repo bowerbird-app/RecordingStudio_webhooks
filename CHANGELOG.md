@@ -4,7 +4,8 @@
 
 ## [0.7.1] - 2026-10-28
 
-Cleanup only. No runtime behavior change.
+Cleanup, sibling pin alignment, and Flatpack layout primitives. Version stays
+0.7.1 (untagged). Needs Marikit: bump to 0.7.2 instead, or keep this fold-in.
 
 ### Changed
 
@@ -20,7 +21,7 @@ Cleanup only. No runtime behavior change.
   and CI’s Postgres database name now say Recording Studio Webhooks.
 - `docs/admin-webhooks-hierarchy.txt` uses a `.txt` suffix.
 - Dummy no longer prepends a `FlatPack::Card` `style:` mapping. Development
-  pins align with the sibling kit: Flatpack `v0.1.329`, Admin `v2.5.1`,
+  pins align with the sibling kit: Flatpack `v0.1.331`, Admin `v2.5.1`,
   Accessible `v0.21.0`, Metrics `v0.6.1`, Root Switchable `v0.11.0`, Cache
   `v0.5.1`, and Trashable `v0.11.3` (`require: false`). Those Admin and
   Root Switchable tags do not pass `style:` to Card. Dummy tests give
@@ -28,6 +29,11 @@ Cleanup only. No runtime behavior change.
   Switchable `config.layout` is `nil` (0.11.0 rejects a Symbol). Dummy
   Admin `access_recording_resolver` uses `controller&.` so Metrics API
   calls with no controller do not raise.
+- Runtime `flat_pack` is `>= 0.1.331` (was `>= 0.1.315`). Development pins
+  tag `v0.1.331` so the optional engine layout can use Stack and Cluster.
+  `recording_studio_webhooks/application` keeps `<main>` and wraps its
+  children in Stack `gap: :lg`. The page-nav row is Cluster
+  `justify: :between`; the right-side actions are Cluster `justify: :end`.
 
 ### Upgrade notes
 
@@ -36,7 +42,9 @@ Cleanup only. No runtime behavior change.
   `FlatPack::Card`. Dummy no longer maps that keyword. If you copied the dummy
   prepend, delete it after Admin `v2.5.1` and Root Switchable `v0.11.0`.
   Dummy/dev sibling pins are Accessible `v0.21.0`, Metrics `v0.6.1`, Cache
-  `v0.5.1`, and Trashable `v0.11.3`. Runtime gemspec ranges are unchanged.
+  `v0.5.1`, and Trashable `v0.11.3`.
+- Requires Flatpack `>= 0.1.331`. Hosts still on a lower Flatpack cannot
+  render the optional `recording_studio_webhooks/application` layout.
 
 ## [0.7.0] - 2026-10-27
 

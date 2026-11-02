@@ -62,6 +62,13 @@ class AdminLayoutTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "body[data-recording-studio-default-layout]", count: 0
     assert_select "h1", count: 1, text: "Providers"
+    assert_select "main.mx-auto.w-full.max-w-6xl.p-6"
+    refute_includes response.body, 'class="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6"'
+    refute_includes response.body, "flex items-center justify-between gap-2"
+    assert_includes response.body, "gap-[var(--stack-gap-lg)]"
+    assert_includes response.body, "justify-between"
+    assert_includes response.body, "justify-end"
+    assert_includes response.body, "flex flex-wrap"
     assert_operator stylesheet_index("flat_pack/variables"), :<, stylesheet_index("flat_pack/application")
 
     @configuration.layout = ->(controller:) { controller.action_name == "index" ? false : nil }
