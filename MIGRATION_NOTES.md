@@ -1,6 +1,6 @@
 # Migration Notes
 
-This engine requires Recording Studio `>= 6.1.0` and Flatpack `>= 0.1.315`.
+This engine requires Recording Studio `>= 6.1.0` and Flatpack `>= 0.1.331`.
 
 ## 0.7.0
 
@@ -27,7 +27,7 @@ Back and close belong in `flat_pack_page_nav`. Right-side actions belong in
 `register_page_nav` or `recording_studio_page_nav_right`.
 
 Development Gemfiles pin Recording Studio `v6.1.0` and Flatpack tag
-`v0.1.329`. Accessible `v0.21.0`, Metrics `v0.6.1`, Admin `v2.5.1`, Root
+`v0.1.331`. Accessible `v0.21.0`, Metrics `v0.6.1`, Admin `v2.5.1`, Root
 Switchable `v0.11.0`, Cache `v0.5.1`, and Trashable `v0.11.3` still
 declare `recording_studio` below 5.
 `test/support/widen_recording_studio_requirement.rb` relaxes that
