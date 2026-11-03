@@ -5,7 +5,7 @@
 ## [0.7.1] - 2026-10-28
 
 Cleanup, sibling pin alignment, and Flatpack layout primitives. Version stays
-0.7.1 (untagged). Needs Marikit: bump to 0.7.2 instead, or keep this fold-in.
+0.7.1 (untagged).
 
 ### Changed
 
