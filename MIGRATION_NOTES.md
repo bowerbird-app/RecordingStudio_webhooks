@@ -1,6 +1,16 @@
 # Migration Notes
 
-This engine requires Recording Studio `>= 6.1.0` and Flatpack `>= 0.1.331`.
+This engine requires Recording Studio `>= 6.1.0` and Flatpack `>= 0.1.341`.
+
+## 0.7.2
+
+No database migration.
+
+Admin date-range filters pass `preset_name:` to
+`FlatPack::DateRangeInput::Component`. FlatPack Apply writes the preset key and
+dispatches bubbling `change` events, then `flat-pack--flatpack-date-picker:apply`.
+Do not keep a host Apply click handler next to those events. Reload kit
+JavaScript. Development Gemfiles pin Flatpack tag `v0.1.341`.
 
 ## 0.7.0
 
