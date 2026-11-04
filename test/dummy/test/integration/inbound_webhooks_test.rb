@@ -98,7 +98,9 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_equal first_snapshot_id, first_issuance.endpoint_token.id
     assert_includes first_token_recording.events.pluck(:action), "recording_studio_webhooks.endpoint_token.issued"
     assert_includes first_token_recording.events.pluck(:action), "recording_studio_webhooks.endpoint_token.revoked"
-    assert_equal second_token, @endpoint.endpoint_tokens.order(:created_at).last.token
+    stored = @endpoint.endpoint_tokens.order(:created_at).last
+    refute stored.has_attribute?(:token)
+    assert_equal stored, RecordingStudioWebhooks::EndpointToken.authenticate(plaintext: second_token)
   end
 
   test "public intake returns a generic unauthorized response without exposing a credential" do
@@ -633,7 +635,8 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     get "/admin/webhooks/events", params: { endpoint_token: first_token }
 
     assert_response :success
-    assert_includes response.body, first_token
+    assert_includes response.body, first_token.first(13)
+    refute_includes response.body, second_token.first(13)
     refute_includes response.body, second_token
   end
 
@@ -656,7 +659,8 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Endpoints"
     assert_includes response.body, "Activity"
-    assert_match %r{/webhooks/inbound/rswh_[A-Za-z0-9_-]+}, response.body
+    assert_includes response.body, "/webhooks/inbound"
+    refute_match %r{/webhooks/inbound/rswh_[A-Za-z0-9_-]+}, response.body
     refute_includes response.body, "/webhooks/inbound/rswh_..."
     escaped_provider = Regexp.escape(CGI.escape(@endpoint.provider_name))
     assert_match(
@@ -879,6 +883,59 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_equal label, endpoint.label
     assert_equal 1, endpoint.endpoint_tokens.count
     assert_predicate endpoint.endpoint_tokens.first, :current?
+  end
+
+  test "token creation shows the raw token once and stores only a digest" do
+    issuance = @endpoint.issue_token!(actor: @user)
+    token = issuance.plaintext_token
+
+    assert_match(/\Arswh_/, token)
+    assert_raises(RecordingStudioWebhooks::Error) { issuance.plaintext_token }
+    stored = issuance.endpoint_token.reload
+    refute stored.has_attribute?(:token)
+    refute_includes stored.attributes.values.map(&:to_s), token
+    assert_equal stored, RecordingStudioWebhooks::EndpointToken.authenticate(plaintext: token)
+  end
+
+  test "header and bearer intake authenticate without a path token" do
+    token = @endpoint.issue_token!.plaintext_token
+    payload = JSON.generate(id: "evt_header_auth", type: "demo.received")
+
+    post "/webhooks/inbound",
+      params: payload,
+      headers: intake_headers.merge("HTTP_AUTHORIZATION" => "Bearer #{token}")
+
+    assert_response :accepted
+    assert_equal "accepted", JSON.parse(response.body).fetch("status")
+
+    post "/webhooks/inbound",
+      params: JSON.generate(id: "evt_alt_header_auth", type: "demo.received"),
+      headers: intake_headers.merge("HTTP_X_RECORDING_STUDIO_WEBHOOK_TOKEN" => token)
+
+    assert_response :accepted
+  end
+
+  test "host inbound helper still names the path-token route" do
+    helpers = Rails.application.routes.url_helpers
+    token = "rswh_exampletokenvalue"
+
+    assert_equal "/webhooks/inbound/#{token}", helpers.recording_studio_webhooks_inbound_path(endpoint_token: token)
+    assert_equal "/webhooks/inbound", helpers.recording_studio_webhooks_inbound_header_path
+    assert_equal(
+      "/admin/webhooks/inbound/#{token}",
+      recording_studio_admin_webhooks_engine.inbound_path(endpoint_token: token)
+    )
+    assert_equal "/admin/webhooks/inbound", recording_studio_admin_webhooks_engine.inbound_header_path
+  end
+
+  test "deprecated path-token intake still authenticates issued URLs" do
+    token = @endpoint.issue_token!.plaintext_token
+
+    post inbound_path(token),
+      params: JSON.generate(id: "evt_legacy_path", type: "demo.received"),
+      headers: intake_headers
+
+    assert_response :accepted
   end
 
   test "administration fails closed when its authorizer is absent" do

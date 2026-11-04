@@ -4,9 +4,8 @@ RecordingStudioWebhooks::Engine.routes.draw do
   post "inbound/:endpoint_token",
        to: "public/intake#create",
        as: :inbound,
-       constraints: {
-         endpoint_token: /rswh_[A-Za-z0-9_-]+/
-       }
+       constraints: { endpoint_token: /rswh_[A-Za-z0-9_-]+/ }
+  post "inbound", to: "public/intake#create", as: :inbound_header
 
   scope module: :admin, as: :admin do
     root to: "webhooks#show"

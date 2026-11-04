@@ -13,6 +13,9 @@ Rails.application.routes.draw do
   mount RecordingStudioRootSwitchable::Engine, at: "/recording_studio_root_switchable"
   recording_studio_admin_for :webhooks, at: "/admin", root_section: :admin_webhooks
   mount RecordingStudioWebhooks::Engine, at: "/admin/webhooks", as: "recording_studio_admin_webhooks_engine"
+  post "/webhooks/inbound",
+    to: "recording_studio_webhooks/public/intake#create",
+    as: :recording_studio_webhooks_inbound_header
   post "/webhooks/inbound/:endpoint_token",
     to: "recording_studio_webhooks/public/intake#create",
     as: :recording_studio_webhooks_inbound,

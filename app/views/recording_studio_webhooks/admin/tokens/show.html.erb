@@ -1,17 +1,24 @@
 <% content_for :head do %>
   <meta name="robots" content="noindex,nofollow">
 <% end %>
-<% content_for :title, "Webhook endpoint ready" %>
-<% content_for :subtitle, "Use this URL in your provider to start receiving inbound webhooks." %>
+<% content_for :title, "Copy this token now" %>
+<% content_for :subtitle, "We show it once. Send it as a header, not in the URL." %>
 
 <%= render FlatPack::Card::Component.new(border: :strong) do |card| %>
   <% card.body do %>
     <%= render FlatPack::TextInput::Component.new(
+      name: "endpoint_token",
+      label: "Endpoint token",
+      value: @issued_token,
+      quick_copy: true,
+      help_text: "Paste this into Authorization: Bearer or X-Recording-Studio-Webhook-Token."
+    ) %>
+    <%= render FlatPack::TextInput::Component.new(
       name: "endpoint_url",
-      label: "Webhook endpoint URL",
+      label: "Webhook URL",
       value: @endpoint_url,
       quick_copy: true,
-      help_text: "Copy and paste this full URL into your provider webhook configuration."
+      help_text: "POST JSON here. Do not put the token in the path."
     ) %>
   <% end %>
   <% card.footer do %>

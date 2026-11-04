@@ -18,7 +18,7 @@ There are four engine tables, all with UUID primary keys:
 | Table | Responsibility |
 | --- | --- |
 | endpoints | stable Recording Studio ownership and endpoint policy |
-| endpoint tokens | digest/prefix/lifecycle only |
+| endpoint tokens | digest, prefix, and lifecycle only (no plaintext) |
 | inbound events | redacted receipt and immutable intake snapshots |
 | action attempts | action snapshot, state, retries, and append-only attempts |
 

@@ -4,6 +4,17 @@ require "test_helper"
 require "stringio"
 
 class PublicIntakeGuardTest < Minitest::Test
+  def test_inbound_path_matches_header_and_path_token_routes
+    pattern = RecordingStudioWebhooks::PublicIntakeGuard::INBOUND_PATH
+
+    assert pattern.match?("/webhooks/inbound")
+    assert pattern.match?("/webhooks/inbound/rswh_123e4567e89b12d3a456426614174000")
+    assert pattern.match?("/inbound")
+    assert pattern.match?("/admin/webhooks/inbound")
+    refute pattern.match?("/webhooks/inbound/provider-only")
+    refute pattern.match?("/webhooks/inbound/")
+  end
+
   def test_guard_blocks_declared_oversized_intake_before_the_application
     with_fresh_configuration do |configuration|
       configuration.max_payload_bytes = 3
@@ -41,6 +52,24 @@ class PublicIntakeGuardTest < Minitest::Test
     end
   end
 
+  def test_guard_protects_header_only_inbound_path
+    with_fresh_configuration do |configuration|
+      configuration.max_payload_bytes = 3
+      called = false
+      guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true })
+
+      status, _headers, body = guard.call(
+        "PATH_INFO" => "/webhooks/inbound",
+        "CONTENT_LENGTH" => "4",
+        "rack.input" => StringIO.new("abcd")
+      )
+
+      assert_equal 413, status
+      assert_equal '{"status":"invalid"}', body.join
+      refute called
+    end
+  end
+
   def test_guard_does_not_treat_a_provider_only_path_as_public_intake
     called = false
     guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true; [204, {}, []] })
@@ -49,5 +78,23 @@ class PublicIntakeGuardTest < Minitest::Test
 
     assert_equal 204, status
     assert called
+  end
+
+  def test_root_inbound_header_path_is_guarded
+    with_fresh_configuration do |configuration|
+      configuration.max_payload_bytes = 3
+      called = false
+      guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true })
+
+      status, _headers, body = guard.call(
+        "PATH_INFO" => "/inbound",
+        "CONTENT_LENGTH" => "4",
+        "rack.input" => StringIO.new("abcd")
+      )
+
+      assert_equal 413, status
+      assert_equal '{"status":"invalid"}', body.join
+      refute called
+    end
   end
 end

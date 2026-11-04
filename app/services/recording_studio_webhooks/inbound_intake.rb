@@ -2,8 +2,8 @@
 
 # app/services/recording_studio_webhooks/inbound_intake.rb
 module RecordingStudioWebhooks
-  # Controller-independent public intake. The route carries the endpoint token
-  # credential directly, which resolves endpoint and provider.
+  # Controller-independent public intake. The credential comes from a header
+  # or, for previously issued URLs, a deprecated path segment.
   class InboundIntake
     SignatureContext = Struct.new(:raw_payload, :headers, :endpoint, :provider, keyword_init: true) do
       def inspect = "#<#{self.class.name} raw_payload=[FILTERED]>"
@@ -97,7 +97,6 @@ module RecordingStudioWebhooks
     rescue InvalidEventPatternError, InvalidPolicyError
       failure(422, "event_type_invalid")
     rescue StandardError
-      # Do not expose request-derived values or exceptions from the public API.
       failure(503, "intake_unavailable")
     end
 

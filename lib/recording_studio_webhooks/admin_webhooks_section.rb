@@ -430,13 +430,12 @@ module RecordingStudioWebhooks
         token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now)
       end
                               .max_by(&:active_at)
-      current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence
-      current_plaintext_token.present? ? "/webhooks/inbound/#{current_plaintext_token}" : "Active token present; full URL unavailable"
+      current_token.present? ? "/webhooks/inbound" : "No active token"
     end
 
     def endpoint_inbound_url(endpoint, context)
       inbound_path = endpoint_inbound_path(endpoint)
-      return nil unless inbound_path.start_with?("/webhooks/inbound/")
+      return nil unless inbound_path == "/webhooks/inbound" || inbound_path.start_with?("/webhooks/inbound/")
 
       base_url = context.view_context&.request&.base_url.to_s
       return nil if base_url.empty?

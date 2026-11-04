@@ -1,25 +1,23 @@
 source "https://rubygems.org"
 
-require_relative "../support/widen_recording_studio_requirement"
-
 # Use the Recording Studio Webhooks engine
 gem "recording_studio_webhooks", path: "../.."
 
-# RecordingStudio 6.1 kit. Sibling tags still cap recording_studio below 5.
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.1.0"
-gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.21.0"
+# RecordingStudio 6.3 kit.
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.3.0"
+gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.24.0"
 gem "recording_studio_admin", github: "bowerbird-app/RecordingStudio_admin", tag: "v2.5.1"
-gem "recording_studio_cache", github: "bowerbird-app/RecordingStudio_cache", tag: "v0.5.1"
+gem "recording_studio_cache", github: "bowerbird-app/RecordingStudio_cache", tag: "v0.6.2"
 # Admin and Accessible load Trashable query helpers only; pin for Bundler.
 gem "recording_studio_trashable",
-    github: "bowerbird-app/RecordingStudio_trashable", tag: "v0.11.3",
+    github: "bowerbird-app/RecordingStudio_trashable", tag: "v0.12.2",
     require: false
 
 # Root switcher for the top nav
-gem "recording_studio_root_switchable", github: "bowerbird-app/RecordingStudio_root_switchable", tag: "v0.11.0"
+gem "recording_studio_root_switchable", github: "bowerbird-app/RecordingStudio_root_switchable", tag: "v0.11.4"
 
 # Host registers Metrics definitions. Webhooks does not depend on RecordingStudio API.
-gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.6.1"
+gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.7.2"
 
 # Devise authentication
 gem "devise"

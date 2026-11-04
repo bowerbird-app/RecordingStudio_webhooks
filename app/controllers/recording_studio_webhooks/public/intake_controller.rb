@@ -4,8 +4,8 @@ module RecordingStudioWebhooks
   module Public
     # This controller intentionally uses the stateless API base instead of
     # weakening CSRF protection on the cookie-backed administrative controller.
-    # Public intake authenticates with an endpoint credential header, never a
-    # browser session.
+    # Public intake authenticates with an endpoint credential header. A
+    # path token is accepted only for URLs issued before 0.8.0.
     class IntakeController < ActionController::API
 
       def create

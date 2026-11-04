@@ -20,17 +20,12 @@
        current_token = endpoint.endpoint_tokens
          .select { |token| token.revoked_at.nil? && token.active_at <= now && (token.expires_at.nil? || token.expires_at > now) }
          .max_by(&:active_at)
-       current_plaintext_token = current_token&.attributes&.fetch("token", nil).to_s.presence
-       inbound_template_path = if current_plaintext_token.present?
-                                 "/webhooks/inbound/#{current_plaintext_token}"
-                               else
-                                 "Active token present; full URL unavailable"
-                               end
+       inbound_template_path = current_token.present? ? "/webhooks/inbound" : "No active token"
        {
          endpoint: endpoint,
          path: inbound_template_path,
-         copy_value: current_plaintext_token.present? ? "#{request.base_url}#{inbound_template_path}" : "",
-         copyable: current_plaintext_token.present?
+         copy_value: current_token.present? ? "#{request.base_url}#{inbound_template_path}" : "",
+         copyable: current_token.present?
        }
      end %>
   <%= render FlatPack::Table::Component.new(data: rows, min_width: :lg) do |table| %>

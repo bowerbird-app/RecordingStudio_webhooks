@@ -50,7 +50,6 @@ module RecordingStudioWebhooks
           metadata: { endpoint_id: id, endpoint_token_prefix: prefix }
         ) do |recordable|
           recordable.endpoint_id = id
-          recordable.token = plaintext if recordable.has_attribute?(:token)
           recordable.digest = digest
           recordable.prefix = prefix
           recordable.active_at = active_at

@@ -27,11 +27,27 @@ module RecordingStudioWebhooks
                            "db/migrate/create_recording_studio_webhooks_tables.rb"
       end
 
+      def copy_remove_plaintext_token_migration
+        if remove_plaintext_token_migration_exists?
+          say "skip  remove_plaintext_token_from_endpoint_tokens.rb (already exists)", :yellow
+          return
+        end
+
+        migration_template "remove_plaintext_token_from_endpoint_tokens.rb.tt",
+                           "db/migrate/remove_plaintext_token_from_endpoint_tokens.rb"
+      end
+
       private
 
       def migration_exists?
         Dir.glob(
           File.join(destination_root, "db/migrate", "*_create_recording_studio_webhooks_tables.rb")
+        ).any?
+      end
+
+      def remove_plaintext_token_migration_exists?
+        Dir.glob(
+          File.join(destination_root, "db/migrate", "*_remove_plaintext_token_from_endpoint_tokens.rb")
         ).any?
       end
     end

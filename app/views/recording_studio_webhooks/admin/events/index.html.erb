@@ -78,7 +78,7 @@
          received_at: event.received_at,
          status: event.status.to_s,
          endpoint: "#{event.endpoint.label} (#{event.endpoint.recording_studio_recording_id})",
-         token: event.endpoint_token.attributes.fetch("token", nil).to_s.presence || "Unavailable",
+         token: event.endpoint_token.prefix,
          attempts: event.action_attempts.sum(&:attempts)
        }
      end %>
