@@ -41,6 +41,24 @@ class PublicIntakeGuardTest < Minitest::Test
     end
   end
 
+  def test_guard_protects_header_only_inbound_path
+    with_fresh_configuration do |configuration|
+      configuration.max_payload_bytes = 3
+      called = false
+      guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true })
+
+      status, _headers, body = guard.call(
+        "PATH_INFO" => "/webhooks/inbound",
+        "CONTENT_LENGTH" => "4",
+        "rack.input" => StringIO.new("abcd")
+      )
+
+      assert_equal 413, status
+      assert_equal '{"status":"invalid"}', body.join
+      refute called
+    end
+  end
+
   def test_guard_does_not_treat_a_provider_only_path_as_public_intake
     called = false
     guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true; [204, {}, []] })

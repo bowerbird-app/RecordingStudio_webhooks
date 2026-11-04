@@ -7,6 +7,7 @@ module RecordingStudioWebhooks
     class SandboxesController < BaseController
       before_action :load_endpoint_from_params
       before_action :load_provider_options
+      before_action :authorize_admin_webhooks_write!, only: :create
 
       def show
         return unless @endpoint
@@ -156,9 +157,7 @@ module RecordingStudioWebhooks
       end
 
       def validate_signature(provider, endpoint, headers, payload)
-        verifier = provider.respond_to?(:signature_verifier_callable) ?
-          provider.signature_verifier_callable :
-          provider.instance_variable_get(:@signature_verifier)
+        verifier = provider.signature_verifier if provider.respond_to?(:signature_verifier)
         return { verified: true, message: "No signature verifier configured." } unless verifier
 
         result = invoke_provider_callable(
@@ -171,7 +170,8 @@ module RecordingStudioWebhooks
         )
         { verified: result == true,
           message: (result == true ? "Signature verifier accepted payload." : "Signature verifier rejected payload.") }
-      rescue StandardError
+      rescue *HOST_CALLBACK_ERRORS => e
+        RecordingStudioWebhooks.log_fail_closed(e, context: "sandbox_signature_verifier")
         { verified: false, message: "Signature verifier raised an error." }
       end
 

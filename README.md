@@ -21,9 +21,12 @@ bin/rails db:migrate
 ```
 
 The install generator creates an initializer, mounts the engine at
-`/recording_studio_webhooks`, and generates one migration containing the four
-engine tables. Use `--mount-path=/webhooks` to choose another safe lowercase
-path, or `--skip-migrations` when migrations are managed separately.
+`/recording_studio_webhooks`, and copies engine migrations (the four UUID
+tables, then later upgrades such as dropping plaintext tokens). Use
+`--mount-path=/webhooks` to choose another safe lowercase path, or
+`--skip-migrations` when migrations are managed separately. Hosts already on
+the four tables still need `db:migrate` after each gem bump that adds a
+migration.
 
 Sidekiq is the default dispatcher. The engine requires Sidekiq `~> 8.1.6`;
 that version was checked against the GitHub advisory database when this engine
@@ -112,13 +115,15 @@ additive and cannot be removed by a lower-level policy.
 With the default mount, providers POST JSON to:
 
 ```text
-POST /recording_studio_webhooks/inbound/:endpoint_token
-Authorization header: endpoint credential
+POST /recording_studio_webhooks/inbound
+Authorization: Bearer <endpoint token>
 Content-Type: application/json
 ```
 
 `X-Recording-Studio-Webhook-Token` is also supported for providers that
 cannot send an Authorization header. Query-string tokens are intentionally unsupported.
+Path-token URLs (`/inbound/:endpoint_token`) issued before 0.8.0 still work.
+New tokens are not minted in the path.
 The public controller is stateless and does not use browser sessions; all
 administrative endpoints retain Rails CSRF protection. It returns only a
 generic JSON status: `accepted`, `duplicate`, `unauthorized`, `not_found`,
@@ -222,7 +227,7 @@ filters status, provider, and endpoint in the filter modal.
 ## Metrics
 
 `RecordingStudioWebhooks::Metrics.register!` registers site-wide metrics with
-RecordingStudio Metrics (`>= 0.3.0, < 0.6`) at boot. Every metric uses
+RecordingStudio Metrics (`>= 0.7.2`) at boot. Every metric uses
 `blast_radius: :site`, is exposed on the `:operations` API only, and is visible
 over the API only to actors with `:view` on the Admin root
 (`Api::Access.can_view?`). This gem does not call
@@ -309,18 +314,17 @@ Tests use a no-op dispatcher so CI can run without Redis; development uses
 Sidekiq. Sign in as `admin@admin.com` with password `Password`, then open
 **Webhook endpoints** from Admin webhooks. The demo never sends outbound requests.
 
-The dummy is on the Recording Studio 6.1 kit from `Gemfile`, `test/dummy/Gemfile`,
-and `recording_studio_webhooks.gemspec`: core tag `v6.1.0` (runtime `>= 6.1.0`),
-Accessible tag `v0.21.0`, Root Switchable tag `v0.11.0`,
-Metrics tag `v0.6.1` (runtime `>= 0.3.0`, `< 1.0`), Flatpack tag
-`v0.1.341` (runtime `>= 0.1.341`), Admin tag `v2.5.1`, Cache tag `v0.5.1`,
-and Trashable tag `v0.11.3` (`require: false`).
+The dummy is on the Recording Studio 6.3 kit from `Gemfile`, `test/dummy/Gemfile`,
+and `recording_studio_webhooks.gemspec`: core tag `v6.3.0` (runtime `>= 6.3.0`),
+Accessible tag `v0.24.0`, Root Switchable tag `v0.11.4`,
+Metrics tag `v0.7.2` (runtime `>= 0.7.2`, `< 1.0`), Flatpack tag
+`v0.1.341` (runtime `>= 0.1.341`), Admin tag `v2.5.1`, Cache tag `v0.6.2`,
+and Trashable tag `v0.12.2` (`require: false`).
 Dummy Rails is `~> 8.1.1`; the gemspec is `rails ~> 8.1.0`, `sidekiq ~> 8.1.6`,
 and `view_component >= 4.14, < 5`. Authenticated dummy screens use
-Recording Studio's shared default layout. `config.layout` overrides it. Flatpack
+Recording Studio's shared default layout. Engine controllers include
+`RecordingStudio::ControllerLayout`. `config.layout` overrides it. Flatpack
 stylesheets load before Tailwind. Dummy Accessible setup uses string roles.
-Sibling gems that still require `recording_studio` below 5 are widened in
-`test/support/widen_recording_studio_requirement.rb`.
 
 Controller flashes and form errors resolve under `recording_studio.webhooks.*`
 with English `default:` on every lookup. Hosts override by defining the same

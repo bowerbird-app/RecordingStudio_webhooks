@@ -170,7 +170,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_120000) do
     t.string "prefix", null: false
     t.datetime "revoked_at"
     t.string "revoked_by_actor_id"
-    t.string "token"
     t.datetime "updated_at", null: false
     t.index ["digest"], name: "index_recording_studio_webhooks_endpoint_tokens_on_digest"
     t.index ["endpoint_id", "active_at"], name: "index_rsw_tokens_on_endpoint_and_active_at"

@@ -52,11 +52,6 @@ module RecordingStudioWebhooks
       value = plaintext.to_str
       scope = endpoint.is_a?(Endpoint) ? endpoint.endpoint_tokens.current(at) : current(at)
 
-      if column_names.include?("token")
-        direct = scope.find_by(token: value)
-        return direct if direct
-      end
-
       digest = TokenDigest.digest(value)
       token = scope.find_by(digest: digest)
       token if token && TokenDigest.secure_compare(digest, token.digest)
@@ -145,13 +140,13 @@ module RecordingStudioWebhooks
         return if configured_types.include?(type_name)
 
         ::RecordingStudio.register_recordable_type(type_name)
-      rescue StandardError
+      rescue ArgumentError, TypeError, NameError, RecordingStudioWebhooks::Error => e
+        RecordingStudioWebhooks.log_fail_closed(e, context: "endpoint_token.ensure_registered_recordable_type")
         nil
       end
 
     def prevent_credential_mutation
       immutable = %w[endpoint_id digest prefix active_at expires_at metadata revoked_at revoked_by_actor_id]
-      immutable.unshift("token") if self.class.column_names.include?("token")
       return unless immutable.any? { |attribute| will_save_change_to_attribute?(attribute) }
 
       raise ActiveRecord::ReadOnlyRecord, "endpoint tokens are immutable; issue a replacement token"

@@ -22,9 +22,12 @@ per-repo dummy master key. Set `RAILS_MASTER_KEY`, or write the shared key to
 
 Public intake uses `ActionController::API`, so it is stateless and has no
 cookie-backed CSRF surface. It accepts JSON with a credential header, validates
-request size and content type, and emits generic responses. Administrative
-mutations retain standard Rails CSRF protection and require an explicit host
-authorizer.
+request size and content type, and emits generic responses. Path-token URLs
+issued before 0.8.0 still authenticate; new URLs do not put the credential in
+the path. Administrative mutations retain standard Rails CSRF protection and
+require an explicit host authorizer. Sandbox POST uses the same write
+capability as other mutating admin actions. `return_to` after endpoint autosave
+must be a same-host relative path.
 
 The public intake guard prevents Rails parameter parsing and request logging
 from buffering or recording the raw JSON body. It applies a declared-length

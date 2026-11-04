@@ -2,6 +2,7 @@
 
 module RecordingStudioWebhooks
   class ApplicationController < ActionController::Base
+    include RecordingStudio::ControllerLayout if defined?(RecordingStudio::ControllerLayout)
     include RecordingStudio::RootSwitchable::ControllerSupport if defined?(RecordingStudio::RootSwitchable::ControllerSupport)
 
     protect_from_forgery with: :exception

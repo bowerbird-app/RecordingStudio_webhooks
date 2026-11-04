@@ -212,6 +212,7 @@ Metrics/AbcSize:
     - 'app/services/recording_studio_webhooks/execute_action_attempt.rb'
     - 'app/services/recording_studio_webhooks/inbound_intake.rb'
     - 'db/migrate/20260728000000_create_recording_studio_webhooks_tables.rb'
+    - 'db/migrate/20261104000000_remove_plaintext_token_from_endpoint_tokens.rb'
     - 'lib/recording_studio_webhooks/admin/registration.rb'
     - 'lib/recording_studio_webhooks/admin_webhooks_section.rb'
     - 'lib/recording_studio_webhooks/canonical_json.rb'
@@ -231,6 +232,7 @@ Metrics/BlockLength:
     - 'app/services/recording_studio_webhooks/inbound_intake.rb'
     - 'lib/recording_studio_webhooks/admin_webhooks_section.rb'
     - 'lib/tasks/recording_studio_webhooks_tasks.rake'
+    - 'config/routes.rb'
 
 # Offense count: 8
 # Configuration parameters: CountComments, Max, CountAsOne.
@@ -266,6 +268,7 @@ Metrics/CyclomaticComplexity:
     - 'lib/recording_studio_webhooks/policy_resolver.rb'
     - 'lib/recording_studio_webhooks/recording_studio_gateway.rb'
     - 'lib/recording_studio_webhooks/redactor.rb'
+    - 'app/controllers/recording_studio_webhooks/admin/endpoints_controller.rb'
 
 # Offense count: 75
 # Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
@@ -291,6 +294,7 @@ Metrics/MethodLength:
     - 'app/services/recording_studio_webhooks/inbound_intake.rb'
     - 'db/migrate/20260728000000_create_recording_studio_webhooks_tables.rb'
     - 'db/migrate/20260729140000_remove_superseded_columns_from_endpoints.rb'
+    - 'db/migrate/20261104000000_remove_plaintext_token_from_endpoint_tokens.rb'
     - 'lib/recording_studio_webhooks.rb'
     - 'lib/recording_studio_webhooks/action_definition.rb'
     - 'lib/recording_studio_webhooks/admin/registration.rb'
@@ -326,6 +330,7 @@ Metrics/PerceivedComplexity:
     - 'app/controllers/recording_studio_webhooks/admin/base_controller.rb'
     - 'app/controllers/recording_studio_webhooks/admin/events_controller.rb'
     - 'app/controllers/recording_studio_webhooks/admin/sandboxes_controller.rb'
+    - 'app/controllers/recording_studio_webhooks/admin/endpoints_controller.rb'
     - 'app/models/recording_studio_webhooks/action_attempt.rb'
     - 'app/models/recording_studio_webhooks/inbound_event.rb'
     - 'app/services/recording_studio_webhooks/execute_action_attempt.rb'

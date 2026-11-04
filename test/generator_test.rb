@@ -47,5 +47,19 @@ class GeneratorTest < Minitest::Test
     assert_includes template, "recording_studio_webhooks_action_attempts"
     assert_includes template, "%i[provider_name recording_studio_recording_id]"
     refute_includes template, "superseded_at IS NULL"
+    refute_match(/t\.string :token\b/, template)
+  end
+
+  def test_remove_plaintext_token_migration_template_backfills_then_drops_token
+    template = File.read(
+      File.expand_path(
+        "../lib/generators/recording_studio_webhooks/migrations/templates/remove_plaintext_token_from_endpoint_tokens.rb.tt",
+        __dir__
+      )
+    )
+
+    assert_includes template, "TokenDigest.digest"
+    assert_includes template, "remove_column table, :token"
+    assert_includes template, "Irreversible for data"
   end
 end

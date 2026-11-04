@@ -66,9 +66,6 @@ ensure_endpoint = lambda do |root_recording, provider_name:, label:, identity:, 
 end
 
 ensure_active_token = lambda do |endpoint, actor|
-  current_token = endpoint.endpoint_tokens.current.order(active_at: :desc).first
-  return current_token.token if current_token&.token.present?
-
   issuance = endpoint.issue_token!(actor: actor)
   issuance.plaintext_token
 end

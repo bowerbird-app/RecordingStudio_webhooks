@@ -28,7 +28,7 @@ Background action                 # A worker runs your local Ruby code.
 
 ## Install
 
-This engine requires Recording Studio `~> 4.2`. Add the gem, generate its setup files, and apply its migration.
+This engine requires Recording Studio `>= 6.3.0`. Add the gem, generate its setup files, and apply its migrations.
 
 ```bash
 bundle add recording_studio_webhooks                         # Add the engine to the host application.
@@ -187,12 +187,12 @@ Create endpoints in the webhooks admin UI. An endpoint connects one Recording St
 After issuing a token, copy it immediately. The database keeps only its digest.
 
 ```text
-POST /webhooks/inbound/:endpoint_token                        # Replace /webhooks with the engine mount path.
+POST /webhooks/inbound                                        # Replace /webhooks with the engine mount path.
 Authorization: Bearer rswh_example_token                      # Send the token issued for this endpoint.
 Content-Type: application/json                                # Send a supported JSON content type.
 ```
 
-When a provider cannot use `Authorization`, send the supported alternate header. Do not put tokens in a query string.
+When a provider cannot use `Authorization`, send the supported alternate header. Do not put tokens in a query string or in a newly minted path. `/inbound/:endpoint_token` remains only for URLs issued before 0.8.0.
 
 ```text
 X-Recording-Studio-Webhook-Token: rswh_example_token         # Send the same issued token in the alternate header.

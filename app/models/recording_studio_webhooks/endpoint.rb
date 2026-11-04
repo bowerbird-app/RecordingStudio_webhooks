@@ -50,7 +50,6 @@ module RecordingStudioWebhooks
           metadata: { endpoint_id: id, endpoint_token_prefix: prefix }
         ) do |recordable|
           recordable.endpoint_id = id
-          recordable.token = plaintext if recordable.has_attribute?(:token)
           recordable.digest = digest
           recordable.prefix = prefix
           recordable.active_at = active_at
@@ -113,7 +112,8 @@ module RecordingStudioWebhooks
         return if configured_types.include?(type_name)
 
         ::RecordingStudio.register_recordable_type(type_name)
-      rescue StandardError
+      rescue ArgumentError, TypeError, NameError, RecordingStudioWebhooks::Error => e
+        RecordingStudioWebhooks.log_fail_closed(e, context: "endpoint.ensure_registered_recordable_type")
         nil
       end
 

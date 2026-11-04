@@ -16,7 +16,8 @@ module RecordingStudioWebhooks
         scope = scope.where(provider_name: @filter[:provider_name]) if @filter[:provider_name].present?
         scope = scope.where(endpoint_id: @filter[:endpoint_id]) if @filter[:endpoint_id].present?
         if normalized_endpoint_token.present?
-          scope = scope.joins(:endpoint_token).where(recording_studio_webhooks_endpoint_tokens: { token: normalized_endpoint_token })
+          digest = TokenDigest.digest(normalized_endpoint_token)
+          scope = scope.joins(:endpoint_token).where(recording_studio_webhooks_endpoint_tokens: { digest: digest })
         end
         scope = scope.where(event_type: @filter[:event_type]) if @filter[:event_type].present?
         scope = scope.where(status: @filter[:status]) if @filter[:status].present?

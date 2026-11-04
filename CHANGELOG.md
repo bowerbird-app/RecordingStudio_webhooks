@@ -2,6 +2,53 @@
 
 ## Unreleased
 
+## [0.8.0] - 2026-11-04
+
+Endpoint tokens are hash-only. Intake uses header credentials. Core is 6.3.
+
+### Security
+
+- Stop writing plaintext `token` on endpoint tokens. Lookup is digest-only.
+- Migration backfills a missing digest from plaintext, then drops the column.
+  Existing tokens keep working through their stored hash.
+- Stop minting intake URLs that put the credential in the path. Header and
+  Bearer auth are the issued form. `POST .../inbound/:endpoint_token` still
+  accepts previously issued URLs.
+- `return_to` must be a same-host relative path. Protocol-relative and
+  backslash values are rejected.
+- Sandbox POST requires the same write capability as other mutating admin
+  actions.
+
+### Changed
+
+- `recording_studio` is `>= 6.3.0`. Development pins tag `v6.3.0`.
+- `recording_studio_metrics` is `>= 0.7.2`, `< 1.0`. Development pins tag
+  `v0.7.2`.
+- Dummy/dev sibling pins: Accessible `v0.24.0`, Trashable `v0.12.2`, Cache
+  `v0.6.2`, Root Switchable `v0.11.4`. Admin stays `v2.5.1`.
+- Engine `ApplicationController` includes `RecordingStudio::ControllerLayout`.
+  `config.layout = nil` still uses core's Default Layout.
+- Fail-closed host callbacks log the error class and message. Recordable
+  registration rescues specific errors. Public intake and action execution
+  still catch `StandardError` so unknown host errors stay generic.
+- Signature verifiers are read through `signature_verifier`, not
+  `instance_variable_get`.
+- Dummy coverage artifacts are untracked.
+
+### Upgrade notes
+
+- Bump to `0.8.0`. Run the engine migrations. Hosts that already installed
+  the four tables must run
+  `RemovePlaintextTokenFromEndpointTokens` (copy it with
+  `bin/rails generate recording_studio_webhooks:migrations` if it is not in
+  `db/migrate`). Every token row must have a digest; the migration hashes
+  plaintext into digest when digest is blank, then drops `token`.
+- Point providers at `POST /<mount>/inbound` and send
+  `Authorization: Bearer …` or `X-Recording-Studio-Webhook-Token`. Path-token
+  URLs already issued still work until you rotate.
+- Pin Recording Studio `v6.3.0` and Metrics `v0.7.2`. This repository no
+  longer ships `test/support/widen_recording_studio_requirement.rb`.
+
 ## [0.7.2] - 2026-11-03
 
 Admin date-range filters use FlatPack `DateRangeInput` `preset_name:` and
@@ -28,8 +75,8 @@ submit path.
 
 ## [0.7.1] - 2026-10-28
 
-Cleanup, sibling pin alignment, and Flatpack layout primitives. Version stays
-0.7.1 (untagged).
+Cleanup, sibling pin alignment, and Flatpack layout primitives. Tagged
+`v0.7.1`.
 
 ### Changed
 
@@ -439,7 +486,8 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.6.7...v0.7.0

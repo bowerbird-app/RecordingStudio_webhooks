@@ -36,6 +36,7 @@ class AdminLayoutTest < ActionDispatch::IntegrationTest
   test "admin pages inherit the engine layout and render one heading" do
     engine = RecordingStudioWebhooks::ApplicationController
     admin = RecordingStudioWebhooks::Admin::BaseController
+    assert_includes engine.included_modules, RecordingStudio::ControllerLayout
     assert_same engine.send(:recording_studio_layout_block), admin.send(:recording_studio_layout_block)
     assert_empty RecordingStudio::Layout.hardcoded_layout_paths(Rails.root)
     assert_empty RecordingStudio::Layout.hardcoded_layout_paths(RecordingStudioWebhooks::Engine.root)

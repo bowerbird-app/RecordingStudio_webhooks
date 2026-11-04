@@ -1,6 +1,36 @@
 # Migration Notes
 
-This engine requires Recording Studio `>= 6.1.0` and Flatpack `>= 0.1.341`.
+This engine requires Recording Studio `>= 6.3.0` and Flatpack `>= 0.1.341`.
+
+## 0.8.0
+
+Hosts must run the engine migrations.
+
+```bash
+bin/rails generate recording_studio_webhooks:migrations
+bin/rails db:migrate
+```
+
+`RemovePlaintextTokenFromEndpointTokens` checks every
+`recording_studio_webhooks_endpoint_tokens` row has a digest. Rows with
+plaintext and a blank digest are hashed with `TokenDigest.digest` (the same
+HMAC as runtime when `token_digest_secret` is set). Then the `token` column
+is dropped. Down adds an empty `token` column; plaintext cannot be restored
+from a digest.
+
+New installs get the four tables without a `token` column. The drop
+migration is a no-op when that column is already gone.
+
+Point providers at `POST /<mount>/inbound` with
+`Authorization: Bearer` or `X-Recording-Studio-Webhook-Token`. Previously
+issued `/inbound/:endpoint_token` URLs still authenticate.
+
+Pin Recording Studio `v6.3.0` and Metrics `v0.7.2`. Admin stays `v2.5.1`.
+This gem no longer ships a Bundler `Gem::Specification` prepend to widen
+`recording_studio` requirements.
+
+Engine `ApplicationController` includes `RecordingStudio::ControllerLayout`.
+`config.layout = nil` keeps core's Default Layout.
 
 ## 0.7.2
 
