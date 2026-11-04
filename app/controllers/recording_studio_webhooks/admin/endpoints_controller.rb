@@ -50,7 +50,7 @@ module RecordingStudioWebhooks
             actor: current_admin_actor
           )
           if params[:auto_save].to_s == "1"
-            redirect_to safe_return_to_path(params[:return_to]) || "/admin/screens/endpoints"
+            redirect_to RecordingStudioWebhooks::SafeReturnPath.call(params[:return_to]) || "/admin/screens/endpoints"
           else
             redirect_to "/admin/screens/endpoints",
                         notice: Copy.t("flashes.endpoint_updated", default: "Endpoint updated.")
@@ -137,28 +137,6 @@ module RecordingStudioWebhooks
 
       def cast_boolean(value)
         ActiveModel::Type::Boolean.new.cast(value)
-      end
-
-      def safe_return_to_path(value)
-        path = value.to_s.strip
-        relative_same_host_path?(path) ? path : nil
-      end
-
-      def relative_same_host_path?(path)
-        return false if path.empty? || !path.start_with?("/") || path.start_with?("//")
-        return false if path.include?("\\") || path.match?(/[[:space:]]/)
-        return false unless path.match?(%r{\A/[A-Za-z0-9._~!$&'()*+,;=:@%/?-]*\z})
-
-        uri = URI.parse(path)
-        return false unless uri.relative?
-        return false if uri.host.present? || uri.scheme.present?
-
-        decoded = CGI.unescape(uri.path.to_s)
-        return false if decoded.start_with?("//") || decoded.include?("\\") || decoded.include?("://")
-
-        true
-      rescue URI::InvalidURIError
-        false
       end
 
       def registered_provider?

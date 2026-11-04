@@ -192,7 +192,7 @@ Authorization: Bearer rswh_example_token                      # Send the token i
 Content-Type: application/json                                # Send a supported JSON content type.
 ```
 
-When a provider cannot use `Authorization`, send the supported alternate header. Do not put tokens in a query string or in a newly minted path. `/inbound/:endpoint_token` remains only for URLs issued before 0.8.0.
+When a provider cannot use `Authorization`, send the supported alternate header. Do not put tokens in a query string or in a newly minted path. Build `POST /<mount>/inbound` with `recording_studio_webhooks_inbound_header_path`. `recording_studio_webhooks_inbound_path(endpoint_token:)` still names `/inbound/:endpoint_token` so existing hosts keep working. That route is deprecated: tokens in URLs end up in server logs. Previously issued path-token URLs still authenticate.
 
 ```text
 X-Recording-Studio-Webhook-Token: rswh_example_token         # Send the same issued token in the alternate header.

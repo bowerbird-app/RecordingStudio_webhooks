@@ -133,7 +133,7 @@ module RecordingStudioWebhooks
         provider: provider
       )
       invoke_signature_verifier(verifier, context)
-    rescue *HOST_CALLBACK_ERRORS => e
+    rescue StandardError => e
       RecordingStudioWebhooks.log_fail_closed(e, context: "signature_verifier")
       false
     end
@@ -223,7 +223,7 @@ module RecordingStudioWebhooks
         hook.call(context)
         end
       result.respond_to?(:success?) ? result.success? : result == true
-    rescue *HOST_CALLBACK_ERRORS => e
+    rescue StandardError => e
       RecordingStudioWebhooks.log_fail_closed(e, context: "intake_hook")
       false
     end

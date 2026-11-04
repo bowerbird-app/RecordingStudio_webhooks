@@ -15,10 +15,10 @@ Rails.application.routes.draw do
   mount RecordingStudioWebhooks::Engine, at: "/admin/webhooks", as: "recording_studio_admin_webhooks_engine"
   post "/webhooks/inbound",
     to: "recording_studio_webhooks/public/intake#create",
-    as: :recording_studio_webhooks_inbound
+    as: :recording_studio_webhooks_inbound_header
   post "/webhooks/inbound/:endpoint_token",
     to: "recording_studio_webhooks/public/intake#create",
-    as: :recording_studio_webhooks_inbound_legacy,
+    as: :recording_studio_webhooks_inbound,
     constraints: {
       endpoint_token: /rswh_[A-Za-z0-9_-]+/
     }

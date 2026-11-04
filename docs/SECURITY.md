@@ -22,9 +22,13 @@ per-repo dummy master key. Set `RAILS_MASTER_KEY`, or write the shared key to
 
 Public intake uses `ActionController::API`, so it is stateless and has no
 cookie-backed CSRF surface. It accepts JSON with a credential header, validates
-request size and content type, and emits generic responses. Path-token URLs
-issued before 0.8.0 still authenticate; new URLs do not put the credential in
-the path. Administrative mutations retain standard Rails CSRF protection and
+request size and content type, and emits generic responses. Fail-closed logs
+record the error class and context, never `error.message`. Path-token URLs
+issued before 0.8.0 still authenticate and remain available as
+`recording_studio_webhooks_inbound_path(endpoint_token:)`; that route is
+deprecated because tokens in URLs end up in server logs. New URLs use
+`recording_studio_webhooks_inbound_header_path` and do not put the
+credential in the path. Administrative mutations retain standard Rails CSRF protection and
 require an explicit host authorizer. Sandbox POST uses the same write
 capability as other mutating admin actions. `return_to` after endpoint autosave
 must be a same-host relative path.

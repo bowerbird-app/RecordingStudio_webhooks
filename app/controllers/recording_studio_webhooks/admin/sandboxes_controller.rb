@@ -170,7 +170,7 @@ module RecordingStudioWebhooks
         )
         { verified: result == true,
           message: (result == true ? "Signature verifier accepted payload." : "Signature verifier rejected payload.") }
-      rescue *HOST_CALLBACK_ERRORS => e
+      rescue StandardError => e
         RecordingStudioWebhooks.log_fail_closed(e, context: "sandbox_signature_verifier")
         { verified: false, message: "Signature verifier raised an error." }
       end

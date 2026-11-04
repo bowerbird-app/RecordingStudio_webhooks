@@ -12,19 +12,8 @@ module RecordingStudioWebhooks
   class RecordingStudioConfigurationError < Error; end
   class TokenIdentityConflictError < Error; end
 
-  # NameError covers NoMethodError. Host callbacks may still raise other
-  # StandardError subclasses; public intake and action execution catch those.
-  HOST_CALLBACK_ERRORS = [
-    ArgumentError,
-    TypeError,
-    NameError,
-    KeyError,
-    RuntimeError,
-    Error
-  ].freeze
-
   def self.log_fail_closed(error, context:)
-    message = "[recording_studio_webhooks] #{context}: #{error.class}: #{error.message}"
+    message = "[recording_studio_webhooks] #{context}: #{error.class}"
     logger = defined?(Rails) && Rails.respond_to?(:logger) ? Rails.logger : nil
     logger&.warn(message)
   end

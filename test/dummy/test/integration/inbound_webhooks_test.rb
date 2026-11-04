@@ -915,6 +915,19 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :accepted
   end
 
+  test "host inbound helper still names the path-token route" do
+    helpers = Rails.application.routes.url_helpers
+    token = "rswh_exampletokenvalue"
+
+    assert_equal "/webhooks/inbound/#{token}", helpers.recording_studio_webhooks_inbound_path(endpoint_token: token)
+    assert_equal "/webhooks/inbound", helpers.recording_studio_webhooks_inbound_header_path
+    assert_equal(
+      "/admin/webhooks/inbound/#{token}",
+      recording_studio_admin_webhooks_engine.inbound_path(endpoint_token: token)
+    )
+    assert_equal "/admin/webhooks/inbound", recording_studio_admin_webhooks_engine.inbound_header_path
+  end
+
   test "deprecated path-token intake still authenticates issued URLs" do
     token = @endpoint.issue_token!.plaintext_token
 

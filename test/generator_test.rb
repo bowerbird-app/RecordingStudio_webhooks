@@ -50,7 +50,7 @@ class GeneratorTest < Minitest::Test
     refute_match(/t\.string :token\b/, template)
   end
 
-  def test_remove_plaintext_token_migration_template_backfills_then_drops_token
+  def test_remove_plaintext_token_migration_template_drops_token_when_present
     template = File.read(
       File.expand_path(
         "../lib/generators/recording_studio_webhooks/migrations/templates/remove_plaintext_token_from_endpoint_tokens.rb.tt",
@@ -58,8 +58,21 @@ class GeneratorTest < Minitest::Test
       )
     )
 
-    assert_includes template, "TokenDigest.digest"
+    refute_includes template, "TokenDigest"
+    assert_includes template, "return unless column_exists?(table, :token)"
     assert_includes template, "remove_column table, :token"
     assert_includes template, "Irreversible for data"
+  end
+
+  def test_create_tables_template_indents_digest_with_the_other_columns
+    template = File.read(
+      File.expand_path(
+        "../lib/generators/recording_studio_webhooks/migrations/templates/create_recording_studio_webhooks_tables.rb.tt",
+        __dir__
+      )
+    )
+
+    assert_includes template, "      t.string :digest, null: false\n"
+    refute_includes template, "        t.string :digest"
   end
 end

@@ -122,8 +122,13 @@ Content-Type: application/json
 
 `X-Recording-Studio-Webhook-Token` is also supported for providers that
 cannot send an Authorization header. Query-string tokens are intentionally unsupported.
-Path-token URLs (`/inbound/:endpoint_token`) issued before 0.8.0 still work.
-New tokens are not minted in the path.
+Build the header-only URL with `recording_studio_webhooks_inbound_header_path`
+(engine: `inbound_header_path`).
+`recording_studio_webhooks_inbound_path(endpoint_token:)` still names the
+path-token route so existing host code keeps working. That route is
+deprecated: tokens in URLs end up in server logs. Previously issued
+`/inbound/:endpoint_token` URLs still authenticate. New tokens are not
+minted in the path.
 The public controller is stateless and does not use browser sessions; all
 administrative endpoints retain Rails CSRF protection. It returns only a
 generic JSON status: `accepted`, `duplicate`, `unauthorized`, `not_found`,

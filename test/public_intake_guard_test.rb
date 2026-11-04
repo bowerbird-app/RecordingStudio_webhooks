@@ -4,6 +4,14 @@ require "test_helper"
 require "stringio"
 
 class PublicIntakeGuardTest < Minitest::Test
+  def setup
+    RecordingStudioWebhooks::PublicIntakeGuard.mount_path = "/webhooks"
+  end
+
+  def teardown
+    RecordingStudioWebhooks::PublicIntakeGuard.mount_path = nil
+  end
+
   def test_guard_blocks_declared_oversized_intake_before_the_application
     with_fresh_configuration do |configuration|
       configuration.max_payload_bytes = 3
@@ -11,6 +19,7 @@ class PublicIntakeGuardTest < Minitest::Test
       guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true })
 
       status, _headers, body = guard.call(
+        "REQUEST_METHOD" => "POST",
         "PATH_INFO" => "/webhooks/inbound/rswh_123e4567e89b12d3a456426614174000",
         "CONTENT_LENGTH" => "4",
         "rack.input" => StringIO.new("abcd")
@@ -30,6 +39,7 @@ class PublicIntakeGuardTest < Minitest::Test
       )
 
       status, = guard.call(
+        "REQUEST_METHOD" => "POST",
         "PATH_INFO" => "/webhooks/inbound/rswh_123e4567e89b12d3a456426614174000",
         "CONTENT_LENGTH" => "3",
         "rack.input" => StringIO.new("{}")
@@ -48,6 +58,7 @@ class PublicIntakeGuardTest < Minitest::Test
       guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true })
 
       status, _headers, body = guard.call(
+        "REQUEST_METHOD" => "POST",
         "PATH_INFO" => "/webhooks/inbound",
         "CONTENT_LENGTH" => "4",
         "rack.input" => StringIO.new("abcd")
@@ -63,7 +74,26 @@ class PublicIntakeGuardTest < Minitest::Test
     called = false
     guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true; [204, {}, []] })
 
-    status, = guard.call("PATH_INFO" => "/webhooks/inbound/provider-only", "CONTENT_LENGTH" => "9999999")
+    status, = guard.call(
+      "REQUEST_METHOD" => "POST",
+      "PATH_INFO" => "/webhooks/inbound/provider-only",
+      "CONTENT_LENGTH" => "9999999"
+    )
+
+    assert_equal 204, status
+    assert called
+  end
+
+  def test_guard_leaves_a_non_engine_inbound_request_untouched
+    called = false
+    guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true; [204, {}, []] })
+
+    status, = guard.call(
+      "REQUEST_METHOD" => "POST",
+      "PATH_INFO" => "/something/inbound",
+      "CONTENT_LENGTH" => "9999999",
+      "rack.input" => StringIO.new("abcd")
+    )
 
     assert_equal 204, status
     assert called

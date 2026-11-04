@@ -9,11 +9,13 @@ Endpoint tokens are hash-only. Intake uses header credentials. Core is 6.3.
 ### Security
 
 - Stop writing plaintext `token` on endpoint tokens. Lookup is digest-only.
-- Migration backfills a missing digest from plaintext, then drops the column.
-  Existing tokens keep working through their stored hash.
+- Migration drops the `token` column when it is present. Digest is already
+  `NOT NULL`; existing tokens keep working through their stored hash. Fresh
+  installs never get the column. Down re-adds an empty `token` column.
 - Stop minting intake URLs that put the credential in the path. Header and
-  Bearer auth are the issued form. `POST .../inbound/:endpoint_token` still
-  accepts previously issued URLs.
+  Bearer auth are the issued form. `POST .../inbound/:endpoint_token` is
+  deprecated and still accepts previously issued URLs. Tokens in URLs end
+  up in server logs.
 - `return_to` must be a same-host relative path. Protocol-relative and
   backslash values are rejected.
 - Sandbox POST requires the same write capability as other mutating admin
@@ -28,9 +30,9 @@ Endpoint tokens are hash-only. Intake uses header credentials. Core is 6.3.
   `v0.6.2`, Root Switchable `v0.11.4`. Admin stays `v2.5.1`.
 - Engine `ApplicationController` includes `RecordingStudio::ControllerLayout`.
   `config.layout = nil` still uses core's Default Layout.
-- Fail-closed host callbacks log the error class and message. Recordable
-  registration rescues specific errors. Public intake and action execution
-  still catch `StandardError` so unknown host errors stay generic.
+- Fail-closed host callbacks log the error class and context only, never
+  `error.message`. Public intake and action execution still catch
+  `StandardError` so unknown host errors stay generic.
 - Signature verifiers are read through `signature_verifier`, not
   `instance_variable_get`.
 - Dummy coverage artifacts are untracked.
@@ -41,11 +43,15 @@ Endpoint tokens are hash-only. Intake uses header credentials. Core is 6.3.
   the four tables must run
   `RemovePlaintextTokenFromEndpointTokens` (copy it with
   `bin/rails generate recording_studio_webhooks:migrations` if it is not in
-  `db/migrate`). Every token row must have a digest; the migration hashes
-  plaintext into digest when digest is blank, then drops `token`.
+  `db/migrate`). Digest is already required; the migration drops `token`
+  when that column exists and is a no-op on fresh installs.
 - Point providers at `POST /<mount>/inbound` and send
-  `Authorization: Bearer …` or `X-Recording-Studio-Webhook-Token`. Path-token
-  URLs already issued still work until you rotate.
+  `Authorization: Bearer …` or `X-Recording-Studio-Webhook-Token`. Build that
+  URL with `recording_studio_webhooks_inbound_header_path` (engine:
+  `inbound_header_path`). `recording_studio_webhooks_inbound_path(endpoint_token:)`
+  still names the path-token route so existing hosts keep working. That
+  route is deprecated: tokens in URLs end up in server logs. Path-token
+  URLs already issued still authenticate until you rotate.
 - Pin Recording Studio `v6.3.0` and Metrics `v0.7.2`. This repository no
   longer ships `test/support/widen_recording_studio_requirement.rb`.
 

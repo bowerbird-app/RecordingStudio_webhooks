@@ -5,40 +5,44 @@ require "test_helper"
 class RemovePlaintextTokenTest < ActiveSupport::TestCase
   TABLE = "recording_studio_webhooks_endpoint_tokens"
 
-  test "backfills digest from plaintext then drops the token column" do
+  test "drops the token column when present and skips when already gone" do
     connection = ActiveRecord::Base.connection
     endpoint = create_endpoint!
-
-    hashed_issuance = endpoint.issue_token!
-    hashed_plaintext = hashed_issuance.plaintext_token
-    hashed_token = hashed_issuance.endpoint_token
-    hashed_digest = hashed_token.digest
-
-    backfill_endpoint = create_endpoint!
-    backfill_issuance = backfill_endpoint.issue_token!
-    backfill_plaintext = backfill_issuance.plaintext_token
-    backfill_token = backfill_issuance.endpoint_token
+    issuance = endpoint.issue_token!
+    plaintext = issuance.plaintext_token
+    token = issuance.endpoint_token
+    digest = token.digest
 
     restore_token_column!(connection)
     connection.execute(<<~SQL)
       UPDATE #{TABLE}
-      SET token = #{connection.quote(hashed_plaintext)}
-      WHERE id = #{connection.quote(hashed_token.id)}
-    SQL
-    connection.execute(<<~SQL)
-      UPDATE #{TABLE}
-      SET token = #{connection.quote(backfill_plaintext)}, digest = ''
-      WHERE id = #{connection.quote(backfill_token.id)}
+      SET token = #{connection.quote(plaintext)}
+      WHERE id = #{connection.quote(token.id)}
     SQL
 
     migrate_up!
     RecordingStudioWebhooks::EndpointToken.reset_column_information
 
     refute_includes connection.columns(TABLE).map(&:name), "token"
-    assert_equal hashed_digest, select_digest(hashed_token.id)
-    assert_equal RecordingStudioWebhooks::TokenDigest.digest(backfill_plaintext), select_digest(backfill_token.id)
-    assert_equal hashed_token.id, RecordingStudioWebhooks::EndpointToken.authenticate(plaintext: hashed_plaintext).id
-    assert_equal backfill_token.id, RecordingStudioWebhooks::EndpointToken.authenticate(plaintext: backfill_plaintext).id
+    assert_equal digest, select_digest(token.id)
+    assert_equal token.id, RecordingStudioWebhooks::EndpointToken.authenticate(plaintext: plaintext).id
+
+    migrate_up!
+    refute_includes connection.columns(TABLE).map(&:name), "token"
+  ensure
+    migrate_up! if ActiveRecord::Base.connection.column_exists?(TABLE, :token)
+    RecordingStudioWebhooks::EndpointToken.reset_column_information
+  end
+
+  test "down re-adds an empty token column" do
+    connection = ActiveRecord::Base.connection
+    migrate_up! if connection.column_exists?(TABLE, :token)
+
+    load_migration.down
+    RecordingStudioWebhooks::EndpointToken.reset_column_information
+
+    assert_includes connection.columns(TABLE).map(&:name), "token"
+    assert(connection.select_values("SELECT token FROM #{TABLE}").all?(&:blank?))
   ensure
     migrate_up! if ActiveRecord::Base.connection.column_exists?(TABLE, :token)
     RecordingStudioWebhooks::EndpointToken.reset_column_information

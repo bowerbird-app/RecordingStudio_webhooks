@@ -71,10 +71,10 @@ module RecordingStudioWebhooks
       end
 
       def inbound_url_without_token
-        if main_app.respond_to?(:recording_studio_webhooks_inbound_path)
-          main_app.recording_studio_webhooks_inbound_path
+        if main_app.respond_to?(:recording_studio_webhooks_inbound_header_path)
+          main_app.recording_studio_webhooks_inbound_header_path
         else
-          recording_studio_webhooks.inbound_path
+          recording_studio_webhooks.inbound_header_path
         end
       end
     end

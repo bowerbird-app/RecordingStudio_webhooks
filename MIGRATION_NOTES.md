@@ -11,19 +11,21 @@ bin/rails generate recording_studio_webhooks:migrations
 bin/rails db:migrate
 ```
 
-`RemovePlaintextTokenFromEndpointTokens` checks every
-`recording_studio_webhooks_endpoint_tokens` row has a digest. Rows with
-plaintext and a blank digest are hashed with `TokenDigest.digest` (the same
-HMAC as runtime when `token_digest_secret` is set). Then the `token` column
-is dropped. Down adds an empty `token` column; plaintext cannot be restored
-from a digest.
+`RemovePlaintextTokenFromEndpointTokens` drops the `token` column when it
+exists. Digest is already `NOT NULL`, so the migration does not backfill.
+Down adds an empty `token` column; plaintext cannot be restored from a
+digest.
 
 New installs get the four tables without a `token` column. The drop
 migration is a no-op when that column is already gone.
 
 Point providers at `POST /<mount>/inbound` with
-`Authorization: Bearer` or `X-Recording-Studio-Webhook-Token`. Previously
-issued `/inbound/:endpoint_token` URLs still authenticate.
+`Authorization: Bearer` or `X-Recording-Studio-Webhook-Token`. Build that
+URL with `recording_studio_webhooks_inbound_header_path`.
+`recording_studio_webhooks_inbound_path(endpoint_token:)` still names the
+path-token route. That route is deprecated: tokens in URLs end up in
+server logs. Previously issued `/inbound/:endpoint_token` URLs still
+authenticate.
 
 Pin Recording Studio `v6.3.0` and Metrics `v0.7.2`. Admin stays `v2.5.1`.
 This gem no longer ships a Bundler `Gem::Specification` prepend to widen

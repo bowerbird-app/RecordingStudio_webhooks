@@ -36,7 +36,7 @@ module RecordingStudioWebhooks
         return false unless authorizer
 
         invoke_callable(authorizer, admin_context(permission: permission)) == true
-      rescue *HOST_CALLBACK_ERRORS => e
+      rescue StandardError => e
         RecordingStudioWebhooks.log_fail_closed(e, context: "admin_authorizer")
         false
       end
@@ -78,7 +78,7 @@ module RecordingStudioWebhooks
 
           scoped = invoke_callable(resolver, admin_context)
           normalize_recording_scope(scope, scoped)
-        rescue *HOST_CALLBACK_ERRORS, ActiveRecord::ActiveRecordError => e
+        rescue StandardError => e
           RecordingStudioWebhooks.log_fail_closed(e, context: "admin_recording_scope")
           empty_recording_scope
         end

@@ -5,15 +5,19 @@ module RecordingStudioWebhooks
   # inbound JSON body before the intake service can redact it. The controller
   # reads Rack input with a bounded read instead.
   class PublicIntakeGuard
-    INBOUND_PATH = %r{(?:\A|/)inbound(?:/rswh_[A-Za-z0-9_-]+)?\z}.freeze
     INVALID_BODY = '{"status":"invalid"}'
+    TOKEN_SUFFIX = %r{\A/rswh_[A-Za-z0-9_-]+\z}
+
+    class << self
+      attr_accessor :mount_path
+    end
 
     def initialize(app)
       @app = app
     end
 
     def call(environment)
-      return @app.call(environment) unless INBOUND_PATH.match?(environment.fetch("PATH_INFO", ""))
+      return @app.call(environment) unless public_intake_request?(environment)
 
       limit = RecordingStudioWebhooks.configuration.max_payload_bytes
       return payload_too_large if declared_body_too_large?(environment["CONTENT_LENGTH"], limit)
@@ -27,6 +31,53 @@ module RecordingStudioWebhooks
     end
 
     private
+
+    def public_intake_request?(environment)
+      return false unless environment.fetch("REQUEST_METHOD", "").upcase == "POST"
+
+      mount = resolved_mount_path
+      return false if mount.nil? || mount.empty?
+
+      inbound = "#{mount.delete_suffix('/')}/inbound"
+      path = environment.fetch("PATH_INFO", "")
+      return true if path == inbound
+
+      remainder = path.delete_prefix(inbound)
+      remainder != path && TOKEN_SUFFIX.match?(remainder)
+    end
+
+    def resolved_mount_path
+      self.class.mount_path || discover_engine_mount_path
+    end
+
+    def discover_engine_mount_path
+      return nil unless defined?(Rails) && Rails.respond_to?(:application)
+
+      application = Rails.application
+      return nil unless application.respond_to?(:routes)
+
+      application.routes.routes.each do |route|
+        next unless mounted_webhooks_engine?(route)
+
+        return route.path.spec.to_s.sub("(.:format)", "").delete_suffix("/")
+      end
+      nil
+    end
+
+    def mounted_webhooks_engine?(route)
+      unwrap_rack_app(route.app) == RecordingStudioWebhooks::Engine
+    end
+
+    def unwrap_rack_app(app)
+      current = app
+      8.times do
+        return current if current == RecordingStudioWebhooks::Engine
+        break unless current.respond_to?(:app) && !current.is_a?(Class)
+
+        current = current.app
+      end
+      current
+    end
 
     def declared_body_too_large?(content_length, limit)
       return false unless /\A\d+\z/.match?(content_length.to_s)
