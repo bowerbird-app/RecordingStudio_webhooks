@@ -465,7 +465,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Webhook traffic"
     assert_includes response.body, "Date range"
     assert_includes response.body, "Last 4 weeks"
-    assert_includes response.body, 'data-controller="recording-studio-webhooks--date-range-filter"'
+    assert_flatpack_date_range_one_submit_path(response.body, expected_preset: "last_4_weeks")
     assert_includes response.body, "name=\"start_date\" value=\"#{(Date.current - 27.days).iso8601}\""
     assert_includes response.body, "name=\"end_date\" value=\"#{Date.current.iso8601}\""
     assert_includes response.body, "Group by"
@@ -490,6 +490,14 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "start_date=#{week_start}"
     assert_includes response.body, "end_date=#{week_end}"
     assert_includes response.body, "group_by=week"
+  end
+
+  test "webhook traffic date range posts one FlatPack preset and does not add a second Apply submit" do
+    sign_in @user
+    get "/admin/screens/webhook_traffic"
+
+    assert_response :success
+    assert_flatpack_date_range_one_submit_path(response.body, expected_preset: "last_4_weeks")
   end
 
   test "webhook traffic status filter keeps accepted events and hides planned events" do

@@ -111,6 +111,7 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, "Action attempts"
+    assert_flatpack_date_range_one_submit_path(response.body, expected_preset: "last_4_weeks")
   end
 
   test "every screen linked from admin webhooks widgets returns 200 when the section is enabled" do

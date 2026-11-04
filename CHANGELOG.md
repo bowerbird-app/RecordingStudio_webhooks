@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+## [0.7.2] - 2026-11-03
+
+Admin date-range filters use FlatPack `DateRangeInput` `preset_name:` and
+FlatPack's Apply events. The Webhooks click handler is gone, so Apply has one
+submit path.
+
+### Changed
+
+- Runtime `flat_pack` is `>= 0.1.341`. Development pins tag `v0.1.341`.
+- `_filter_fields.html.erb` passes `preset_name:` to
+  `FlatPack::DateRangeInput::Component`. It no longer renders a sibling
+  `date_range_preset` hidden field or a Webhooks Apply click handler.
+
+### Upgrade notes
+
+- Bump to `0.7.2`. No database migration. The four webhook tables are unchanged.
+- Requires Flatpack `>= 0.1.341`. Apply writes the hidden start, end, and
+  optional preset fields, dispatches a bubbling `change` on each field, then
+  `flat-pack--flatpack-date-picker:apply` on the picker root with
+  `{start, end, preset}`. Reload kit JavaScript. Do not rebuild Tailwind. Do
+  not rerun the install generator.
+- Delete any copied `date_range_filter_controller.js` from a host importmap.
+  Do not keep a host Apply click hook next to FlatPack's events.
+
 ## [0.7.1] - 2026-10-28
 
 Cleanup, sibling pin alignment, and Flatpack layout primitives. Version stays
@@ -415,7 +439,8 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.6.7...v0.7.0
 [0.6.7]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.6.6...v0.6.7
