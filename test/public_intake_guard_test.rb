@@ -6,10 +6,12 @@ require "stringio"
 class PublicIntakeGuardTest < Minitest::Test
   def setup
     RecordingStudioWebhooks::PublicIntakeGuard.mount_path = "/webhooks"
+    RecordingStudioWebhooks::PublicIntakeGuard.reset_discovered_mount_path!
   end
 
   def teardown
     RecordingStudioWebhooks::PublicIntakeGuard.mount_path = nil
+    RecordingStudioWebhooks::PublicIntakeGuard.reset_discovered_mount_path!
   end
 
   def test_guard_blocks_declared_oversized_intake_before_the_application
@@ -97,5 +99,62 @@ class PublicIntakeGuardTest < Minitest::Test
 
     assert_equal 204, status
     assert called
+  end
+
+  def test_root_engine_mount_guards_inbound
+    RecordingStudioWebhooks::PublicIntakeGuard.mount_path = nil
+    RecordingStudioWebhooks::PublicIntakeGuard.reset_discovered_mount_path!
+
+    with_engine_mounted_at("/") do
+      with_fresh_configuration do |configuration|
+        configuration.max_payload_bytes = 3
+        called = false
+        guard = RecordingStudioWebhooks::PublicIntakeGuard.new(->(_environment) { called = true })
+
+        status, _headers, body = guard.call(
+          "REQUEST_METHOD" => "POST",
+          "PATH_INFO" => "/inbound",
+          "CONTENT_LENGTH" => "4",
+          "rack.input" => StringIO.new("abcd")
+        )
+
+        assert_equal 413, status
+        assert_equal '{"status":"invalid"}', body.join
+        refute called
+      end
+    end
+  end
+
+  def test_discover_engine_mount_path_memoizes_after_routes_load
+    RecordingStudioWebhooks::PublicIntakeGuard.mount_path = nil
+    RecordingStudioWebhooks::PublicIntakeGuard.reset_discovered_mount_path!
+    iterations = 0
+
+    with_engine_mounted_at("/admin/webhooks", on_each_route: -> { iterations += 1 }) do
+      assert_equal "/admin/webhooks", RecordingStudioWebhooks::PublicIntakeGuard.discover_engine_mount_path
+      assert_equal "/admin/webhooks", RecordingStudioWebhooks::PublicIntakeGuard.discover_engine_mount_path
+    end
+
+    assert_equal 1, iterations
+  end
+
+  private
+
+  def with_engine_mounted_at(path, on_each_route: nil, &block)
+    spec = "#{path == '/' ? '/' : path}(.:format)"
+    route = Struct.new(:path, :app).new(
+      Struct.new(:spec).new(spec),
+      RecordingStudioWebhooks::Engine
+    )
+    routes = Object.new
+    routes.define_singleton_method(:each) do |&block|
+      on_each_route&.call
+      block&.call(route)
+      self
+    end
+    application = Struct.new(:routes).new(Struct.new(:routes).new(routes))
+    application.define_singleton_method(:initialized?) { true }
+
+    Rails.stub(:application, application, &block)
   end
 end

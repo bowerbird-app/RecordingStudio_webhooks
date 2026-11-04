@@ -10,6 +10,87 @@ module RecordingStudioWebhooks
 
     class << self
       attr_accessor :mount_path
+
+      def reset_discovered_mount_path!
+        EngineMount.reset!
+      end
+
+      def discover_engine_mount_path
+        EngineMount.discover
+      end
+    end
+
+    module EngineMount
+      UNSET = Object.new.freeze
+      private_constant :UNSET
+
+      class << self
+        def reset!
+          @discovered_mount_path = UNSET
+        end
+
+        def discover
+          return @discovered_mount_path if cached?
+          return nil unless routes_ready?
+
+          @discovered_mount_path = scan
+        end
+
+        private
+
+        def cached?
+          instance_variable_defined?(:@discovered_mount_path) && !@discovered_mount_path.equal?(UNSET)
+        end
+
+        def routes_ready?
+          application = rails_application
+          return false unless application
+          return false unless application.respond_to?(:routes)
+          return true if application.respond_to?(:initialized?) && application.initialized?
+
+          collection = application.routes
+          collection.respond_to?(:routes) && collection.routes.any?
+        end
+
+        def rails_application
+          return nil unless defined?(Rails) && Rails.respond_to?(:application)
+
+          Rails.application
+        end
+
+        def scan
+          application = rails_application
+          return nil unless application
+          return nil unless application.respond_to?(:routes)
+
+          application.routes.routes.each do |route|
+            next unless mounted_webhooks_engine?(route)
+
+            return normalize(route.path.spec.to_s)
+          end
+          nil
+        end
+
+        def normalize(spec)
+          trimmed = spec.sub("(.:format)", "").delete_suffix("/")
+          trimmed.empty? ? "/" : trimmed
+        end
+
+        def mounted_webhooks_engine?(route)
+          unwrap_rack_app(route.app) == RecordingStudioWebhooks::Engine
+        end
+
+        def unwrap_rack_app(app)
+          current = app
+          8.times do
+            return current if current == RecordingStudioWebhooks::Engine
+            break unless current.respond_to?(:app) && !current.is_a?(Class)
+
+            current = current.app
+          end
+          current
+        end
+      end
     end
 
     def initialize(app)
@@ -47,36 +128,7 @@ module RecordingStudioWebhooks
     end
 
     def resolved_mount_path
-      self.class.mount_path || discover_engine_mount_path
-    end
-
-    def discover_engine_mount_path
-      return nil unless defined?(Rails) && Rails.respond_to?(:application)
-
-      application = Rails.application
-      return nil unless application.respond_to?(:routes)
-
-      application.routes.routes.each do |route|
-        next unless mounted_webhooks_engine?(route)
-
-        return route.path.spec.to_s.sub("(.:format)", "").delete_suffix("/")
-      end
-      nil
-    end
-
-    def mounted_webhooks_engine?(route)
-      unwrap_rack_app(route.app) == RecordingStudioWebhooks::Engine
-    end
-
-    def unwrap_rack_app(app)
-      current = app
-      8.times do
-        return current if current == RecordingStudioWebhooks::Engine
-        break unless current.respond_to?(:app) && !current.is_a?(Class)
-
-        current = current.app
-      end
-      current
+      self.class.mount_path || self.class.discover_engine_mount_path
     end
 
     def declared_body_too_large?(content_length, limit)
