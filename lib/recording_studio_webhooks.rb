@@ -32,7 +32,6 @@ require "recording_studio_webhooks/admin/metric_widgets"
 require "recording_studio_webhooks/admin/registration"
 require "recording_studio_webhooks/metrics"
 require "recording_studio_webhooks/public_intake_guard"
-require "recording_studio_webhooks/safe_return_path"
 require "recording_studio_webhooks/engine"
 
 module RecordingStudioWebhooks

@@ -36,8 +36,7 @@ module RecordingStudioWebhooks
         return false unless authorizer
 
         invoke_callable(authorizer, admin_context(permission: permission)) == true
-      rescue StandardError => e
-        RecordingStudioWebhooks.log_fail_closed(e, context: "admin_authorizer")
+      rescue StandardError
         false
       end
 
@@ -78,8 +77,7 @@ module RecordingStudioWebhooks
 
           scoped = invoke_callable(resolver, admin_context)
           normalize_recording_scope(scope, scoped)
-        rescue StandardError => e
-          RecordingStudioWebhooks.log_fail_closed(e, context: "admin_recording_scope")
+        rescue StandardError
           empty_recording_scope
         end
       end

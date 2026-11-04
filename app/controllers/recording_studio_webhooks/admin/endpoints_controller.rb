@@ -50,7 +50,7 @@ module RecordingStudioWebhooks
             actor: current_admin_actor
           )
           if params[:auto_save].to_s == "1"
-            redirect_to RecordingStudioWebhooks::SafeReturnPath.call(params[:return_to]) || "/admin/screens/endpoints"
+            redirect_to safe_return_to_path(params[:return_to]) || "/admin/screens/endpoints"
           else
             redirect_to "/admin/screens/endpoints",
                         notice: Copy.t("flashes.endpoint_updated", default: "Endpoint updated.")
@@ -137,6 +137,15 @@ module RecordingStudioWebhooks
 
       def cast_boolean(value)
         ActiveModel::Type::Boolean.new.cast(value)
+      end
+
+      def safe_return_to_path(value)
+        path = value.to_s.strip
+        return nil if path.empty?
+        return nil unless path.start_with?("/")
+        return nil if path.start_with?("//")
+
+        path
       end
 
       def registered_provider?

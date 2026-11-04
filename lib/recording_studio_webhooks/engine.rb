@@ -70,5 +70,3 @@ module RecordingStudioWebhooks
     end
   end
 end
-
-require "recording_studio_webhooks/public_intake_routes"

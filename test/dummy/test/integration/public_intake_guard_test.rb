@@ -3,18 +3,31 @@
 require "test_helper"
 
 class PublicIntakeGuardIntegrationTest < ActionDispatch::IntegrationTest
-  setup do
-    RecordingStudioWebhooks::PublicIntakeGuard.reset_discovered_mount_path!
-    RecordingStudioWebhooks::PublicIntakeGuard.mount_path = nil
-  end
+  test "host route /webhooks/inbound with oversized Content-Length is stopped by the guard" do
+    original_limit = RecordingStudioWebhooks.configuration.max_payload_bytes
+    RecordingStudioWebhooks.configuration.max_payload_bytes = 8
 
-  teardown do
-    RecordingStudioWebhooks::PublicIntakeGuard.mount_path = nil
-    RecordingStudioWebhooks::PublicIntakeGuard.reset_discovered_mount_path!
-  end
+    env = Rack::MockRequest.env_for(
+      "/webhooks/inbound",
+      method: "POST",
+      input: "{}",
+      "CONTENT_TYPE" => "application/json"
+    )
+    env["CONTENT_LENGTH"] = "9"
 
-  test "discover_engine_mount_path finds the dummy app engine mount" do
-    assert_equal "/admin/webhooks", RecordingStudioWebhooks::PublicIntakeGuard.discover_engine_mount_path
+    status, headers, response_body = Rails.application.call(env)
+    body = +""
+    response_body.each { |chunk| body << chunk }
+    response_body.close if response_body.respond_to?(:close)
+
+    assert_equal 413, status
+    assert_equal RecordingStudioWebhooks::PublicIntakeGuard::INVALID_BODY, body
+    assert_equal(
+      RecordingStudioWebhooks::PublicIntakeGuard::INVALID_BODY.bytesize.to_s,
+      headers["content-length"] || headers["Content-Length"]
+    )
+  ensure
+    RecordingStudioWebhooks.configuration.max_payload_bytes = original_limit
   end
 
   test "engine-mounted inbound with oversized Content-Length is stopped by the guard" do

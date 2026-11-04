@@ -28,8 +28,7 @@ module RecordingStudioWebhooks
       attempt.succeed!
       dispatch_next_sequential(attempt.inbound_event)
       Result.new(status: 200, code: "action_succeeded", record: attempt)
-    rescue StandardError => e
-      RecordingStudioWebhooks.log_fail_closed(e, context: "execute_action_attempt")
+    rescue StandardError
       return Result.new(status: 500, code: "action_execution_unavailable") unless attempt
 
       outcome = attempt.fail_and_schedule_retry!

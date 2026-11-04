@@ -4,6 +4,7 @@ require "test_helper"
 require "fileutils"
 require "tmpdir"
 require "generators/recording_studio_webhooks/install/install_generator"
+require "generators/recording_studio_webhooks/migrations/migrations_generator"
 
 class GeneratorTest < Minitest::Test
   def test_install_generator_mounts_the_renamed_engine_at_a_safe_path
@@ -74,5 +75,33 @@ class GeneratorTest < Minitest::Test
 
     assert_includes template, "      t.string :digest, null: false\n"
     refute_includes template, "        t.string :digest"
+  end
+
+  def test_skip_existing_create_tables_still_copies_the_drop_token_migration
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, "db/migrate"))
+      File.write(
+        File.join(dir, "db/migrate", "20240101000000_create_recording_studio_webhooks_tables.rb"),
+        "# existing\n"
+      )
+
+      generator = RecordingStudioWebhooks::Generators::MigrationsGenerator.new(
+        [],
+        { skip_existing: true },
+        destination_root: dir
+      )
+      templates = []
+      generator.stub(:migration_template, ->(source, dest) { templates << [source, dest] }) do
+        generator.copy_migration
+        generator.copy_remove_plaintext_token_migration
+      end
+
+      assert_equal [
+        [
+          "remove_plaintext_token_from_endpoint_tokens.rb.tt",
+          "db/migrate/remove_plaintext_token_from_endpoint_tokens.rb"
+        ]
+      ], templates
+    end
   end
 end

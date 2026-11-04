@@ -11,10 +11,4 @@ module RecordingStudioWebhooks
   class RecordingStudioUnavailableError < Error; end
   class RecordingStudioConfigurationError < Error; end
   class TokenIdentityConflictError < Error; end
-
-  def self.log_fail_closed(error, context:)
-    message = "[recording_studio_webhooks] #{context}: #{error.class}"
-    logger = defined?(Rails) && Rails.respond_to?(:logger) ? Rails.logger : nil
-    logger&.warn(message)
-  end
 end

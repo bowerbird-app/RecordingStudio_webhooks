@@ -17,7 +17,7 @@ module RecordingStudioWebhooks
           actor: current_admin_actor
         )
         @issued_token = issuance.plaintext_token
-        @endpoint_url = "#{request.base_url}#{inbound_url_without_token}"
+        @endpoint_url = "#{request.base_url}#{main_app.recording_studio_webhooks_inbound_header_path}"
         response.headers["Cache-Control"] = "no-store, max-age=0"
         response.headers["Pragma"] = "no-cache"
         render :show, status: :created
@@ -68,14 +68,6 @@ module RecordingStudioWebhooks
       def load_index_data
         @tokens = @endpoint.endpoint_tokens.stable.order(created_at: :desc)
         @events_by_token_id = @endpoint.inbound_events.group(:endpoint_token_id).count
-      end
-
-      def inbound_url_without_token
-        if main_app.respond_to?(:recording_studio_webhooks_inbound_header_path)
-          main_app.recording_studio_webhooks_inbound_header_path
-        else
-          recording_studio_webhooks.inbound_header_path
-        end
       end
     end
   end

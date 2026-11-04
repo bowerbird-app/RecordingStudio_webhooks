@@ -66,6 +66,12 @@ ensure_endpoint = lambda do |root_recording, provider_name:, label:, identity:, 
 end
 
 ensure_active_token = lambda do |endpoint, actor|
+  current = endpoint.endpoint_tokens.current.order(active_at: :desc).first
+  if current
+    puts "Seeded: reusing token #{current.prefix}"
+    next nil
+  end
+
   issuance = endpoint.issue_token!(actor: actor)
   issuance.plaintext_token
 end
@@ -263,124 +269,126 @@ begin
     end
     raise "No compatible endpoint/action targets are registered" if seed_targets.empty?
 
-    failed_target_count = 100
-    non_failed_target_count = 300
-    total_monthly_seeds = failed_target_count + non_failed_target_count
-    range_end = Time.current.utc - 1.hour
-    range_start = Time.current.utc - 30.days
+    if endpoint_tokens.values.all?
+      failed_target_count = 100
+      non_failed_target_count = 300
+      total_monthly_seeds = failed_target_count + non_failed_target_count
+      range_end = Time.current.utc - 1.hour
+      range_start = Time.current.utc - 30.days
 
-    monthly_event_scope = RecordingStudioWebhooks::InboundEvent
-      .joins(endpoint: :recording_studio_recording)
-      .where(recording_studio_recordings: { root_recording_id: root_recording.id })
-      .where("recording_studio_webhooks_inbound_events.provider_event_id LIKE ?", "seed_monthly_%")
-    monthly_event_ids = monthly_event_scope.pluck(:id)
-    unless monthly_event_ids.empty?
-      RecordingStudioWebhooks::ActionAttempt.where(inbound_event_id: monthly_event_ids).delete_all
-      RecordingStudioWebhooks::InboundEvent.where(id: monthly_event_ids).delete_all
-    end
+      monthly_event_scope = RecordingStudioWebhooks::InboundEvent
+        .joins(endpoint: :recording_studio_recording)
+        .where(recording_studio_recordings: { root_recording_id: root_recording.id })
+        .where("recording_studio_webhooks_inbound_events.provider_event_id LIKE ?", "seed_monthly_%")
+      monthly_event_ids = monthly_event_scope.pluck(:id)
+      unless monthly_event_ids.empty?
+        RecordingStudioWebhooks::ActionAttempt.where(inbound_event_id: monthly_event_ids).delete_all
+        RecordingStudioWebhooks::InboundEvent.where(id: monthly_event_ids).delete_all
+      end
 
-    failed_target_count.times do |index|
-      target = seed_targets[index % seed_targets.length]
-      endpoint = target.fetch(:endpoint)
-      event_type = target.fetch(:event_type)
-      received_at = random_time_within.call(
-        range_start: range_start,
-        range_end: range_end
-      )
-      event_id = format("seed_monthly_failed_%03d", index + 1)
-      payload = {
-        id: event_id,
-        type: event_type,
-        data: {
-          object: {
-            title: format("Seed failed event %03d", index + 1),
-            sequence: index + 1
+      failed_target_count.times do |index|
+        target = seed_targets[index % seed_targets.length]
+        endpoint = target.fetch(:endpoint)
+        event_type = target.fetch(:event_type)
+        received_at = random_time_within.call(
+          range_start: range_start,
+          range_end: range_end
+        )
+        event_id = format("seed_monthly_failed_%03d", index + 1)
+        payload = {
+          id: event_id,
+          type: event_type,
+          data: {
+            object: {
+              title: format("Seed failed event %03d", index + 1),
+              sequence: index + 1
+            }
           }
         }
-      }
 
-      event = seed_inbound_event.call(
-        endpoint: endpoint,
-        token: endpoint_tokens.fetch(endpoint),
-        event_id: event_id,
-        event_type: event_type,
-        payload: payload,
-        request_id: format("seed-monthly-failed-%03d", index + 1),
-        received_at: received_at
-      )
-      attempt = event.action_attempts.find_by(action_name: target.fetch(:action_name))
-      raise "Failed seed event missing action attempt: #{event_id}" unless attempt
+        event = seed_inbound_event.call(
+          endpoint: endpoint,
+          token: endpoint_tokens.fetch(endpoint),
+          event_id: event_id,
+          event_type: event_type,
+          payload: payload,
+          request_id: format("seed-monthly-failed-%03d", index + 1),
+          received_at: received_at
+        )
+        attempt = event.action_attempts.find_by(action_name: target.fetch(:action_name))
+        raise "Failed seed event missing action attempt: #{event_id}" unless attempt
 
-      apply_attempt_state.call(
-        attempt: attempt,
-        status: "failed",
-        created_at: received_at + 20.seconds,
-        attempts: 3 + (index % 2),
-        action_name: attempt.action_name,
-        error_code: "action_execution_failed"
-      )
-    end
+        apply_attempt_state.call(
+          attempt: attempt,
+          status: "failed",
+          created_at: received_at + 20.seconds,
+          attempts: 3 + (index % 2),
+          action_name: attempt.action_name,
+          error_code: "action_execution_failed"
+        )
+      end
 
-    non_failed_statuses = %w[succeeded retrying queued running pending skipped cancelled].freeze
-    non_failed_target_count.times do |index|
-      target = seed_targets[(index + 1) % seed_targets.length]
-      endpoint = target.fetch(:endpoint)
-      event_type = target.fetch(:event_type)
-      received_at = random_time_within.call(
-        range_start: range_start,
-        range_end: range_end
-      )
-      event_id = format("seed_monthly_nonfailed_%03d", index + 1)
-      payload = {
-        id: event_id,
-        type: event_type,
-        data: {
-          object: {
-            title: format("Seed non-failed event %03d", index + 1),
-            sequence: failed_target_count + index + 1
+      non_failed_statuses = %w[succeeded retrying queued running pending skipped cancelled].freeze
+      non_failed_target_count.times do |index|
+        target = seed_targets[(index + 1) % seed_targets.length]
+        endpoint = target.fetch(:endpoint)
+        event_type = target.fetch(:event_type)
+        received_at = random_time_within.call(
+          range_start: range_start,
+          range_end: range_end
+        )
+        event_id = format("seed_monthly_nonfailed_%03d", index + 1)
+        payload = {
+          id: event_id,
+          type: event_type,
+          data: {
+            object: {
+              title: format("Seed non-failed event %03d", index + 1),
+              sequence: failed_target_count + index + 1
+            }
           }
         }
-      }
 
-      event = seed_inbound_event.call(
-        endpoint: endpoint,
-        token: endpoint_tokens.fetch(endpoint),
-        event_id: event_id,
-        event_type: event_type,
-        payload: payload,
-        request_id: format("seed-monthly-nonfailed-%03d", index + 1),
-        received_at: received_at
-      )
-      attempt = event.action_attempts.find_by(action_name: target.fetch(:action_name))
-      raise "Non-failed seed event missing action attempt: #{event_id}" unless attempt
+        event = seed_inbound_event.call(
+          endpoint: endpoint,
+          token: endpoint_tokens.fetch(endpoint),
+          event_id: event_id,
+          event_type: event_type,
+          payload: payload,
+          request_id: format("seed-monthly-nonfailed-%03d", index + 1),
+          received_at: received_at
+        )
+        attempt = event.action_attempts.find_by(action_name: target.fetch(:action_name))
+        raise "Non-failed seed event missing action attempt: #{event_id}" unless attempt
 
-      status = non_failed_statuses[(index / 9 + index) % non_failed_statuses.length]
-      attempts = case status
-                 when "pending" then 0
-                 when "queued" then 1
-                 when "running" then 1
-                 when "retrying" then 2
-                 else 1 + ((index % 4).zero? ? 1 : 0)
-                 end
-      apply_attempt_state.call(
-        attempt: attempt,
-        status: status,
-        created_at: received_at + 20.seconds,
-        attempts: attempts,
-        action_name: attempt.action_name
-      )
+        status = non_failed_statuses[(index / 9 + index) % non_failed_statuses.length]
+        attempts = case status
+                   when "pending" then 0
+                   when "queued" then 1
+                   when "running" then 1
+                   when "retrying" then 2
+                   else 1 + ((index % 4).zero? ? 1 : 0)
+                   end
+        apply_attempt_state.call(
+          attempt: attempt,
+          status: status,
+          created_at: received_at + 20.seconds,
+          attempts: attempts,
+          action_name: attempt.action_name
+        )
+      end
+
+      monthly_attempt_scope = RecordingStudioWebhooks::ActionAttempt
+        .joins(inbound_event: { endpoint: :recording_studio_recording })
+        .where(recording_studio_recordings: { root_recording_id: root_recording.id })
+        .where("recording_studio_webhooks_inbound_events.provider_event_id LIKE ?", "seed_monthly_%")
+      failed_seed_count = monthly_attempt_scope.where(status: "failed").count
+      non_failed_seed_count = monthly_attempt_scope.where.not(status: "failed").count
+
+      puts "Seeded: #{total_monthly_seeds} monthly events"
+      puts "Seeded: #{failed_seed_count} monthly failed action attempts"
+      puts "Seeded: #{non_failed_seed_count} monthly non-failed action attempts"
     end
-
-    monthly_attempt_scope = RecordingStudioWebhooks::ActionAttempt
-      .joins(inbound_event: { endpoint: :recording_studio_recording })
-      .where(recording_studio_recordings: { root_recording_id: root_recording.id })
-      .where("recording_studio_webhooks_inbound_events.provider_event_id LIKE ?", "seed_monthly_%")
-    failed_seed_count = monthly_attempt_scope.where(status: "failed").count
-    non_failed_seed_count = monthly_attempt_scope.where.not(status: "failed").count
-
-    puts "Seeded: #{total_monthly_seeds} monthly events"
-    puts "Seeded: #{failed_seed_count} monthly failed action attempts"
-    puts "Seeded: #{non_failed_seed_count} monthly non-failed action attempts"
   end
 ensure
   RecordingStudioWebhooks.configuration.dispatcher = previous_dispatcher

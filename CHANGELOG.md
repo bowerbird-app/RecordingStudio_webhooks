@@ -16,10 +16,10 @@ Endpoint tokens are hash-only. Intake uses header credentials. Core is 6.3.
   Bearer auth are the issued form. `POST .../inbound/:endpoint_token` is
   deprecated and still accepts previously issued URLs. Tokens in URLs end
   up in server logs.
-- `return_to` must be a same-host relative path. Protocol-relative and
-  backslash values are rejected.
-- Sandbox POST requires the same write capability as other mutating admin
-  actions.
+- Public intake guard matches `/inbound` and `/inbound/rswh_*` on any mount,
+  including host routes such as `/webhooks/inbound`.
+- `v0.7.1` was tagged after the 0.7.1 notes shipped. Those notes stay as
+  written.
 
 ### Changed
 
@@ -30,12 +30,9 @@ Endpoint tokens are hash-only. Intake uses header credentials. Core is 6.3.
   `v0.6.2`, Root Switchable `v0.11.4`. Admin stays `v2.5.1`.
 - Engine `ApplicationController` includes `RecordingStudio::ControllerLayout`.
   `config.layout = nil` still uses core's Default Layout.
-- Fail-closed host callbacks log the error class and context only, never
-  `error.message`. Public intake and action execution still catch
-  `StandardError` so unknown host errors stay generic.
-- Signature verifiers are read through `signature_verifier`, not
-  `instance_variable_get`.
 - Dummy coverage artifacts are untracked.
+- Header-only `POST inbound` is declared in `config/routes.rb` as
+  `inbound_header`.
 
 ### Upgrade notes
 
@@ -81,8 +78,8 @@ submit path.
 
 ## [0.7.1] - 2026-10-28
 
-Cleanup, sibling pin alignment, and Flatpack layout primitives. Tagged
-`v0.7.1`.
+Cleanup, sibling pin alignment, and Flatpack layout primitives. Version stays
+0.7.1 (untagged).
 
 ### Changed
 

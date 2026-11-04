@@ -96,8 +96,7 @@ module RecordingStudioWebhooks
       failure(400, "json_invalid")
     rescue InvalidEventPatternError, InvalidPolicyError
       failure(422, "event_type_invalid")
-    rescue StandardError => e
-      RecordingStudioWebhooks.log_fail_closed(e, context: "inbound_intake")
+    rescue StandardError
       failure(503, "intake_unavailable")
     end
 
@@ -123,7 +122,9 @@ module RecordingStudioWebhooks
     end
 
     def signature_valid?(provider, body, endpoint)
-      verifier = provider.signature_verifier if provider.respond_to?(:signature_verifier)
+      verifier = provider.respond_to?(:signature_verifier_callable) ?
+        provider.signature_verifier_callable :
+        provider.instance_variable_get(:@signature_verifier)
       return true unless verifier
 
       context = SignatureContext.new(
@@ -133,8 +134,7 @@ module RecordingStudioWebhooks
         provider: provider
       )
       invoke_signature_verifier(verifier, context)
-    rescue StandardError => e
-      RecordingStudioWebhooks.log_fail_closed(e, context: "signature_verifier")
+    rescue StandardError
       false
     end
 
@@ -223,8 +223,7 @@ module RecordingStudioWebhooks
         hook.call(context)
         end
       result.respond_to?(:success?) ? result.success? : result == true
-    rescue StandardError => e
-      RecordingStudioWebhooks.log_fail_closed(e, context: "intake_hook")
+    rescue StandardError
       false
     end
 

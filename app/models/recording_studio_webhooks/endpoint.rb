@@ -112,8 +112,7 @@ module RecordingStudioWebhooks
         return if configured_types.include?(type_name)
 
         ::RecordingStudio.register_recordable_type(type_name)
-      rescue StandardError => e
-        RecordingStudioWebhooks.log_fail_closed(e, context: "endpoint.ensure_registered_recordable_type")
+      rescue StandardError
         nil
       end
 

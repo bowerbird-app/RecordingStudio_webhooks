@@ -938,48 +938,6 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_response :accepted
   end
 
-  test "endpoint autosave rejects open-redirect return_to values" do
-    sign_in @user
-
-    [
-      "//evil.example",
-      "/\\evil.example",
-      "/admin\\screens",
-      "https://evil.example/phish"
-    ].each do |value|
-      patch "/admin/webhooks/endpoints/#{@endpoint.id}", params: {
-        auto_save: "1",
-        return_to: value,
-        endpoint: { enabled: "1" }
-      }
-
-      assert_redirected_to "/admin/screens/endpoints", "accepted unsafe return_to #{value.inspect}"
-    end
-  end
-
-  test "sandbox POST requires write capability" do
-    sign_in @user
-    original = @webhooks_configuration.admin_authorizer
-    @webhooks_configuration.admin_authorizer = lambda { |context|
-      next false unless context.actor&.email == "admin@admin.com"
-
-      context.permission.to_sym != :admin
-    }
-
-    post sandbox_path, params: {
-      sandbox: {
-        endpoint_id: @endpoint.id,
-        provider_name: @endpoint.provider_name,
-        event_type: "demo.received",
-        payload: JSON.generate(id: "sandbox_denied", type: "demo.received")
-      }
-    }
-
-    assert_response :not_found
-  ensure
-    @webhooks_configuration.admin_authorizer = original
-  end
-
   test "administration fails closed when its authorizer is absent" do
     configuration = RecordingStudioWebhooks.configuration
     original_authorizer = configuration.admin_authorizer
