@@ -4,10 +4,21 @@ require "test_helper"
 require "recording_studio_accessible"
 
 class AdminAccessibleAuthorizationTest < Minitest::Test
-  Context = Struct.new(:actor, :controller, :permission, keyword_init: true)
+  Context = Struct.new(:actor, :controller, :permission, :recording, keyword_init: true)
   Controller = Struct.new(:root) do
     def current_root_recording
       root
+    end
+  end
+  PrivateRootController = Class.new do
+    def initialize(root)
+      @root = root
+    end
+
+    private
+
+    def current_root_recording
+      @root
     end
   end
 
@@ -79,6 +90,41 @@ class AdminAccessibleAuthorizationTest < Minitest::Test
         Context.new(actor: actor, controller: Controller.new(recording), permission: :view)
       )
     end
+  end
+
+  def test_authorizer_ignores_a_private_current_root_recording
+    actor = Object.new
+    recording = Object.new
+
+    RecordingStudioAccessible.stub(:authorized?, true) do
+      refute RecordingStudioWebhooks::Admin::AccessibleAuthorization.authorized?(
+        Context.new(actor: actor, controller: PrivateRootController.new(recording), permission: :view)
+      )
+    end
+  end
+
+  def test_authorizer_uses_a_recording_threaded_on_context
+    actor = Object.new
+    recording = Object.new
+    seen = []
+
+    check = lambda do |actor:, recording:, role:|
+      seen << [actor, recording, role]
+      true
+    end
+
+    RecordingStudioAccessible.stub(:authorized?, check) do
+      assert RecordingStudioWebhooks::Admin::AccessibleAuthorization.authorized?(
+        Context.new(
+          actor: actor,
+          controller: PrivateRootController.new(Object.new),
+          permission: :view,
+          recording: recording
+        )
+      )
+    end
+
+    assert_equal [[actor, recording, :view]], seen
   end
 
   def test_recording_scope_is_empty_when_accessible_denies

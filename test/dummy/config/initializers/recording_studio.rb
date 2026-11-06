@@ -22,14 +22,22 @@ RecordingStudio.configure do |config|
   # Actor resolver for events when no actor is explicitly supplied
   config.actor = -> { Current.actor }
 
-  # Core 6.5 fails closed without a write authorizer. Allow Accessible grant
-  # writes, then require :edit on the recording being written.
-  config.authorize_write = lambda do |actor:, recording:, root_recording:, **|
+  # Core 6.5 fails closed without a write authorizer. AccessCreationContext
+  # covers RecordingStudio::Access rows only. Every other write needs :edit.
+  config.authorize_write = lambda do |actor:, recording:, root_recording:, recordable:, **|
     next false unless actor
+
+    access_write = recordable.is_a?(RecordingStudio::Access) ||
+      recording&.recordable.is_a?(RecordingStudio::Access) ||
+      recordable.class.name == "RecordingStudio::Access" ||
+      recording&.recordable_type == "RecordingStudio::Access"
+
+    if access_write
+      next RecordingStudioAccessible::AccessCreationContext.allowed?
+    end
 
     rec = root_recording || recording
     next false unless rec
-    next true if RecordingStudioAccessible::AccessCreationContext.allowed?
 
     RecordingStudioAccessible.authorized?(actor: actor, recording: rec, role: :edit)
   rescue StandardError

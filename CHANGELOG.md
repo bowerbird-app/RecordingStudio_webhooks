@@ -34,8 +34,11 @@ to the current kit tags. Admin stays `v2.5.1`.
 - Do not keep a `user.admin?` authorizer. Accessible on the current root is
   the default.
 - Core 6.5 requires `config.authorize_write` and an actor on `record!`.
-  Dummy authorizes writes with Accessible `:edit` on the root. Public intake
-  skips the accepted-event audit when no actor is configured.
+  Dummy `AccessCreationContext` covers `RecordingStudio::Access` rows only.
+  Other dummy writes need Accessible `:edit`. Grant Accessible on seed roots
+  before child writes. Dummy `page.created` carries an explicit execution
+  actor and raises `ActorRequired` when the job has none. Public intake
+  still skips the accepted-event audit when no actor is configured.
 
 ## [0.8.0] - 2026-11-04
 

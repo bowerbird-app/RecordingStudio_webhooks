@@ -25,10 +25,13 @@ module RecordingStudioWebhooks
       end
 
       def current_root_from(context)
-        controller = context.respond_to?(:controller) ? context.controller : nil
-        return unless controller.respond_to?(:current_root_recording, true)
+        recording = context.recording if context.respond_to?(:recording)
+        return recording if recording
 
-        controller.send(:current_root_recording)
+        controller = context.respond_to?(:controller) ? context.controller : nil
+        return unless controller.respond_to?(:current_root_recording)
+
+        controller.current_root_recording
       end
 
       def required_role(context)

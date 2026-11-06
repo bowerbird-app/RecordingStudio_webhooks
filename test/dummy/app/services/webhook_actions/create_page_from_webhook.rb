@@ -21,7 +21,7 @@ module WebhookActions
         recordable: page,
         root_recording: root_recording,
         parent_recording: root_recording,
-        actor: Current.actor
+        actor: execution_actor
       )
 
       true
@@ -37,6 +37,13 @@ module WebhookActions
 
     def endpoint
       context.endpoint
+    end
+
+    def execution_actor
+      actor = context.actor if context.respond_to?(:actor)
+      return actor if actor.present?
+
+      raise RecordingStudio::ActorRequired, "actor is required for RecordingStudio writes"
     end
   end
 end

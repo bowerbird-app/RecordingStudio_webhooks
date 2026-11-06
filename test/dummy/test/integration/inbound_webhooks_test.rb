@@ -175,6 +175,57 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     assert_predicate RecordingStudio::Recording.find_by(root_recording: root_recording, recordable: page, trashed_at: nil), :present?
   end
 
+  test "page.created action fails closed when the job has no execution actor" do
+    previous_actor = Current.actor
+    previous_resolver = RecordingStudio.configuration.actor
+    token = @endpoint.issue_token!(actor: @user).plaintext_token
+    Current.actor = nil
+    RecordingStudio.configuration.actor = -> { nil }
+    title = "Actorless Job Page #{SecureRandom.hex(4)}"
+    payload = {
+      id: "evt_page_created_actorless",
+      type: "page.created",
+      data: { object: { title: title } }
+    }
+
+    post inbound_path(token), params: JSON.generate(payload), headers: intake_headers
+    assert_response :accepted
+
+    event = @endpoint.inbound_events.find_by!(provider_event_id: "evt_page_created_actorless")
+    attempt = event.action_attempts.find_by!(action_name: "demo.page_created")
+    result = RecordingStudioWebhooks::ExecuteActionAttempt.call(attempt.id)
+
+    assert_equal "action_failed", result.code
+    assert_nil Page.find_by(title: title)
+
+    jobless_context = Struct.new(:payload, :endpoint, :actor).new(event.payload, event.endpoint, nil)
+    assert_raises(RecordingStudio::ActorRequired) do
+      WebhookActions::CreatePageFromWebhook.call(jobless_context)
+    end
+    assert_nil Page.find_by(title: title)
+  ensure
+    Current.actor = previous_actor
+    RecordingStudio.configuration.actor = previous_resolver
+  end
+
+  test "page.created action uses an explicit actor without Current.actor" do
+    previous_actor = Current.actor
+    Current.actor = nil
+
+    title = "Explicit Actor Page #{SecureRandom.hex(4)}"
+    payload = {
+      "data" => { "object" => { "title" => title } }
+    }
+    context = Struct.new(:payload, :endpoint, :actor).new(payload, @endpoint, @user)
+
+    assert WebhookActions::CreatePageFromWebhook.call(context)
+    page = Page.find_by!(title: title)
+    root_recording = @endpoint.recording_studio_recording.root_recording_or_self
+    assert_predicate RecordingStudio::Recording.find_by(root_recording: root_recording, recordable: page, trashed_at: nil), :present?
+  ensure
+    Current.actor = previous_actor
+  end
+
   test "endpoint rows can coexist for the same provider and recording and empty JSON objects are valid" do
     other_workspace = Workspace.create!(name: "Other Webhook Workspace #{SecureRandom.hex(4)}")
     other_recording = RecordingStudio.root_recording_for(other_workspace)

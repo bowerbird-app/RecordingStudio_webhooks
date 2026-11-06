@@ -5,7 +5,7 @@ module RecordingStudioWebhooks
     class BaseController < ApplicationController
       ADMIN_WEBHOOKS_SECTION_KEY = "admin_webhooks"
 
-      AdminContext = Struct.new(:controller, :actor, :section_key, :permission, keyword_init: true)
+      AdminContext = Struct.new(:controller, :actor, :section_key, :permission, :recording, keyword_init: true)
 
       before_action :authorize_admin_webhooks_read!
       before_action :keep_admin_pages_out_of_indexes
@@ -57,8 +57,15 @@ module RecordingStudioWebhooks
           controller: self,
           actor: current_admin_actor,
           section_key: ADMIN_WEBHOOKS_SECTION_KEY,
-          permission: permission
+          permission: permission,
+          recording: public_current_root_recording
         )
+      end
+
+      def public_current_root_recording
+        return current_root_recording if respond_to?(:current_root_recording)
+
+        nil
       end
 
       def current_admin_actor
