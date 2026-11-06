@@ -2,6 +2,50 @@
 
 ## Unreleased
 
+## [0.9.0] - 2026-11-06
+
+Admin authorization defaults through Accessible. Recording Studio pins move
+to the current kit tags. Admin stays `v2.5.1`.
+
+### Security
+
+- `admin_authorizer` defaults to Accessible `:view` / `:admin` on the current
+  root instead of remaining unset.
+- `admin_recording_scope` defaults to the current root and its descendants
+  after that Accessible check, instead of remaining unset.
+- An unset recording scope no longer falls through to every recording.
+- Public intake writes the accepted-event audit only when an explicit intake
+  actor is passed or Recording Studio `config.actor` returns one. Core 6.5
+  refuses actorless writes. Action execution reads that audit's actor onto
+  the action context. It does not resolve `Current` or `config.actor` again
+  in the worker. The public intake controller still does not mint a
+  system-intake actor.
+
+### Changed
+
+- Runtime `recording_studio_accessible` is `>= 0.24.2`.
+- Development pins: core `v6.5.0`, Accessible `v0.24.2`, Metrics `v0.7.3`,
+  Trashable `v0.12.3`. Admin stays `v2.5.1`.
+
+### Upgrade notes
+
+- Bump to `0.9.0`. No database migration. The four webhook tables are unchanged.
+- Pin Accessible `v0.24.2`, core `v6.5.0`, and Metrics `v0.7.3`. Admin stays
+  `v2.5.1`.
+- Hosts that already set `admin_authorizer` / `admin_recording_scope` to the
+  featured_in Accessible hooks can delete those assignments. The gem default
+  matches. Set either hook to `nil` if you still want the admin UI closed.
+- Do not keep a `user.admin?` authorizer. Accessible on the current root is
+  the default.
+- Core 6.5 requires `config.authorize_write` and an actor on `record!`.
+  Dummy `AccessCreationContext` covers `RecordingStudio::Access` rows only.
+  Other dummy writes need Accessible `:edit`. Grant Accessible on seed roots
+  before child writes. Dummy `page.created` uses the granted actor from
+  the accepted-event audit written at intake and raises `ActorRequired`
+  when that audit has none. Public HTTP intake still skips the
+  accepted-event audit when no actor is passed or configured. There is
+  no system-intake actor.
+
 ## [0.8.0] - 2026-11-04
 
 Endpoint tokens are hash-only. Intake uses header credentials. Core is 6.3.
@@ -489,7 +533,8 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.0...v0.7.1

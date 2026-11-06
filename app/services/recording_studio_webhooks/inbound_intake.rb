@@ -14,7 +14,7 @@ module RecordingStudioWebhooks
     def self.call(...) = new(...).call
 
     def initialize(token:, raw_payload: nil, payload: nil, content_type: nil, headers: {},
-      request_metadata: {}, event_type: nil, provider_event_id: nil)
+      request_metadata: {}, event_type: nil, provider_event_id: nil, actor: nil)
       @token = token
       @raw_payload = raw_payload.nil? ? payload : raw_payload
       @content_type = content_type
@@ -22,6 +22,7 @@ module RecordingStudioWebhooks
       @request_metadata = request_metadata
       @event_type = event_type
       @provider_event_id = provider_event_id
+      @actor = actor
     end
 
     def call
@@ -105,6 +106,16 @@ module RecordingStudioWebhooks
     private
 
     def configuration = RecordingStudioWebhooks.configuration
+
+    def recording_studio_actor
+      return @actor if @actor.present?
+      return unless defined?(::RecordingStudio)
+      return unless ::RecordingStudio.respond_to?(:configuration)
+
+      ::RecordingStudio.configuration.actor&.call
+    rescue StandardError
+      nil
+    end
 
     def payload_string
       return nil unless @raw_payload.respond_to?(:to_str)
@@ -298,16 +309,20 @@ module RecordingStudioWebhooks
         )
         attempts = BuildActionAttempts.call(inbound_event: event, provider: provider, resolution: resolution)
         event.update!(status: "planned") if attempts.any?
-        endpoint.audit!(
-          action: "recording_studio_webhooks.incoming.accepted",
-          metadata: {
-            inbound_event_id: event.id,
-            provider: provider.name,
-            event_type: event_type,
-            provider_event_id: provider_event_id
-          },
-          idempotency_key: "recording_studio_webhooks:incoming:#{event.id}"
-        )
+        actor = recording_studio_actor
+        if actor
+          endpoint.audit!(
+            action: InboundEvent::ACCEPTED_AUDIT_ACTION,
+            actor: actor,
+            metadata: {
+              inbound_event_id: event.id,
+              provider: provider.name,
+              event_type: event_type,
+              provider_event_id: provider_event_id
+            },
+            idempotency_key: event.accepted_audit_idempotency_key
+          )
+        end
       end
 
       attempts.each { |attempt| DispatchActionAttempt.call(attempt.id) }

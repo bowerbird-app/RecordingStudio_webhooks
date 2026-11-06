@@ -38,9 +38,11 @@ class EngineAdminPagesWithoutHostRouteTest < ActionDispatch::IntegrationTest
       ),
       actor: @user
     )
+    Current.actor = @user
   end
 
   teardown do
+    Current.actor = nil
     @webhooks_configuration.admin_authorizer = @original_admin_authorizer
     @webhooks_configuration.admin_recording_scope = @original_admin_recording_scope
     restore_host_recording_studio_admin_webhooks_path!

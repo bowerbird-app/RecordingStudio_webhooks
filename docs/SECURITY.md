@@ -28,7 +28,8 @@ issued before 0.8.0 still authenticate and remain available as
 deprecated because tokens in URLs end up in server logs. New URLs use
 `recording_studio_webhooks_inbound_header_path` and do not put the
 credential in the path. Administrative mutations retain standard Rails CSRF protection and
-require an explicit host authorizer.
+authorize through Accessible on the current root unless the host replaces
+`admin_authorizer`.
 
 The public intake guard prevents Rails parameter parsing and request logging
 from buffering or recording the raw JSON body. It applies a declared-length

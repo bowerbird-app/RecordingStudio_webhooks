@@ -2,7 +2,7 @@
 
 module RecordingStudioWebhooks
   class ExecuteActionAttempt
-    ActionContext = Data.define(:action_attempt, :inbound_event, :endpoint, :payload, :provenance)
+    ActionContext = Data.define(:action_attempt, :inbound_event, :endpoint, :payload, :provenance, :actor)
 
     def self.call(...) = new(...).call
 
@@ -50,7 +50,8 @@ module RecordingStudioWebhooks
         event,
         event.endpoint,
         ImmutableSnapshot.build(event.payload),
-        ImmutableSnapshot.build(event.provenance)
+        ImmutableSnapshot.build(event.provenance),
+        event.execution_actor
       )
     end
 

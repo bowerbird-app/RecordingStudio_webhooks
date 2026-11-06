@@ -36,14 +36,13 @@ to be supplied by the Recording Studio host UI bundle.
 
 ## Minimal configuration
 
-Administration is intentionally denied until the host opts in:
+Administration defaults through Recording Studio Accessible on the current
+root. `:view` can read the admin UI. `:admin` can change endpoints and tokens.
+Set either hook to `nil` to keep that part unavailable.
 
 ```ruby
 # config/initializers/recording_studio_webhooks.rb
 RecordingStudioWebhooks.configure do |config|
-  config.admin_authorizer = ->(context) { context.actor&.admin? }
-  config.admin_recording_scope = ->(_context) { RecordingStudio::Recording.all }
-
   # Recommended: source this from encrypted credentials. It is never reported
   # or snapshotted. Random tokens remain safely hashed if this is unset.
   config.token_digest_secret = Rails.application.credentials.dig(
@@ -67,11 +66,10 @@ RecordingStudioWebhooks.configure do |config|
 end
 ```
 
-`admin_authorizer` is where your app decides who is allowed into the webhooks
-admin area.
-`admin_recording_scope` is where your app decides which recordings that allowed
-user can see and manage.
-An absent authorizer always returns a generic not-found response.
+Hosts that already set these hooks to the same Accessible checks can delete
+them. Replace them only when a host needs a narrower policy. An authorizer
+set to `nil` always returns a generic not-found response. A recording scope
+set to `nil` shows no recordings.
 
 ## Provider and action registration
 
@@ -319,12 +317,12 @@ Tests use a no-op dispatcher so CI can run without Redis; development uses
 Sidekiq. Sign in as `admin@admin.com` with password `Password`, then open
 **Webhook endpoints** from Admin webhooks. The demo never sends outbound requests.
 
-The dummy is on the Recording Studio 6.3 kit from `Gemfile`, `test/dummy/Gemfile`,
-and `recording_studio_webhooks.gemspec`: core tag `v6.3.0` (runtime `>= 6.3.0`),
-Accessible tag `v0.24.0`, Root Switchable tag `v0.11.4`,
-Metrics tag `v0.7.2` (runtime `>= 0.7.2`, `< 1.0`), Flatpack tag
+The dummy is on the Recording Studio 6.5 kit from `Gemfile`, `test/dummy/Gemfile`,
+and `recording_studio_webhooks.gemspec`: core tag `v6.5.0` (runtime `>= 6.3.0`),
+Accessible tag `v0.24.2` (runtime `>= 0.24.2`), Root Switchable tag `v0.11.4`,
+Metrics tag `v0.7.3` (runtime `>= 0.7.2`, `< 1.0`), Flatpack tag
 `v0.1.341` (runtime `>= 0.1.341`), Admin tag `v2.5.1`, Cache tag `v0.6.2`,
-and Trashable tag `v0.12.2` (`require: false`).
+and Trashable tag `v0.12.3` (`require: false`).
 Dummy Rails is `~> 8.1.1`; the gemspec is `rails ~> 8.1.0`, `sidekiq ~> 8.1.6`,
 and `view_component >= 4.14, < 5`. Authenticated dummy screens use
 Recording Studio's shared default layout. Engine controllers include

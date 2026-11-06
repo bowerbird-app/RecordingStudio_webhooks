@@ -27,9 +27,11 @@ class WebhooksHostLocaleOverrideTest < ActionDispatch::IntegrationTest
       user.password = "Password123!"
       user.password_confirmation = "Password123!"
     end
+    Current.actor = @user
   end
 
   teardown do
+    Current.actor = nil
     @webhooks_configuration.admin_authorizer = @original_admin_authorizer
     @webhooks_configuration.admin_recording_scope = @original_admin_recording_scope
     I18n.backend = @backend_before if @backend_before

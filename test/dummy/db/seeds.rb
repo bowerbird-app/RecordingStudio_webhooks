@@ -215,13 +215,13 @@ begin
   accessible_root_recording = RecordingStudio.root_recording_for(accessible_workspace)
   private_root_recording = RecordingStudio.root_recording_for(private_workspace)
 
-  folder_recording = find_or_record_child.call(folder, root_recording, root_recording)
-
-  find_or_record_child.call(page, root_recording, folder_recording)
-
   [admin_root_recording, root_recording, accessible_root_recording, private_root_recording].each do |recording|
     grant_admin_access.call(recording, user)
   end
+
+  folder_recording = find_or_record_child.call(folder, root_recording, root_recording)
+
+  find_or_record_child.call(page, root_recording, folder_recording)
 
   seeded_endpoints = []
   if RecordingStudioWebhooks::Endpoint.table_exists?
