@@ -106,6 +106,15 @@ module RecordingStudioWebhooks
 
     def configuration = RecordingStudioWebhooks.configuration
 
+    def recording_studio_actor
+      return unless defined?(::RecordingStudio)
+      return unless ::RecordingStudio.respond_to?(:configuration)
+
+      ::RecordingStudio.configuration.actor&.call
+    rescue StandardError
+      nil
+    end
+
     def payload_string
       return nil unless @raw_payload.respond_to?(:to_str)
 
@@ -298,16 +307,20 @@ module RecordingStudioWebhooks
         )
         attempts = BuildActionAttempts.call(inbound_event: event, provider: provider, resolution: resolution)
         event.update!(status: "planned") if attempts.any?
-        endpoint.audit!(
-          action: "recording_studio_webhooks.incoming.accepted",
-          metadata: {
-            inbound_event_id: event.id,
-            provider: provider.name,
-            event_type: event_type,
-            provider_event_id: provider_event_id
-          },
-          idempotency_key: "recording_studio_webhooks:incoming:#{event.id}"
-        )
+        actor = recording_studio_actor
+        if actor
+          endpoint.audit!(
+            action: "recording_studio_webhooks.incoming.accepted",
+            actor: actor,
+            metadata: {
+              inbound_event_id: event.id,
+              provider: provider.name,
+              event_type: event_type,
+              provider_event_id: provider_event_id
+            },
+            idempotency_key: "recording_studio_webhooks:incoming:#{event.id}"
+          )
+        end
       end
 
       attempts.each { |attempt| DispatchActionAttempt.call(attempt.id) }

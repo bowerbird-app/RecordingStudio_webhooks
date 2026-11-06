@@ -43,6 +43,7 @@ class MetricsTest < Minitest::Test
     assert_includes engine, "RecordingStudioWebhooks::Metrics.register!"
     refute_includes engine, "RecordingStudioMetrics::Api.register!"
 
+    assert_includes gemspec, 'spec.add_dependency "recording_studio_accessible", ">= 0.24.2"'
     assert_includes gemspec, 'spec.add_dependency "recording_studio_metrics", ">= 0.7.2", "< 1.0"'
     refute_includes dummy_metrics, "RecordingStudioMetrics::Api.register!"
 
@@ -61,6 +62,6 @@ class MetricsTest < Minitest::Test
   end
 
   def test_version_pin
-    assert_equal "0.8.0", RecordingStudioWebhooks::VERSION
+    assert_equal "0.9.0", RecordingStudioWebhooks::VERSION
   end
 end

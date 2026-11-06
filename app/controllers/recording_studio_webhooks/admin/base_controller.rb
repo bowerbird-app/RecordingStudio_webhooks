@@ -71,12 +71,11 @@ module RecordingStudioWebhooks
         @available_recordings ||= begin
           return empty_recording_scope unless defined?(::RecordingStudio::Recording)
 
-          scope = ::RecordingStudio::Recording.all
           resolver = webhook_configuration.admin_recording_scope
-          return scope unless resolver
+          return empty_recording_scope unless resolver
 
           scoped = invoke_callable(resolver, admin_context)
-          normalize_recording_scope(scope, scoped)
+          normalize_recording_scope(::RecordingStudio::Recording.all, scoped)
         rescue StandardError
           empty_recording_scope
         end

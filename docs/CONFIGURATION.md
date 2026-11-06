@@ -14,8 +14,8 @@ settings.
 | `provenance_keys` | request metadata allowlist | fields retained with events |
 | `authorization_hook` | nil | final intake authorization hook |
 | `rate_limiter` | nil | intake rate-limit hook |
-| `admin_authorizer` | nil | decides which users can access the webhooks admin UI |
-| `admin_recording_scope` | nil | decides which recordings those users can view and manage |
+| `admin_authorizer` | Accessible on the current root | decides which users can access the webhooks admin UI |
+| `admin_recording_scope` | current root and descendants after Accessible | decides which recordings those users can view and manage |
 | `token_digest_secret` | nil | optional HMAC key from host credentials |
 | `layout` | `nil` | `nil`, `false`, a layout name, or `->(controller:) { ... }` |
 

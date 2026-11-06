@@ -10,6 +10,12 @@ module RecordingStudioWebhooks
     DEFAULT_PROVENANCE_KEYS = %w[
       request_id remote_ip user_agent content_type provider_event_id
     ].freeze
+    DEFAULT_ADMIN_AUTHORIZER = lambda do |context|
+      Admin::AccessibleAuthorization.authorized?(context)
+    end
+    DEFAULT_ADMIN_RECORDING_SCOPE = lambda do |context|
+      Admin::AccessibleAuthorization.recordings_for(context)
+    end
 
     attr_reader :providers, :actions, :default_policy, :queue_name, :dispatcher,
       :max_payload_bytes, :content_types, :secret_redaction_keys, :provenance_keys,
@@ -35,8 +41,8 @@ module RecordingStudioWebhooks
       @provenance_keys = DEFAULT_PROVENANCE_KEYS
       @authorization_hook = nil
       @rate_limiter = nil
-      @admin_authorizer = nil
-      @admin_recording_scope = nil
+      @admin_authorizer = DEFAULT_ADMIN_AUTHORIZER
+      @admin_recording_scope = DEFAULT_ADMIN_RECORDING_SCOPE
       @token_digest_secret = nil
       @provider_roots = [].freeze
       @action_roots = [].freeze
@@ -132,15 +138,14 @@ module RecordingStudioWebhooks
       @rate_limiter = callable_or_nil(value, "rate limiter")
     end
 
-    # Administrative access is deliberately opt-in. The engine's controllers
-    # fail closed when this is unset, rather than guessing how a host app
-    # represents an administrator.
+    # Defaults to Recording Studio Accessible on the current root. Set nil to
+    # keep the admin UI unavailable. Hosts may replace this callable.
     def admin_authorizer=(value)
       @admin_authorizer = callable_or_nil(value, "admin authorizer")
     end
 
-    # An optional callable returning the RecordingStudio::Recording relation
-    # visible to an already-authorized administrator. Returning nil means no
+    # Defaults to the current root and its descendants after Accessible
+    # authorizes the actor. Returning nil from a host callable means no
     # recordings are visible; it must never widen a host application's scope.
     def admin_recording_scope=(value)
       @admin_recording_scope = callable_or_nil(value, "admin recording scope")

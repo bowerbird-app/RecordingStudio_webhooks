@@ -45,58 +45,12 @@ bin/rails generate recording_studio_webhooks:install \
 
 ## Admin Access
 
-The host supplies two callbacks because the engine cannot know how a host represents users or permissions:
+The engine defaults both admin hooks through Recording Studio Accessible. Enable Accessible on the host root with `RecordingStudio.enable_capability(:accessible, on: Workspace)`. For the first owner on an empty owned root, call `RecordingStudioAccessible.bootstrap_owner_access!`; use `grant_access` for later invites. Do not create or update `RecordingStudio::Access` rows directly.
 
-- `admin_authorizer` decides whether the signed-in user can enter the webhooks admin UI.
-- `admin_recording_scope` decides which recordings that user can view and manage.
+- `admin_authorizer` asks Accessible for `:view` on the current root for reads, and `:admin` for writes.
+- `admin_recording_scope` returns the current root and its descendants after that Accessible check.
 
-When using `RecordingStudioAccessible`, delegate to its established policy instead of building a second permission system. Enable Accessible on the host root with `RecordingStudio.enable_capability(:accessible, on: Workspace)`. For the first owner on an empty owned root, call `RecordingStudioAccessible.bootstrap_owner_access!`; use `grant_access` for later invites. Accessible `0.11` stores roles as strings (`view`, `edit`, `admin`); do not create or update `RecordingStudio::Access` rows directly.
-
-```ruby
-# config/initializers/recording_studio_webhooks.rb           # Load this when Rails starts.
-RecordingStudioWebhooks.configure do |config|                # Open the engine configuration block.
-  config.admin_authorizer = lambda do |context|              # Receive the actor and current request context.
-    actor = context.actor                                     # Read the signed-in user from the host application.
-    next false unless actor                                   # Deny requests without an authenticated user.
-
-    root = context.controller.current_root_recording          # Read the selected Recording Studio root.
-    next false unless root                                    # Deny requests with no recording context.
-
-    role = context.permission.to_sym == :admin ? :admin : :view # Require admin for changes and view for reads.
-
-    RecordingStudioAccessible.authorized?(                    # Delegate the permission decision to the host policy.
-      actor: actor,                                           # Check this signed-in user.
-      recording: root,                                        # Check this Recording Studio recording.
-      role: role                                              # Check the access level required by this request.
-    )                                                         # Return true only when policy permits it.
-  rescue StandardError                                        # Treat an unexpected policy error as a denial.
-    false                                                     # Fail closed rather than expose admin data.
-  end                                                         # Finish authorization callback.
-
-  config.admin_recording_scope = lambda do |context|         # Return the recordings visible in this context.
-    root = context.controller.current_root_recording          # Start with the selected root recording.
-    next RecordingStudio::Recording.none unless root          # Show nothing until a root is selected.
-
-    RecordingStudio::Recording                               # Build an Active Record relation.
-      .where(trashed_at: nil)                                 # Exclude recordings that are no longer active.
-      .where(                                                  # Include the root and its descendants.
-        "id = :root_id OR root_recording_id = :root_id",      # Match either root relationship.
-        root_id: root.id                                       # Bind the selected root ID safely.
-      )                                                        # Return the restricted relation to the engine.
-  end                                                          # Finish scope callback.
-end                                                            # Finish configuration.
-```
-
-For a global admin role, use a simpler policy:
-
-```ruby
-config.admin_authorizer = ->(context) { context.actor&.admin? } # Allow only application admins.
-config.admin_recording_scope = ->(_context) {                   # Define what those admins manage.
-  RecordingStudio::Recording.all                                # Allow every recording for global administrators.
-}                                                                # Finish the scope callback.
-```
-
-Leaving `admin_authorizer` unset keeps the admin interface unavailable.
+Hosts that already set these hooks to the same Accessible policy can delete them. Set a hook to `nil` to fail closed. Replace a hook only when the host needs a narrower policy.
 
 ## Queueing and Tokens
 

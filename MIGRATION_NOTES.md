@@ -1,6 +1,19 @@
 # Migration Notes
 
-This engine requires Recording Studio `>= 6.3.0` and Flatpack `>= 0.1.341`.
+This engine requires Recording Studio `>= 6.3.0`, Accessible `>= 0.24.2`, and
+Flatpack `>= 0.1.341`.
+
+## 0.9.0
+
+No database migration.
+
+Admin authorization defaults through Accessible on the current root. Hosts
+that already set the featured_in Accessible `admin_authorizer` and
+`admin_recording_scope` hooks can delete those assignments. Set either hook
+to `nil` to keep the admin UI unavailable.
+
+Pin Accessible `v0.24.2`, Recording Studio `v6.5.0`, and Metrics `v0.7.3`.
+Admin stays `v2.5.1`.
 
 ## 0.8.0
 

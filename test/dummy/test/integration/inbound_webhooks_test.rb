@@ -36,9 +36,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
       ),
       actor: @user
     )
+    Current.actor = @user
   end
 
   teardown do
+    Current.actor = nil
     @webhooks_configuration.admin_authorizer = @original_admin_authorizer
     @webhooks_configuration.admin_recording_scope = @original_admin_recording_scope
   end
@@ -863,6 +865,11 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     label = "Auto token endpoint"
     other_workspace = Workspace.create!(name: "Auto Token Workspace #{SecureRandom.hex(4)}")
     other_recording = RecordingStudio.root_recording_for(other_workspace)
+    other_owner = RecordingStudioAccessible.bootstrap_owner_access!(
+      recording: other_recording,
+      actor: @user
+    )
+    raise other_owner.error if other_owner.failure?
 
     post "/admin/webhooks/endpoints", params: {
       endpoint: {

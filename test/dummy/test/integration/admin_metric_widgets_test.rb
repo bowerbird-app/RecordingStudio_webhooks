@@ -39,7 +39,12 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
       actor: @user
     )
     @token = @endpoint.issue_token!(actor: @user).endpoint_token
+    Current.actor = @user
     seed_metric_rows!
+  end
+
+  teardown do
+    Current.actor = nil
   end
 
   test "admin hub renders metric cards from RecordingStudioMetrics" do
@@ -359,6 +364,12 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
 
     other_workspace = Workspace.create!(name: "Other metric root #{SecureRandom.hex(4)}")
     other_root = RecordingStudio.root_recording_for(other_workspace)
+    other_owner = RecordingStudioAccessible.bootstrap_owner_access!(
+      recording: other_root,
+      actor: @user
+    )
+    raise other_owner.error if other_owner.failure?
+
     other_endpoint = RecordingStudioWebhooks::EndpointLifecycle.create!(
       endpoint: RecordingStudioWebhooks::Endpoint.new(
         recording_studio_recording_id: other_root.id,

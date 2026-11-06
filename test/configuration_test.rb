@@ -10,13 +10,21 @@ class ConfigurationTest < Minitest::Test
       assert_equal 1_048_576, configuration.max_payload_bytes
       assert_equal 18, configuration.endpoint_token_bytesize
       assert_equal true, configuration.default_policy.deduplicate?
-      assert_nil configuration.admin_authorizer
+      assert_same(
+        RecordingStudioWebhooks::Configuration::DEFAULT_ADMIN_AUTHORIZER,
+        configuration.admin_authorizer
+      )
+      assert_same(
+        RecordingStudioWebhooks::Configuration::DEFAULT_ADMIN_RECORDING_SCOPE,
+        configuration.admin_recording_scope
+      )
 
       configuration.token_digest_secret = "not-for-reporting"
       report = configuration.report
 
       refute_includes report.to_s, "not-for-reporting"
-      assert_equal false, report.fetch("admin_authorizer_configured")
+      assert_equal true, report.fetch("admin_authorizer_configured")
+      assert_equal true, report.fetch("admin_recording_scope_configured")
       assert_equal "sidekiq", report.fetch("dispatcher")
     end
   end

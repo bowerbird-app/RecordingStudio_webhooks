@@ -20,7 +20,8 @@ module WebhookActions
         action: "created",
         recordable: page,
         root_recording: root_recording,
-        parent_recording: root_recording
+        parent_recording: root_recording,
+        actor: Current.actor
       )
 
       true
