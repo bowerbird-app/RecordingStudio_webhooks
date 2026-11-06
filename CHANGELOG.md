@@ -14,8 +14,12 @@ to the current kit tags. Admin stays `v2.5.1`.
 - `admin_recording_scope` defaults to the current root and its descendants
   after that Accessible check, instead of remaining unset.
 - An unset recording scope no longer falls through to every recording.
-- Public intake writes the accepted-event audit only when Recording Studio
-  `config.actor` returns an actor. Core 6.5 refuses actorless writes.
+- Public intake writes the accepted-event audit only when an explicit intake
+  actor is passed or Recording Studio `config.actor` returns one. Core 6.5
+  refuses actorless writes. Action execution reads that audit's actor onto
+  the action context. It does not resolve `Current` or `config.actor` again
+  in the worker. The public intake controller still does not mint a
+  system-intake actor.
 
 ### Changed
 
@@ -36,9 +40,11 @@ to the current kit tags. Admin stays `v2.5.1`.
 - Core 6.5 requires `config.authorize_write` and an actor on `record!`.
   Dummy `AccessCreationContext` covers `RecordingStudio::Access` rows only.
   Other dummy writes need Accessible `:edit`. Grant Accessible on seed roots
-  before child writes. Dummy `page.created` carries an explicit execution
-  actor and raises `ActorRequired` when the job has none. Public intake
-  still skips the accepted-event audit when no actor is configured.
+  before child writes. Dummy `page.created` uses the granted actor from
+  the accepted-event audit written at intake and raises `ActorRequired`
+  when that audit has none. Public HTTP intake still skips the
+  accepted-event audit when no actor is passed or configured. There is
+  no system-intake actor.
 
 ## [0.8.0] - 2026-11-04
 

@@ -4,6 +4,7 @@ module RecordingStudioWebhooks
   class InboundEvent < ApplicationRecord
     STATUSES = %w[accepted planned].freeze
     SNAPSHOT_ATTRIBUTES = %w[endpoint_snapshot token_snapshot policy_snapshot].freeze
+    ACCEPTED_AUDIT_ACTION = "recording_studio_webhooks.incoming.accepted"
 
     belongs_to :endpoint
     belongs_to :endpoint_token
@@ -16,6 +17,24 @@ module RecordingStudioWebhooks
     validate :safe_payload_and_provenance
 
     before_update :prevent_snapshot_mutation
+
+    def accepted_audit_idempotency_key
+      "recording_studio_webhooks:incoming:#{id}"
+    end
+
+    def execution_actor
+      return unless defined?(::RecordingStudio::Event)
+
+      recording_id = endpoint&.recording_studio_recording_id
+      return unless recording_id
+
+      audit = ::RecordingStudio::Event.find_by(
+        recording_id: recording_id,
+        action: ACCEPTED_AUDIT_ACTION,
+        idempotency_key: accepted_audit_idempotency_key
+      )
+      audit&.actor
+    end
 
     def snapshot
       ImmutableSnapshot.build(

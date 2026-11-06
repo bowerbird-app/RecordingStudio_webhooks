@@ -51,17 +51,8 @@ module RecordingStudioWebhooks
         event.endpoint,
         ImmutableSnapshot.build(event.payload),
         ImmutableSnapshot.build(event.provenance),
-        action_execution_actor
+        event.execution_actor
       )
-    end
-
-    def action_execution_actor
-      return unless defined?(::RecordingStudio)
-      return unless ::RecordingStudio.respond_to?(:configuration)
-
-      ::RecordingStudio.configuration.actor&.call
-    rescue StandardError
-      nil
     end
 
     def invoke(handler, context)
