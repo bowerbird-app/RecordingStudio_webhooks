@@ -24,7 +24,8 @@ class DummyWebhookTesterController < ApplicationController
       request_metadata: {
         remote_ip: request.remote_ip,
         user_agent: request.user_agent
-      }
+      },
+      actor: current_user
     )
 
     action_results = []

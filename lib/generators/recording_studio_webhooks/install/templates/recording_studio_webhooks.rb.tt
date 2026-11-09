@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
-# This engine fails closed for administration. Configure host authorization
-# deliberately; do not rely on an implicit current-user convention.
+# Administration defaults through Recording Studio Accessible on the current
+# root. Set these to nil to keep the admin UI unavailable, or replace them
+# when a host needs a narrower policy.
 RecordingStudioWebhooks.configure do |config|
-  # config.admin_authorizer = ->(context) { context.actor&.admin? }
-  # config.admin_recording_scope = ->(_context) { RecordingStudio::Recording.all }
+  # config.admin_authorizer = nil
+  # config.admin_recording_scope = nil
 
   # Keep an optional HMAC key in encrypted credentials or another secret store.
   # Never put a token, provider secret, or a secret-store location in this file.

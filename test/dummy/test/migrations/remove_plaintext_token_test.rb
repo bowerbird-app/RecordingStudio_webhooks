@@ -7,8 +7,8 @@ class RemovePlaintextTokenTest < ActiveSupport::TestCase
 
   test "drops the token column when present and skips when already gone" do
     connection = ActiveRecord::Base.connection
-    endpoint = create_endpoint!
-    issuance = endpoint.issue_token!
+    endpoint, user = create_endpoint!
+    issuance = endpoint.issue_token!(actor: user)
     plaintext = issuance.plaintext_token
     token = issuance.endpoint_token
     digest = token.digest
@@ -86,7 +86,7 @@ class RemovePlaintextTokenTest < ActiveSupport::TestCase
     result = RecordingStudioAccessible.bootstrap_owner_access!(recording: recording, actor: user)
     raise result.error if result.failure?
 
-    RecordingStudioWebhooks::EndpointLifecycle.create!(
+    endpoint = RecordingStudioWebhooks::EndpointLifecycle.create!(
       endpoint: RecordingStudioWebhooks::Endpoint.new(
         recording_studio_recording_id: recording.id,
         label: "Migration endpoint",
@@ -97,5 +97,6 @@ class RemovePlaintextTokenTest < ActiveSupport::TestCase
       ),
       actor: user
     )
+    [endpoint, user]
   end
 end
