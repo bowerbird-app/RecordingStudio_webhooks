@@ -26,6 +26,12 @@ Endpoints are tree objects: people create and manage them, so they are
 recordings. Inbound events and action attempts are exhaust (logs), not children
 of the recording tree.
 
+When Recording Studio API is loaded, `Api::Endpoints.register!` exposes
+create, update, list, show, issue token, and revoke token as named endpoints.
+Those handlers authorize with Accessible `:admin` on the API token's root and
+call `EndpointLifecycle` and the existing token methods. They are not tree
+CRUD. Intake, sandbox, and dispatch stay off that API.
+
 The event stores the endpoint, token, and intake-policy snapshot. Each action
 attempt stores endpoint, token, policy, and action snapshots. This means later
 configuration changes do not rewrite historical provenance.

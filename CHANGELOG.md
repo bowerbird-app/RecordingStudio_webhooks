@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+## [0.10.0] - 2026-11-12
+
+Admin-only webhook endpoint and token methods are named Recording Studio API
+endpoints. MCP picks them up through that API. No new tables.
+
+### Added
+
+- `RecordingStudioWebhooks::Api::Endpoints.register!` registers six named
+  endpoints on the public API when Recording Studio API is loaded. Each
+  handler calls `access_grant.authorize!` with Accessible `:admin` on the
+  token's root, then `EndpointLifecycle.create!` / `update!`,
+  `Endpoint#issue_token!`, or `EndpointToken#revoke!`.
+- Index and show stay inside that root. Another root's endpoints are not
+  listed or shown.
+- Issue returns the plaintext token once. Show and index never include it.
+
+### Upgrade notes
+
+- Bump to `0.10.0`. No database migration. The four webhook tables are
+  unchanged.
+- This gem does not add a `recording_studio_api` runtime dependency. Hosts
+  that already mount Recording Studio API get the endpoints at boot. MCP
+  exposes them through its generic registered-endpoint tools.
+- Grant Accessible `:admin` on the workspace root to the actor behind the
+  API client. `:view` and `:edit` receive `403`.
+- Dummy mounts Recording Studio API `v0.21.3` so the HTTP suite can run.
+
 ## [0.9.0] - 2026-11-06
 
 Admin authorization defaults through Accessible. Recording Studio pins move
