@@ -15,7 +15,8 @@ endpoints. MCP picks them up through that API. No new tables.
   token's root, then `EndpointLifecycle.create!` / `update!`,
   `Endpoint#issue_token!`, or `EndpointToken#revoke!`.
 - Index and show stay inside that root. Another root's endpoints are not
-  listed or shown.
+  listed or shown. Lookups use the configured `admin_recording_scope` (and
+  `admin_authorizer`) with an admin context from the grant's actor and root.
 - Issue returns the plaintext token once. Show and index never include it.
 
 ### Upgrade notes

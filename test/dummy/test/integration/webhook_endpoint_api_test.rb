@@ -14,9 +14,16 @@ class WebhookEndpointApiTest < ActionDispatch::IntegrationTest
     @other_workspace = Workspace.create!(name: "Other Root #{SecureRandom.hex(4)}")
     @other_root = RecordingStudio.root_recording_for(@other_workspace)
     @other_access = bootstrap_owner!(@other_root, @admin)
-    @admin_token = issue_access_token(@admin_access, "Admin webhook API")
-    @view_token = issue_access_token(@viewer_access, "View webhook API", manager: @admin)
-    @other_token = issue_access_token(@other_access, "Other root webhook API")
+    @admin_token, @admin_client = issue_access_token(@admin_access, "Admin webhook API")
+    grant_admin_on_root!(@root, @admin_client, manager: @admin)
+    @view_token, = issue_access_token(
+      @viewer_access,
+      "View webhook API",
+      manager: @admin,
+      role: :edit
+    )
+    @other_token, @other_client = issue_access_token(@other_access, "Other root webhook API")
+    grant_admin_on_root!(@other_root, @other_client, manager: @admin)
     Current.actor = nil
   end
 
@@ -111,9 +118,30 @@ class WebhookEndpointApiTest < ActionDispatch::IntegrationTest
     assert_response :success
     ids = JSON.parse(response.body).fetch("records").map { |record| record.fetch("id") }
     refute_includes ids, foreign.id
+  end
+
+  test "another root's endpoint cannot be shown updated issued or revoked" do
+    foreign = create_endpoint!(@other_root, @admin, "Foreign hook")
+    foreign_token = issue_endpoint_token!(foreign, @admin)
 
     get "/recording_studio_api/api/v1/webhook-endpoints/#{foreign.id}",
         headers: bearer(@admin_token)
+    assert_response :not_found
+
+    patch "/recording_studio_api/api/v1/webhook-endpoints/#{foreign.id}",
+          params: { label: "Hijacked hook" },
+          as: :json,
+          headers: bearer(@admin_token)
+    assert_response :not_found
+
+    post "/recording_studio_api/api/v1/webhook-endpoints/#{foreign.id}/tokens",
+         as: :json,
+         headers: bearer(@admin_token)
+    assert_response :not_found
+
+    post "/recording_studio_api/api/v1/webhook-tokens/#{foreign_token.id}/revoke",
+         as: :json,
+         headers: bearer(@admin_token)
     assert_response :not_found
   end
 
@@ -152,14 +180,20 @@ class WebhookEndpointApiTest < ActionDispatch::IntegrationTest
     result.value
   end
 
-  def issue_access_token(access_recording, name, manager: nil)
+  def grant_admin_on_root!(recording, actor, manager:)
+    return if RecordingStudioAccessible.authorized?(actor: actor, recording: recording, role: :admin)
+
+    grant_access!(recording, actor, :admin, manager: manager)
+  end
+
+  def issue_access_token(access_recording, name, manager: nil, role: nil)
     manager ||= access_recording.recordable.actor
     Current.actor = manager
     point = access_recording.parent_recording || access_recording.root_recording
     provision = RecordingStudioApi::Services::ProvisionApiClient.call(
       access_point_recording: point,
       manager_actor: manager,
-      role: access_recording.recordable.role,
+      role: role || access_recording.recordable.role,
       name: name
     )
     raise provision.error unless provision.success?
@@ -171,7 +205,9 @@ class WebhookEndpointApiTest < ActionDispatch::IntegrationTest
     )
     raise token_result.error unless token_result.success?
 
-    token_result.value.fetch(:access_token)
+    [token_result.value.fetch(:access_token), provision.value.fetch(:api_client)]
+  ensure
+    Current.actor = nil
   end
 
   def create_endpoint!(root, actor, label)
@@ -188,5 +224,14 @@ class WebhookEndpointApiTest < ActionDispatch::IntegrationTest
       ),
       actor: actor
     )
+  ensure
+    Current.actor = nil
+  end
+
+  def issue_endpoint_token!(endpoint, actor)
+    Current.actor = actor
+    endpoint.issue_token!(actor: actor).endpoint_token
+  ensure
+    Current.actor = nil
   end
 end

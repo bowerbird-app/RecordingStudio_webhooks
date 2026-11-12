@@ -40,16 +40,7 @@ RecordingStudio.configure do |config|
     rec = root_recording || recording
     next false unless rec
 
-    write_actor = actor
-    if defined?(RecordingStudioApi::ApiClient) && actor.is_a?(RecordingStudioApi::ApiClient)
-      manager = Current.actor
-      write_actor = manager if manager && !manager.is_a?(RecordingStudioApi::ApiClient)
-    elsif recordable.present? && actor.class == recordable.class && actor.id == recordable.id
-      write_actor = Current.actor
-    end
-    next false unless write_actor
-
-    RecordingStudioAccessible.authorized?(actor: write_actor, recording: rec, role: :edit)
+    RecordingStudioAccessible.authorized?(actor: actor, recording: rec, role: :edit)
   rescue StandardError
     false
   end

@@ -344,9 +344,10 @@ and `recording_studio_webhooks.gemspec`: core tag `v6.5.0` (runtime `>= 6.3.0`),
 Accessible tag `v0.24.2` (runtime `>= 0.24.2`), Root Switchable tag `v0.11.4`,
 Metrics tag `v0.7.3` (runtime `>= 0.7.2`, `< 1.0`), Flatpack tag
 `v0.1.341` (runtime `>= 0.1.341`), Admin tag `v2.5.1`, Cache tag `v0.6.2`,
-Trashable tag `v0.12.3` (`require: false`), Recording Studio API tag
-`v0.21.3` (dummy only, for HTTP coverage of the named endpoints), Logs tag
-`v0.7.3`, Moveable tag `v4.1.0`, and Icons tag `v0.2.0`.
+Trashable tag `v0.12.3` (`require: false`), and Recording Studio API tag
+`v0.21.3` (dummy only, for HTTP coverage of the named endpoints). Logs tag
+`v0.7.3`, Moveable tag `v4.1.0`, and Icons tag `v0.2.0` are dummy-only
+transitive dependencies of Recording Studio API.
 Dummy Rails is `~> 8.1.1`; the gemspec is `rails ~> 8.1.0`, `sidekiq ~> 8.1.6`,
 and `view_component >= 4.14, < 5`. Authenticated dummy screens use
 Recording Studio's shared default layout. Engine controllers include

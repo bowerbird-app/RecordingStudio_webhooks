@@ -32,11 +32,20 @@ module RecordingStudioWebhooks
 
       def authorize!(context)
         context.access_grant.authorize!(recording: context.root_recording, role: ROLE)
+        authorizer = RecordingStudioWebhooks.configuration.admin_authorizer
+        return if authorizer && authorizer.call(admin_context(context, permission: :admin)) == true
+
+        raise RecordingStudioApi::AuthorizationError, "API access grant is not authorized for this capability"
       end
 
       def scoped_endpoints(context)
-        recordings = Admin::AccessibleAuthorization.descendant_scope(context.root_recording)
+        resolver = RecordingStudioWebhooks.configuration.admin_recording_scope
+        return Endpoint.none unless resolver
+
+        recordings = resolver.call(admin_context(context, permission: :view))
         Endpoint.current.where(recording_studio_recording_id: recordings.select(:id))
+      rescue StandardError
+        Endpoint.none
       end
 
       def find_endpoint!(context)
@@ -51,6 +60,16 @@ module RecordingStudioWebhooks
         return token if token && scoped_endpoints(context).exists?(id: token.endpoint_id)
 
         raise RecordingStudioApi::NotFoundError, "Webhook token was not found"
+      end
+
+      def admin_context(context, permission:)
+        Admin::BaseController::AdminContext.new(
+          controller: nil,
+          actor: Access.actor_for(context),
+          section_key: Admin::BaseController::ADMIN_WEBHOOKS_SECTION_KEY,
+          permission: permission,
+          recording: context.root_recording
+        )
       end
 
       def serialize_endpoint(endpoint)

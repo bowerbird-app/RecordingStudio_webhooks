@@ -12,7 +12,7 @@ module RecordingStudioWebhooks
         handler: Endpoints::Index,
         openapi: {
           title: "Webhook Endpoint - List",
-          summary: "Webhook Endpoint - List",
+          summary: "List webhook endpoints in this workspace.",
           description: "List webhook endpoints in the token's root.",
           tags: TAGS
         }
@@ -24,7 +24,7 @@ module RecordingStudioWebhooks
         handler: Endpoints::Show,
         openapi: {
           title: "Webhook Endpoint - Show",
-          summary: "Webhook Endpoint - Show",
+          summary: "Show one webhook endpoint.",
           description: "Show one webhook endpoint in the token's root.",
           tags: TAGS
         }
@@ -47,7 +47,7 @@ module RecordingStudioWebhooks
         },
         openapi: {
           title: "Webhook Endpoint - Create",
-          summary: "Webhook Endpoint - Create",
+          summary: "Create a webhook endpoint.",
           description: "Create a webhook endpoint on the token's root.",
           tags: TAGS
         }
@@ -67,7 +67,7 @@ module RecordingStudioWebhooks
         },
         openapi: {
           title: "Webhook Endpoint - Update",
-          summary: "Webhook Endpoint - Update",
+          summary: "Update a webhook endpoint.",
           description: "Update a webhook endpoint's label or enabled flag.",
           tags: TAGS
         }
@@ -86,7 +86,7 @@ module RecordingStudioWebhooks
         },
         openapi: {
           title: "Webhook Token - Issue",
-          summary: "Webhook Token - Issue",
+          summary: "Issue a webhook token. The plaintext shows once.",
           description: "Issue a webhook endpoint token. The plaintext token is returned only in this response.",
           tags: TOKEN_TAGS
         }
@@ -98,7 +98,7 @@ module RecordingStudioWebhooks
         handler: Endpoints::Revoke,
         openapi: {
           title: "Webhook Token - Revoke",
-          summary: "Webhook Token - Revoke",
+          summary: "Revoke a webhook token.",
           description: "Revoke a webhook endpoint token in the token's root.",
           tags: TOKEN_TAGS
         }
