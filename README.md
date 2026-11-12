@@ -245,13 +245,15 @@ RecordingStudioMetrics::Api.register!(api: :operations)
 
 `RecordingStudioWebhooks::Api::Endpoints.register!` runs at boot when
 Recording Studio API is loaded. It registers named endpoints on the public
-API. It does not use tree CRUD. Authorization is Accessible `:admin` on the
-token's root through `access_grant.authorize!`.
+API. It does not use tree CRUD. Index and show authorize with Accessible
+`:view` on the token's root. Writes stay `:admin`. Both go through
+`access_grant.authorize!` and the configured `admin_authorizer` /
+`admin_recording_scope`.
 
 | Endpoint | HTTP | Role | Domain method |
 | --- | --- | --- | --- |
-| `webhook_endpoints_index` | `GET webhook-endpoints` | `:admin` | current endpoints under the root |
-| `webhook_endpoints_show` | `GET webhook-endpoints/:id` | `:admin` | same scoped lookup |
+| `webhook_endpoints_index` | `GET webhook-endpoints` | `:view` | current endpoints under the root |
+| `webhook_endpoints_show` | `GET webhook-endpoints/:id` | `:view` | same scoped lookup |
 | `webhook_endpoints_create` | `POST webhook-endpoints` | `:admin` | `EndpointLifecycle.create!` |
 | `webhook_endpoints_update` | `PATCH webhook-endpoints/:id` | `:admin` | `EndpointLifecycle.update!` |
 | `webhook_tokens_issue` | `POST webhook-endpoints/:id/tokens` | `:admin` | `Endpoint#issue_token!` |

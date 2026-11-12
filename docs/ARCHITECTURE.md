@@ -28,9 +28,9 @@ of the recording tree.
 
 When Recording Studio API is loaded, `Api::Endpoints.register!` exposes
 create, update, list, show, issue token, and revoke token as named endpoints.
-Those handlers authorize with Accessible `:admin` on the API token's root,
-then resolve recordings through the same configured `admin_recording_scope`
-the admin UI uses. They call `EndpointLifecycle` and the existing token
+Those handlers authorize with Accessible `:view` on the API token's root for
+index and show, and `:admin` for writes, then resolve recordings through the
+same configured `admin_recording_scope` the admin UI uses. They call `EndpointLifecycle` and the existing token
 methods. They are not tree CRUD. Intake, sandbox, and dispatch stay off that
 API.
 

@@ -5,7 +5,7 @@ module RecordingStudioWebhooks
     module Endpoints
       class Index
         def self.call(context)
-          Endpoints.authorize!(context)
+          Endpoints.authorize!(context, permission: :view)
           endpoints = Endpoints.scoped_endpoints(context).order(:created_at, :id)
           { records: endpoints.map { |endpoint| Endpoints.serialize_endpoint(endpoint) } }
         end
@@ -13,7 +13,7 @@ module RecordingStudioWebhooks
 
       class Show
         def self.call(context)
-          Endpoints.authorize!(context)
+          Endpoints.authorize!(context, permission: :view)
           Endpoints.serialize_endpoint(Endpoints.find_endpoint!(context))
         end
       end

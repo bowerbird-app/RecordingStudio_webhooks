@@ -15,15 +15,28 @@ class WebhookEndpointApiTest < ActionDispatch::IntegrationTest
     @other_root = RecordingStudio.root_recording_for(@other_workspace)
     @other_access = bootstrap_owner!(@other_root, @admin)
     @admin_token, @admin_client = issue_access_token(@admin_access, "Admin webhook API")
-    grant_admin_on_root!(@root, @admin_client, manager: @admin)
-    @view_token, = issue_access_token(
+    grant_role_on_root!(@root, @admin_client, :admin, manager: @admin)
+    @view_token, @view_client = issue_access_token(
       @viewer_access,
       "View webhook API",
       manager: @admin,
       role: :edit
     )
+    grant_role_on_root!(@root, @view_client, :view, manager: @admin)
     @other_token, @other_client = issue_access_token(@other_access, "Other root webhook API")
-    grant_admin_on_root!(@other_root, @other_client, manager: @admin)
+    grant_role_on_root!(@other_root, @other_client, :admin, manager: @admin)
+    @other_view_token, @other_view_client = issue_access_token(
+      @other_access,
+      "Other root view webhook API",
+      manager: @admin,
+      role: :edit
+    )
+    grant_role_on_root!(@other_root, @other_view_client, :view, manager: @admin)
+    @locked = create_user!("api-locked-#{SecureRandom.hex(4)}@example.com")
+    @locked_workspace = Workspace.create!(name: "Locked Root #{SecureRandom.hex(4)}")
+    @locked_root = RecordingStudio.root_recording_for(@locked_workspace)
+    @locked_access = bootstrap_owner!(@locked_root, @locked)
+    @locked_token, = issue_access_token(@locked_access, "Locked webhook API")
     Current.actor = nil
   end
 
@@ -105,9 +118,71 @@ class WebhookEndpointApiTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
-  test "a non-admin token is forbidden" do
+  test "view on the admin root can index and show" do
+    endpoint = create_endpoint!(@root, @admin, "Readable hook")
+
     get "/recording_studio_api/api/v1/webhook-endpoints", headers: bearer(@view_token)
+    assert_response :success
+    ids = JSON.parse(response.body).fetch("records").map { |record| record.fetch("id") }
+    assert_includes ids, endpoint.id
+
+    get "/recording_studio_api/api/v1/webhook-endpoints/#{endpoint.id}",
+        headers: bearer(@view_token)
+    assert_response :success
+    assert_equal "Readable hook", JSON.parse(response.body).fetch("label")
+  end
+
+  test "view cannot create update issue or revoke" do
+    endpoint = create_endpoint!(@root, @admin, "Write hook")
+    endpoint_token = issue_endpoint_token!(endpoint, @admin)
+
+    post "/recording_studio_api/api/v1/webhook-endpoints",
+         params: { label: "Denied hook", provider_name: "demo" },
+         as: :json,
+         headers: bearer(@view_token)
     assert_response :forbidden
+
+    patch "/recording_studio_api/api/v1/webhook-endpoints/#{endpoint.id}",
+          params: { label: "Hijacked hook" },
+          as: :json,
+          headers: bearer(@view_token)
+    assert_response :forbidden
+
+    post "/recording_studio_api/api/v1/webhook-endpoints/#{endpoint.id}/tokens",
+         as: :json,
+         headers: bearer(@view_token)
+    assert_response :forbidden
+
+    post "/recording_studio_api/api/v1/webhook-tokens/#{endpoint_token.id}/revoke",
+         as: :json,
+         headers: bearer(@view_token)
+    assert_response :forbidden
+  end
+
+  test "no role on the admin root is denied" do
+    endpoint = create_endpoint!(@root, @admin, "Closed hook")
+
+    get "/recording_studio_api/api/v1/webhook-endpoints", headers: bearer(@locked_token)
+    assert_response :success
+    ids = JSON.parse(response.body).fetch("records").map { |record| record.fetch("id") }
+    refute_includes ids, endpoint.id
+
+    get "/recording_studio_api/api/v1/webhook-endpoints/#{endpoint.id}",
+        headers: bearer(@locked_token)
+    assert_response :not_found
+  end
+
+  test "a view grant on a different root cannot see these endpoints" do
+    local = create_endpoint!(@root, @admin, "Local hook")
+
+    get "/recording_studio_api/api/v1/webhook-endpoints", headers: bearer(@other_view_token)
+    assert_response :success
+    ids = JSON.parse(response.body).fetch("records").map { |record| record.fetch("id") }
+    refute_includes ids, local.id
+
+    get "/recording_studio_api/api/v1/webhook-endpoints/#{local.id}",
+        headers: bearer(@other_view_token)
+    assert_response :not_found
   end
 
   test "another root's endpoint is not visible" do
@@ -180,10 +255,10 @@ class WebhookEndpointApiTest < ActionDispatch::IntegrationTest
     result.value
   end
 
-  def grant_admin_on_root!(recording, actor, manager:)
-    return if RecordingStudioAccessible.authorized?(actor: actor, recording: recording, role: :admin)
+  def grant_role_on_root!(recording, actor, role, manager:)
+    return if RecordingStudioAccessible.authorized?(actor: actor, recording: recording, role: role)
 
-    grant_access!(recording, actor, :admin, manager: manager)
+    grant_access!(recording, actor, role, manager: manager)
   end
 
   def issue_access_token(access_recording, name, manager: nil, role: nil)

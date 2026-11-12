@@ -50,7 +50,8 @@ The engine defaults both admin hooks through Recording Studio Accessible. Enable
 - `admin_authorizer` asks Accessible for `:view` on the current root for reads, and `:admin` for writes.
 - `admin_recording_scope` returns the current root and its descendants after that Accessible check.
 - Named Recording Studio API endpoints for webhook endpoints and tokens use
-  Accessible `:admin` on the API token's root. They wrap `EndpointLifecycle`
+  Accessible `:view` on the API token's root for index and show, and
+  `:admin` for create, update, issue, and revoke. They wrap `EndpointLifecycle`
   and the existing token methods. See the Endpoint API section in the README.
 
 Hosts that already set these hooks to the same Accessible policy can delete them. Set a hook to `nil` to fail closed. Replace a hook only when the host needs a narrower policy.

@@ -30,10 +30,11 @@ module RecordingStudioWebhooks
         RecordingStudioApi.register_endpoint(REVOKE, **EndpointRegistrations::REVOKE)
       end
 
-      def authorize!(context)
-        context.access_grant.authorize!(recording: context.root_recording, role: ROLE)
+      def authorize!(context, permission: ROLE)
+        role = Admin::AccessibleAuthorization.required_role(admin_context(context, permission: permission))
+        context.access_grant.authorize!(recording: context.root_recording, role: role)
         authorizer = RecordingStudioWebhooks.configuration.admin_authorizer
-        return if authorizer && authorizer.call(admin_context(context, permission: :admin)) == true
+        return if authorizer && authorizer.call(admin_context(context, permission: permission)) == true
 
         raise RecordingStudioApi::AuthorizationError, "API access grant is not authorized for this capability"
       end

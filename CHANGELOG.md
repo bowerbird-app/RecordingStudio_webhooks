@@ -10,10 +10,11 @@ endpoints. MCP picks them up through that API. No new tables.
 ### Added
 
 - `RecordingStudioWebhooks::Api::Endpoints.register!` registers six named
-  endpoints on the public API when Recording Studio API is loaded. Each
-  handler calls `access_grant.authorize!` with Accessible `:admin` on the
-  token's root, then `EndpointLifecycle.create!` / `update!`,
-  `Endpoint#issue_token!`, or `EndpointToken#revoke!`.
+  endpoints on the public API when Recording Studio API is loaded. Index and
+  show call `access_grant.authorize!` with Accessible `:view` on the token's
+  root. Create, update, issue, and revoke stay `:admin`, then call
+  `EndpointLifecycle.create!` / `update!`, `Endpoint#issue_token!`, or
+  `EndpointToken#revoke!`.
 - Index and show stay inside that root. Another root's endpoints are not
   listed or shown. Lookups use the configured `admin_recording_scope` (and
   `admin_authorizer`) with an admin context from the grant's actor and root.
@@ -26,8 +27,10 @@ endpoints. MCP picks them up through that API. No new tables.
 - This gem does not add a `recording_studio_api` runtime dependency. Hosts
   that already mount Recording Studio API get the endpoints at boot. MCP
   exposes them through its generic registered-endpoint tools.
-- Grant Accessible `:admin` on the workspace root to the actor behind the
-  API client. `:view` and `:edit` receive `403`.
+- Grant Accessible `:view` on the workspace root to the actor behind the
+  API client to list and show endpoints. Create, update, issue, and revoke
+  still need `:admin`. No role on that root is denied. `:view` on another
+  root does not list or show these endpoints.
 - Dummy mounts Recording Studio API `v0.21.3` so the HTTP suite can run.
 
 ### Fixed
