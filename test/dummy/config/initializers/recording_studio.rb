@@ -12,6 +12,7 @@ RecordingStudio.configure do |config|
   ]
   config.recordable_types = (Array(config.recordable_types) + required_recordable_types).uniq
   config.enable_capability :accessible, on: "Workspace"
+  config.enable_capability :api_access_point, on: "Workspace"
 
   # Require each configured ActiveRecord type to call recording_studio_recordable.
   config.require_recordable_declarations = true

@@ -241,6 +241,30 @@ the host registers Metrics endpoints once:
 RecordingStudioMetrics::Api.register!(api: :operations)
 ```
 
+## Endpoint API
+
+`RecordingStudioWebhooks::Api::Endpoints.register!` runs at boot when
+Recording Studio API is loaded. It registers named endpoints on the public
+API. It does not use tree CRUD. Index and show authorize with Accessible
+`:view` on the token's root. Writes stay `:admin`. Both go through
+`access_grant.authorize!` and the configured `admin_authorizer` /
+`admin_recording_scope`.
+
+| Endpoint | HTTP | Role | Domain method |
+| --- | --- | --- | --- |
+| `webhook_endpoints_index` | `GET webhook-endpoints` | `:view` | current endpoints under the root |
+| `webhook_endpoints_show` | `GET webhook-endpoints/:id` | `:view` | same scoped lookup |
+| `webhook_endpoints_create` | `POST webhook-endpoints` | `:admin` | `EndpointLifecycle.create!` |
+| `webhook_endpoints_update` | `PATCH webhook-endpoints/:id` | `:admin` | `EndpointLifecycle.update!` |
+| `webhook_tokens_issue` | `POST webhook-endpoints/:id/tokens` | `:admin` | `Endpoint#issue_token!` |
+| `webhook_tokens_revoke` | `POST webhook-tokens/:id/revoke` | `:admin` | `EndpointToken#revoke!` |
+
+OpenAPI title and summary use type first, for example `Webhook Endpoint - Create`
+and `Webhook Token - Revoke`. The plaintext intake token is returned only on
+issue. Show and index never include it. MCP lists these through its generic
+pickup of named API endpoints. Inbound intake, sandbox, recover/dispatch, and
+host `register_*` are not exposed.
+
 RecordingStudio MCP `0.17.0` lists one read-only tool per exposed metric. The
 tool name is the identifier with its one dot replaced by a hyphen. Only
 timeseries tools take `from`, `to`, and `interval`. `start` and `start_at` are
@@ -322,7 +346,10 @@ and `recording_studio_webhooks.gemspec`: core tag `v6.5.0` (runtime `>= 6.3.0`),
 Accessible tag `v0.24.2` (runtime `>= 0.24.2`), Root Switchable tag `v0.11.4`,
 Metrics tag `v0.7.3` (runtime `>= 0.7.2`, `< 1.0`), Flatpack tag
 `v0.1.341` (runtime `>= 0.1.341`), Admin tag `v2.5.1`, Cache tag `v0.6.2`,
-and Trashable tag `v0.12.3` (`require: false`).
+Trashable tag `v0.12.3` (`require: false`), and Recording Studio API tag
+`v0.21.3` (dummy only, for HTTP coverage of the named endpoints). Logs tag
+`v0.7.3`, Moveable tag `v4.1.0`, and Icons tag `v0.2.0` are dummy-only
+transitive dependencies of Recording Studio API.
 Dummy Rails is `~> 8.1.1`; the gemspec is `rails ~> 8.1.0`, `sidekiq ~> 8.1.6`,
 and `view_component >= 4.14, < 5`. Authenticated dummy screens use
 Recording Studio's shared default layout. Engine controllers include

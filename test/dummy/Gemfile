@@ -16,8 +16,13 @@ gem "recording_studio_trashable",
 # Root switcher for the top nav
 gem "recording_studio_root_switchable", github: "bowerbird-app/RecordingStudio_root_switchable", tag: "v0.11.4"
 
-# Host registers Metrics definitions. Webhooks does not depend on RecordingStudio API.
+# Host registers Metrics definitions. Named webhook endpoint routes register
+# when Recording Studio API is loaded.
 gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.7.3"
+gem "recording_studio_api", github: "bowerbird-app/RecordingStudio_api", tag: "v0.21.3"
+gem "recording_studio_logs", github: "bowerbird-app/RecordingStudio_logs", tag: "v0.7.3"
+gem "recording_studio_moveable", github: "bowerbird-app/RecordingStudio_moveable", tag: "v4.1.0"
+gem "recording_studio_icons", github: "bowerbird-app/RecordingStudio_icons", tag: "v0.2.0"
 
 # Devise authentication
 gem "devise"
