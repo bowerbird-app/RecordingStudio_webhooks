@@ -30,6 +30,11 @@ endpoints. MCP picks them up through that API. No new tables.
   API client. `:view` and `:edit` receive `403`.
 - Dummy mounts Recording Studio API `v0.21.3` so the HTTP suite can run.
 
+### Fixed
+
+- Index and show stay fail-closed when `admin_recording_scope` raises, and
+  now log the exception class and message.
+
 ## [0.9.0] - 2026-11-06
 
 Admin authorization defaults through Accessible. Recording Studio pins move

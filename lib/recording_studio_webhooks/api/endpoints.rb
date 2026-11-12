@@ -44,7 +44,10 @@ module RecordingStudioWebhooks
 
         recordings = resolver.call(admin_context(context, permission: :view))
         Endpoint.current.where(recording_studio_recording_id: recordings.select(:id))
-      rescue StandardError
+      rescue StandardError => e
+        Rails.logger.warn(
+          "RecordingStudioWebhooks::Api::Endpoints.scoped_endpoints failed: #{e.class}: #{e.message}"
+        )
         Endpoint.none
       end
 

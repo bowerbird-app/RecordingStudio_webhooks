@@ -199,7 +199,7 @@ class WebhookMetricsTest < ActiveSupport::TestCase
   end
 
   test "execute handler is unauthorized when access denies" do
-    error = assert_raises(StandardError) do
+    error = assert_raises(RecordingStudioMetrics::Errors::AuthorizationError) do
       RecordingStudioMetrics::Api::ExecuteHandler.call(build_api_context(@outsider))
     end
 
