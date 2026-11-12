@@ -199,7 +199,8 @@ class WebhookMetricsTest < ActiveSupport::TestCase
   end
 
   test "execute handler is unauthorized when access denies" do
-    error = assert_raises(RecordingStudioMetrics::Errors::AuthorizationError) do
+    # With RS_API loaded, RecordingStudio_metrics' map_to_api_error (lib/recording_studio_metrics/api.rb) maps the Metrics AuthorizationError to RecordingStudioApi::AuthorizationError.
+    error = assert_raises(RecordingStudioApi::AuthorizationError) do
       RecordingStudioMetrics::Api::ExecuteHandler.call(build_api_context(@outsider))
     end
 
