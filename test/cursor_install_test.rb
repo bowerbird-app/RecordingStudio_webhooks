@@ -56,6 +56,28 @@ class CursorInstallTest < Minitest::Test
     refute_includes install, "fetch-skills.sh\" || true"
   end
 
+  ECOSYSTEM_TAGS = {
+    "Gemfile" => %w[v6.7.0 v0.1.356 v0.31.0 v2.13.0 v0.8.0 v0.14.0 v0.7.4],
+    "test/dummy/Gemfile" => %w[v6.7.0 v0.1.356 v0.31.0 v2.13.0 v0.8.0 v0.14.0 v0.7.4 v0.6.3 v0.15.0]
+  }.freeze
+
+  def test_gemfiles_pin_ecosystem_release_tags
+    ECOSYSTEM_TAGS.each do |relative, tags|
+      source = File.read(File.join(ROOT, relative))
+      lock = File.read(File.join(ROOT, "#{relative}.lock"))
+
+      source.each_line do |line|
+        next if line.strip.start_with?("#")
+
+        refute_match(/branch:\s*["']main["']/, line)
+      end
+      tags.each do |tag|
+        assert_includes source, %(tag: "#{tag}"), relative
+        assert_includes lock, "tag: #{tag}", "#{relative}.lock"
+      end
+    end
+  end
+
   def test_lockfiles_pin_current_gem_version
     version = File.read(File.join(ROOT, "lib/recording_studio_webhooks/version.rb"))[/VERSION = "([^"]+)"/, 1]
     %w[Gemfile.lock test/dummy/Gemfile.lock].each do |relative|

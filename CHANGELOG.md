@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+Development Gemfiles pin the current kit tags. `VERSION` stays `0.9.0`.
+Gemspec floors are unchanged.
+
+### Changed
+
+- Development pins: core `v6.7.0`, Flatpack `v0.1.356`, Accessible `v0.31.0`,
+  Admin `v2.13.0`, Metrics `v0.8.0`, Cache `v0.6.3`, Logs `v0.7.4`,
+  Trashable `v0.14.0`, Root Switchable `v0.15.0`. Logs is pinned because
+  Admin `v2.13.0` requires it and it is not on RubyGems.
+
 ## [0.9.0] - 2026-11-06
 
 Admin authorization defaults through Accessible. Recording Studio pins move

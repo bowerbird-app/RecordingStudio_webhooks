@@ -5,14 +5,16 @@ source "https://rubygems.org"
 gemspec
 
 # recording_studio is not published to RubyGems; resolve the gemspec pin from GitHub.
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.5.0"
-gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.341"
-gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.24.2"
-gem "recording_studio_admin", github: "bowerbird-app/RecordingStudio_admin", tag: "v2.5.1"
-gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.7.3"
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.7.0"
+gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.356"
+gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.31.0"
+gem "recording_studio_admin", github: "bowerbird-app/RecordingStudio_admin", tag: "v2.13.0"
+gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.8.0"
+# Admin requires Logs. It is not published to RubyGems.
+gem "recording_studio_logs", github: "bowerbird-app/RecordingStudio_logs", tag: "v0.7.4", require: false
 # Admin and Accessible load Trashable query helpers only; pin for Bundler.
 gem "recording_studio_trashable",
-    github: "bowerbird-app/RecordingStudio_trashable", tag: "v0.12.3",
+    github: "bowerbird-app/RecordingStudio_trashable", tag: "v0.14.0",
     require: false
 
 group :development, :test do
