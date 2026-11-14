@@ -794,7 +794,7 @@ module RecordingStudioWebhooks
                    next relation unless value.present?
 
                    relation.where(
-                     "recording_studio_webhooks_inbound_events.provider_name ILIKE :q",
+                     "recording_studio_webhooks_endpoints.provider_name ILIKE :q",
                      q: "%#{ActiveRecord::Base.sanitize_sql_like(value)}%"
                    )
                  }

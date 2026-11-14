@@ -35,7 +35,8 @@ module RecordingStudioWebhooks
           end
           render :new, status: :unprocessable_entity
         end
-      rescue ActiveRecord::RecordInvalid
+      rescue ActiveRecord::RecordInvalid => e
+        copy_record_errors(e.record)
         render :new, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"
@@ -58,8 +59,8 @@ module RecordingStudioWebhooks
         else
           redirect_to "/admin/screens/endpoints", alert: @form_error
         end
-      rescue ActiveRecord::RecordInvalid
-        redirect_to "/admin/screens/endpoints", alert: @endpoint.errors.full_messages.to_sentence
+      rescue ActiveRecord::RecordInvalid => e
+        redirect_to "/admin/screens/endpoints", alert: e.record.errors.full_messages.to_sentence
       end
 
       private
@@ -146,6 +147,14 @@ module RecordingStudioWebhooks
         return nil if path.start_with?("//")
 
         path
+      end
+
+      def copy_record_errors(record)
+        return unless record.respond_to?(:errors)
+
+        record.errors.each do |validation_error|
+          @endpoint.errors.add(validation_error.attribute, validation_error.message)
+        end
       end
 
       def registered_provider?
