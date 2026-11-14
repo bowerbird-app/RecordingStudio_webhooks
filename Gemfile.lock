@@ -1,20 +1,20 @@
 GIT
   remote: https://github.com/bowerbird-app/RecordingStudio.git
-  revision: a6843377696f5977c918dc5070a5f234f4442cd4
-  tag: v6.10.0
+  revision: c079ce3759ae40ce092ac9c3a7b974ad9c486682
+  tag: v6.13.0
   specs:
-    recording_studio (6.10.0)
+    recording_studio (6.13.0)
       flat_pack (>= 0.1.315)
       rails (>= 8.1.4.1)
 
 GIT
   remote: https://github.com/bowerbird-app/RecordingStudio_accessible.git
-  revision: c147fa43e06595869c54908ad1e54f0255704d30
-  tag: v0.37.0
+  revision: 94d86f3bc2bb4470d6251f568aafef1e24d54dee
+  tag: v0.40.0
   specs:
-    recording_studio_accessible (0.37.0)
+    recording_studio_accessible (0.40.0)
       rails (~> 8.1.0)
-      recording_studio (~> 6.1, >= 6.1.0)
+      recording_studio (~> 6.1, >= 6.13.0)
       recording_studio_trashable (~> 0.10)
 
 GIT
@@ -33,10 +33,10 @@ GIT
 
 GIT
   remote: https://github.com/bowerbird-app/RecordingStudio_logs.git
-  revision: 47d70f2c1d72cdc9bbb9ce7f63d98835347ce449
-  tag: v0.7.4
+  revision: e0cc2c652b79e85105b8d2fc041050e559360a79
+  tag: v0.7.5
   specs:
-    recording_studio_logs (0.7.4)
+    recording_studio_logs (0.7.5)
       rails (~> 8.1.0)
       recording_studio (>= 6.1.0)
       recording_studio_metrics (>= 0.6.1, < 1.0)
@@ -63,10 +63,10 @@ GIT
 
 GIT
   remote: https://github.com/bowerbird-app/flatpack.git
-  revision: 9604b5b37191c7aa7cee1378670a4150acd670b9
-  tag: v0.1.366
+  revision: 6f35ee72d3862a95834fdb43b4de013f9e59c096
+  tag: v0.1.374
   specs:
-    flat_pack (0.1.366)
+    flat_pack (0.1.374)
       pagy (~> 9.0)
       rails (>= 7.1, < 9)
       tailwind_merge (>= 0.13, < 2)
@@ -403,7 +403,7 @@ CHECKSUMS
   drb (2.2.3) sha256=0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373
   erb (6.0.7) sha256=c5ca6dc25b0ef974a44dc8f59fe847577122483b1968a38dec305c60bf91ee92
   erubi (1.13.1) sha256=a082103b0885dbc5ecf1172fede897f9ebdb745a4b97a5e8dc63953db1ee4ad9
-  flat_pack (0.1.366)
+  flat_pack (0.1.374)
   globalid (1.4.0) sha256=037f12fbf1d9d7a014d501c2d5c77356fd4ddd96d7a7991d6700bba96706f427
   i18n (1.15.2) sha256=00f9eb62412fe593b2a65a97daa75300d37abb8f7202ec748e94b6d46a9dd1b5
   io-console (0.9.5) sha256=83dd9bbf4c4680416629245b39cd4212eb5f4d9a4ea91804870c1f6b846414d5
@@ -450,10 +450,10 @@ CHECKSUMS
   rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
   rbs (4.2.0) sha256=51f7b886dcc05bc09e10b901daa6a81829f6adc03101d6ca9ea4aac6103e0674
   rdoc (8.1.0) sha256=befc37880a5cfd36dcb176c748b5fd5ee39dd3536a75e81824e4972ce230f60a
-  recording_studio (6.10.0)
-  recording_studio_accessible (0.37.0)
+  recording_studio (6.13.0)
+  recording_studio_accessible (0.40.0)
   recording_studio_admin (2.13.0)
-  recording_studio_logs (0.7.4)
+  recording_studio_logs (0.7.5)
   recording_studio_metrics (0.8.0)
   recording_studio_trashable (0.15.0)
   recording_studio_webhooks (0.9.1)

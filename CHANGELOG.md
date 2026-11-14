@@ -4,9 +4,21 @@
 
 ### Changed
 
+- Development pins: core `v6.13.0`, Flatpack `v0.1.374`, Accessible `v0.40.0`,
+  Admin `v2.13.0`, Metrics `v0.8.0`, Cache `v0.6.3`, Logs `v0.7.5`,
+  Trashable `v0.15.0`, Root Switchable `v0.15.0`.
 - The dummy copies core migration
   `20261114090000_add_root_recording_id_to_recording_studio_events` so event
-  writes on Recording Studio 6.9+ store `root_recording_id`.
+  writes on Recording Studio 6.9+ store `root_recording_id`. Core `v6.11.0`
+  through `v6.13.0` add no further migrations.
+- Gemspec floors stay unchanged. These tags already satisfy them.
+
+### Upgrade notes
+
+- No version bump. Hosts that copy the development git tags should use the pins above.
+- Copy core migration
+  `20261114090000_add_root_recording_id_to_recording_studio_events` before writing
+  events on Recording Studio 6.9+.
 
 ## [0.9.1] - 2026-11-14
 

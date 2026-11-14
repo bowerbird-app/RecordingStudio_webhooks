@@ -3,9 +3,9 @@ source "https://rubygems.org"
 # Use the Recording Studio Webhooks engine
 gem "recording_studio_webhooks", path: "../.."
 
-# RecordingStudio 6.10 kit.
-gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.10.0"
-gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.37.0"
+# RecordingStudio 6.13 kit.
+gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.13.0"
+gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.40.0"
 gem "recording_studio_admin", github: "bowerbird-app/RecordingStudio_admin", tag: "v2.13.0"
 gem "recording_studio_cache", github: "bowerbird-app/RecordingStudio_cache", tag: "v0.6.3"
 # Admin and Accessible load Trashable query helpers only; pin for Bundler.
@@ -19,7 +19,7 @@ gem "recording_studio_root_switchable", github: "bowerbird-app/RecordingStudio_r
 # Host registers Metrics definitions. Webhooks does not depend on RecordingStudio API.
 gem "recording_studio_metrics", github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.8.0"
 # Admin requires Logs. It is not published to RubyGems.
-gem "recording_studio_logs", github: "bowerbird-app/RecordingStudio_logs", tag: "v0.7.4", require: false
+gem "recording_studio_logs", github: "bowerbird-app/RecordingStudio_logs", tag: "v0.7.5", require: false
 
 # Devise authentication
 gem "devise"
@@ -45,7 +45,7 @@ gem "jbuilder"
 gem "tailwindcss-rails"
 
 # FlatPack UI component library [https://github.com/bowerbird-app/flatpack]
-gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.366"
+gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.374"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"

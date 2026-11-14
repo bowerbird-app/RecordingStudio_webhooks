@@ -57,8 +57,8 @@ class CursorInstallTest < Minitest::Test
   end
 
   ECOSYSTEM_TAGS = {
-    "Gemfile" => %w[v6.10.0 v0.1.366 v0.37.0 v2.13.0 v0.8.0 v0.15.0 v0.7.4],
-    "test/dummy/Gemfile" => %w[v6.10.0 v0.1.366 v0.37.0 v2.13.0 v0.8.0 v0.15.0 v0.7.4 v0.6.3]
+    "Gemfile" => %w[v6.13.0 v0.1.374 v0.40.0 v2.13.0 v0.8.0 v0.15.0 v0.7.5],
+    "test/dummy/Gemfile" => %w[v6.13.0 v0.1.374 v0.40.0 v2.13.0 v0.8.0 v0.15.0 v0.7.5 v0.6.3]
   }.freeze
 
   def test_gemfiles_pin_ecosystem_release_tags
