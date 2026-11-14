@@ -2,6 +2,7 @@
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
+ENV["SIMPLECOV_COMMAND_NAME"] ||= "gem"
 require_relative "simplecov_helper"
 require "minitest/autorun"
 require "minitest/mock"
