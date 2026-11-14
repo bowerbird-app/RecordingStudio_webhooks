@@ -62,6 +62,6 @@ class MetricsTest < Minitest::Test
   end
 
   def test_version_pin
-    assert_equal "0.9.0", RecordingStudioWebhooks::VERSION
+    assert_equal "0.9.1", RecordingStudioWebhooks::VERSION
   end
 end
