@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+
+- The dummy copies core migration
+  `20261114090000_add_root_recording_id_to_recording_studio_events` so event
+  writes on Recording Studio 6.9+ store `root_recording_id`.
+
 ## [0.9.1] - 2026-11-14
 
 Test coverage is 96.05% lines (2793/2908) and 71.5% branches (705/986)
@@ -19,9 +25,9 @@ across the gem and dummy suites.
 
 ### Changed
 
-- Development pins: core `v6.7.0`, Flatpack `v0.1.356`, Accessible `v0.31.0`,
+- Development pins: core `v6.10.0`, Flatpack `v0.1.366`, Accessible `v0.37.0`,
   Admin `v2.13.0`, Metrics `v0.8.0`, Cache `v0.6.3`, Logs `v0.7.4`,
-  Trashable `v0.14.0`, Root Switchable `v0.15.0`. Logs is pinned because
+  Trashable `v0.15.0`, Root Switchable `v0.15.0`. Logs is pinned because
   Admin `v2.13.0` requires it and it is not on RubyGems.
 - Gemspec floors are unchanged.
 

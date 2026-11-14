@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -80,11 +80,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_120000) do
     t.uuid "recordable_id", null: false
     t.string "recordable_type", null: false
     t.uuid "recording_id", null: false
+    t.uuid "root_recording_id", null: false
     t.index ["action", "occurred_at"], name: "index_rs_events_on_action_and_occurred_at"
     t.index ["actor_type", "actor_id", "occurred_at"], name: "index_rs_events_on_actor_and_occurred_at"
+    t.index ["impersonator_type", "impersonator_id", "occurred_at"], name: "index_rs_events_on_impersonator_and_occurred_at"
     t.index ["recording_id", "idempotency_key"], name: "index_recording_studio_events_on_recording_and_idempotency_key", unique: true, where: "(idempotency_key IS NOT NULL)"
     t.index ["recording_id", "occurred_at", "created_at"], name: "index_rs_events_on_recording_and_timeline", order: { occurred_at: :desc, created_at: :desc }
     t.index ["recording_id"], name: "index_recording_studio_events_on_recording_id"
+    t.index ["root_recording_id", "occurred_at", "created_at", "id"], name: "index_rs_events_on_root_and_timeline", order: { occurred_at: :desc, created_at: :desc, id: :desc }
+  end
+
+  create_table "recording_studio_metrics_pages", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "workspace_id", null: false
+    t.string "title", null: false
+    t.string "slug", null: false
+    t.jsonb "content", default: {}, null: false
+    t.boolean "published", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["published"], name: "index_recording_studio_metrics_pages_on_published"
+    t.index ["workspace_id", "slug"], name: "index_recording_studio_metrics_pages_on_workspace_id_and_slug", unique: true
+    t.index ["workspace_id"], name: "index_recording_studio_metrics_pages_on_workspace_id"
   end
 
   create_table "recording_studio_recordings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -121,19 +137,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_120000) do
     t.index ["actor_type", "actor_id", "device_key", "scope_key"], name: "idx_rs_root_switchable_actor_device_scope", unique: true, where: "(actor_id IS NOT NULL)"
     t.index ["device_key", "scope_key"], name: "idx_rs_root_switchable_anonymous_device_scope", unique: true, where: "(actor_id IS NULL)"
     t.index ["root_recording_id"], name: "idx_rs_root_switchable_root_recording"
-  end
-
-  create_table "recording_studio_metrics_pages", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "workspace_id", null: false
-    t.string "title", null: false
-    t.string "slug", null: false
-    t.jsonb "content", default: {}, null: false
-    t.boolean "published", default: false, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["published"], name: "index_recording_studio_metrics_pages_on_published"
-    t.index ["workspace_id", "slug"], name: "index_recording_studio_metrics_pages_on_workspace_id_and_slug", unique: true
-    t.index ["workspace_id"], name: "index_recording_studio_metrics_pages_on_workspace_id"
   end
 
   create_table "recording_studio_webhooks_action_attempts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -234,6 +237,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_120000) do
 
   add_foreign_key "recording_studio_access_invitations", "recording_studio_recordings", column: "recording_id"
   add_foreign_key "recording_studio_events", "recording_studio_recordings", column: "recording_id"
+  add_foreign_key "recording_studio_events", "recording_studio_recordings", column: "root_recording_id"
   add_foreign_key "recording_studio_recordings", "recording_studio_recordings", column: "parent_recording_id"
   add_foreign_key "recording_studio_recordings", "recording_studio_recordings", column: "root_recording_id"
   add_foreign_key "recording_studio_webhooks_action_attempts", "recording_studio_webhooks_inbound_events", column: "inbound_event_id"
