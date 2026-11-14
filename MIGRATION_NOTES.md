@@ -3,6 +3,17 @@
 This engine requires Recording Studio `>= 6.3.0`, Accessible `>= 0.24.2`, and
 Flatpack `>= 0.1.341`.
 
+## 0.9.1
+
+No database migration. Gemspec floors are unchanged.
+
+Sidekiq 8 schedules delayed jobs with `Client.push` and an `at` timestamp.
+`Client.push_at` is gone. Hosts on the default Sidekiq dispatcher do not
+change configuration.
+
+Endpoint create and update show validation errors from the saved recordable.
+The providers table search matches `endpoints.provider_name`.
+
 ## 0.9.0
 
 No database migration.

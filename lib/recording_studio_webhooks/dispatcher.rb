@@ -27,7 +27,8 @@ module RecordingStudioWebhooks
           "queue" => RecordingStudioWebhooks.configuration.queue_name,
           "retry" => false
         }
-        wait_until ? ::Sidekiq::Client.push_at(wait_until.to_f, payload) : ::Sidekiq::Client.push(payload)
+        payload["at"] = wait_until.to_f if wait_until
+        ::Sidekiq::Client.push(payload)
       end
     end
 

@@ -2,8 +2,20 @@
 
 ## Unreleased
 
-Development Gemfiles pin the current kit tags. `VERSION` stays `0.9.0`.
-Gemspec floors are unchanged.
+## [0.9.1] - 2026-11-14
+
+Test coverage is 96.05% lines (2793/2908) and 71.5% branches (705/986)
+across the gem and dummy suites.
+
+### Fixed
+
+- Endpoint create and update copy validation errors from the recordable saved
+  inside `record!` / `revise` onto the form and the flash.
+- Providers table search filters
+  `recording_studio_webhooks_endpoints.provider_name`. The previous query
+  named the inbound events table, which that relation does not join.
+- The Sidekiq dispatcher sets `at` and calls `Sidekiq::Client.push`. Sidekiq 8
+  removed `Client.push_at`.
 
 ### Changed
 
@@ -11,6 +23,13 @@ Gemspec floors are unchanged.
   Admin `v2.13.0`, Metrics `v0.8.0`, Cache `v0.6.3`, Logs `v0.7.4`,
   Trashable `v0.14.0`, Root Switchable `v0.15.0`. Logs is pinned because
   Admin `v2.13.0` requires it and it is not on RubyGems.
+- Gemspec floors are unchanged.
+
+### Upgrade notes
+
+- Bump to `0.9.1`. No database migration.
+- Sidekiq stays `~> 8.1.6`. Delayed dispatch uses `Client.push` with `at`.
+- No host configuration change.
 
 ## [0.9.0] - 2026-11-06
 
@@ -543,7 +562,8 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.1...v0.7.2

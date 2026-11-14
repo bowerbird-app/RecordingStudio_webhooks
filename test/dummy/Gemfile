@@ -85,6 +85,9 @@ group :development, :test do
 
   # Minitest 6 (via newer Rails 8.1) no longer ships Object#stub without this.
   gem "minitest-mock"
+
+  # Same formatter as the gem suite so the two result sets merge.
+  gem "simplecov", "0.22.0", require: false
 end
 
 group :development do
