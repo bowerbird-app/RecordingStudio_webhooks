@@ -13,14 +13,14 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
       user.password_confirmation = "Password123!"
     end
     workspace = Workspace.create!(name: "Metric widgets #{SecureRandom.hex(4)}")
-    @root = RecordingStudio.root_recording_for(workspace)
+    @root = RecordingStudio.create_root_recording!(workspace, actor: @user)
     result = RecordingStudioAccessible.bootstrap_owner_access!(
       recording: @root,
       actor: @user
     )
     raise result.error if result.failure?
 
-    @admin_root = RecordingStudio.root_recording_for(AdminRoot.find_or_create_by!(name: "Admin"))
+    @admin_root = RecordingStudio.create_root_recording!(AdminRoot.find_or_create_by!(name: "Admin"), actor: @user)
     admin_owner = RecordingStudioAccessible.bootstrap_owner_access!(
       recording: @admin_root,
       actor: @user
@@ -363,7 +363,7 @@ class AdminMetricWidgetsTest < ActionDispatch::IntegrationTest
     create_failed_attempt!("invoice.edge_week", created_at: Time.current, completed_at: edge, action_name: "demo.edge_week")
 
     other_workspace = Workspace.create!(name: "Other metric root #{SecureRandom.hex(4)}")
-    other_root = RecordingStudio.root_recording_for(other_workspace)
+    other_root = RecordingStudio.create_root_recording!(other_workspace, actor: @user)
     other_owner = RecordingStudioAccessible.bootstrap_owner_access!(
       recording: other_root,
       actor: @user

@@ -89,7 +89,7 @@ class AdminAccessibleDefaultTest < ActionDispatch::IntegrationTest
 
   def grant_current_root!(actor, role:)
     workspace = Workspace.find_or_create_by!(name: "Studio Workspace")
-    recording = RecordingStudio.root_recording_for(workspace)
+    recording = RecordingStudio.create_root_recording!(workspace, actor: actor)
     owner = create_user!("studio-owner@admin.com")
 
     unless RecordingStudioAccessible.authorized?(actor: owner, recording: recording, role: :admin)

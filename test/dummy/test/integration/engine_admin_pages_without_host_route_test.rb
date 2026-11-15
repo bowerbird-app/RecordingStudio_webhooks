@@ -20,7 +20,7 @@ class EngineAdminPagesWithoutHostRouteTest < ActionDispatch::IntegrationTest
       user.password_confirmation = "Password123!"
     end
     workspace = Workspace.create!(name: "Engine pages #{SecureRandom.hex(4)}")
-    @recording = RecordingStudio.root_recording_for(workspace)
+    @recording = RecordingStudio.create_root_recording!(workspace, actor: @user)
     result = RecordingStudioAccessible.bootstrap_owner_access!(
       recording: @recording,
       actor: @user

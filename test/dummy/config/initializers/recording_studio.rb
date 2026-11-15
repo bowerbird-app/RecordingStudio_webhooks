@@ -22,8 +22,9 @@ RecordingStudio.configure do |config|
   # Actor resolver for events when no actor is explicitly supplied
   config.actor = -> { Current.actor }
 
-  # Core 6.5 fails closed without a write authorizer. AccessCreationContext
-  # covers RecordingStudio::Access rows only. Every other write needs :edit.
+  # Core 7 calls authorize_write for a new root with recording and
+  # root_recording nil. A present actor may create that root. Access rows
+  # stay inside AccessCreationContext. Every other write needs :edit.
   config.authorize_write = lambda do |actor:, recording:, root_recording:, recordable:, **|
     next false unless actor
 
@@ -37,7 +38,7 @@ RecordingStudio.configure do |config|
     end
 
     rec = root_recording || recording
-    next false unless rec
+    next true if rec.nil?
 
     RecordingStudioAccessible.authorized?(actor: actor, recording: rec, role: :edit)
   rescue StandardError

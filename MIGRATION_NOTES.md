@@ -1,7 +1,27 @@
 # Migration Notes
 
-This engine requires Recording Studio `>= 6.3.0`, Accessible `>= 0.24.2`, and
-Flatpack `>= 0.1.341`.
+This engine requires Recording Studio `>= 7.0`, `< 8.0`, Accessible
+`>= 0.44.0`, `< 1.0`, Metrics `>= 0.7.2`, `< 1.0`, and Flatpack `>= 0.1.341`.
+
+## 0.10.0
+
+No webhook table migration. Recording Studio 7 adds
+`recording_studio_events.root_recording_id`. Hosts copy that migration from
+Recording Studio and migrate. The dummy app vendors the same migration.
+
+`RecordingStudio.root_recording_for` only finds a root. Create one with
+`RecordingStudio.create_root_recording!(recordable, actor:)`. This engine
+does not create roots. Dummy seeds and tests do.
+
+Set `config.authorize_write`. A new root calls it with `recording` and
+`root_recording` nil, so the callback has to allow that create. Do not set
+`allow_unauthorized_writes`.
+
+Admin `2.15` removed `site_admin_recording_resolver`. Set
+`RecordingStudioAccessible.configuration.admin_root_resolver` to the kept
+admin root. `Api::Access` reads `RecordingStudioAccessible.admin_root`.
+When that resolver is unset, API access still uses Admin's
+`access_recording_resolver`.
 
 ## 0.9.1
 

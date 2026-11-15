@@ -10,13 +10,31 @@ class AuthorizeWriteTest < ActiveSupport::TestCase
       password_confirmation: "Password123!"
     )
     @workspace = Workspace.create!(name: "Write #{SecureRandom.hex(4)}")
-    @root = RecordingStudio.root_recording_for(@workspace)
+    @root = RecordingStudio.create_root_recording!(@workspace, actor: @user)
     @previous_actor = Current.actor
     Current.actor = @user
   end
 
   teardown do
     Current.actor = @previous_actor
+  end
+
+  test "root_recording_for finds a root and create_root_recording! creates one" do
+    workspace = Workspace.create!(name: "Root split #{SecureRandom.hex(4)}")
+
+    assert_nil RecordingStudio.root_recording_for(workspace)
+
+    created = RecordingStudio.create_root_recording!(workspace, actor: @user)
+    assert_predicate created, :persisted?
+    assert_nil created.parent_recording_id
+    assert_equal created, RecordingStudio.root_recording_for(workspace)
+
+    again = RecordingStudio.create_root_recording!(workspace, actor: @user)
+    assert_equal created.id, again.id
+
+    events = RecordingStudio::Event.where(recording_id: created.id, action: "created")
+    assert_equal 1, events.count
+    assert_equal created.id, events.pick(:root_recording_id)
   end
 
   test "AccessCreationContext does not authorize ordinary page writes" do

@@ -18,7 +18,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
       user.password_confirmation = "Password123!"
     end
     workspace = Workspace.create!(name: "Webhook Workspace #{SecureRandom.hex(4)}")
-    @recording = RecordingStudio.root_recording_for(workspace)
+    @recording = RecordingStudio.create_root_recording!(workspace, actor: @user)
     result = RecordingStudioAccessible.bootstrap_owner_access!(
       recording: @recording,
       actor: @user
@@ -248,7 +248,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
 
   test "endpoint rows can coexist for the same provider and recording and empty JSON objects are valid" do
     other_workspace = Workspace.create!(name: "Other Webhook Workspace #{SecureRandom.hex(4)}")
-    other_recording = RecordingStudio.root_recording_for(other_workspace)
+    other_recording = RecordingStudio.create_root_recording!(other_workspace, actor: @user)
     endpoint = RecordingStudioWebhooks::Endpoint.create!(
       recording_studio_recording: @recording,
       label: "Current endpoint",
@@ -935,7 +935,7 @@ class InboundWebhooksTest < ActionDispatch::IntegrationTest
     sign_in @user
     label = "Auto token endpoint"
     other_workspace = Workspace.create!(name: "Auto Token Workspace #{SecureRandom.hex(4)}")
-    other_recording = RecordingStudio.root_recording_for(other_workspace)
+    other_recording = RecordingStudio.create_root_recording!(other_workspace, actor: @user)
     other_owner = RecordingStudioAccessible.bootstrap_owner_access!(
       recording: other_recording,
       actor: @user

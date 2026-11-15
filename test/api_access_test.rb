@@ -8,16 +8,13 @@ class ApiAccessTest < Minitest::Test
   Grant = Struct.new(:actor)
   GrantContext = Struct.new(:access_grant)
 
-  def test_can_view_prefers_the_site_resolver_when_it_is_set
+  def test_can_view_prefers_the_admin_root_when_it_is_set
     viewer = Object.new
     site_recording = Object.new
     access_called = false
 
     with_admin_resolvers(
-      site: lambda { |context|
-        assert_nil context.controller
-        site_recording
-      },
+      admin_root: ->(**) { site_recording },
       access: lambda { |_context|
         access_called = true
         Object.new
@@ -27,8 +24,10 @@ class ApiAccessTest < Minitest::Test
         actor.equal?(viewer) && recording.equal?(site_recording) && role == :view
       end
 
-      RecordingStudioAccessible.stub(:authorized?, allow_site) do
-        assert RecordingStudioWebhooks::Api::Access.can_view?(grant_context(viewer))
+      RecordingStudioAccessible.stub(:admin_root, site_recording) do
+        RecordingStudioAccessible.stub(:authorized?, allow_site) do
+          assert RecordingStudioWebhooks::Api::Access.can_view?(grant_context(viewer))
+        end
       end
     end
 
@@ -39,7 +38,7 @@ class ApiAccessTest < Minitest::Test
     viewer = Object.new
     access_recording = Object.new
 
-    with_admin_resolvers(site: nil, access: ->(_context) { access_recording }) do
+    with_admin_resolvers(admin_root: nil, access: ->(_context) { access_recording }) do
       allow_access = lambda do |actor:, recording:, role:|
         actor.equal?(viewer) && recording.equal?(access_recording) && role == :view
       end
@@ -50,42 +49,34 @@ class ApiAccessTest < Minitest::Test
     end
   end
 
-  def test_can_view_denies_when_the_resolver_raises
+  def test_can_view_denies_when_the_access_resolver_raises
     viewer = Object.new
-    access_called = false
 
     with_admin_resolvers(
-      site: ->(context) { context.controller.current_root_recording },
-      access: lambda { |_context|
-        access_called = true
-        Object.new
-      }
-    ) do
-      decision = nil
-
-      RecordingStudioAccessible.stub(:authorized?, ->(**) { flunk "Accessible should not be checked" }) do
-        decision = RecordingStudioWebhooks::Api::Access.can_view?(grant_context(viewer))
-      end
-
-      refute decision
-    end
-
-    refute access_called
-  end
-
-  def test_can_view_denies_when_the_resolver_returns_nil
-    viewer = Object.new
-    access_called = false
-
-    with_admin_resolvers(
-      site: ->(_context) {},
-      access: lambda { |_context|
-        access_called = true
-        Object.new
-      }
+      admin_root: nil,
+      access: ->(_context) { raise "access resolver failed" }
     ) do
       RecordingStudioAccessible.stub(:authorized?, ->(**) { flunk "Accessible should not be checked" }) do
         refute RecordingStudioWebhooks::Api::Access.can_view?(grant_context(viewer))
+      end
+    end
+  end
+
+  def test_can_view_denies_when_the_admin_root_returns_nil
+    viewer = Object.new
+    access_called = false
+
+    with_admin_resolvers(
+      admin_root: ->(**) {},
+      access: lambda { |_context|
+        access_called = true
+        Object.new
+      }
+    ) do
+      RecordingStudioAccessible.stub(:admin_root, nil) do
+        RecordingStudioAccessible.stub(:authorized?, ->(**) { flunk "Accessible should not be checked" }) do
+          refute RecordingStudioWebhooks::Api::Access.can_view?(grant_context(viewer))
+        end
       end
     end
 
@@ -98,15 +89,16 @@ class ApiAccessTest < Minitest::Test
     GrantContext.new(Grant.new(actor))
   end
 
-  def with_admin_resolvers(site:, access:)
-    config = RecordingStudioAdmin.configuration
-    previous_site = config.site_admin_recording_resolver
-    previous_access = config.access_recording_resolver
-    config.site_admin_recording_resolver = site
-    config.access_recording_resolver = access
+  def with_admin_resolvers(admin_root:, access:)
+    admin_config = RecordingStudioAdmin.configuration
+    accessible_config = RecordingStudioAccessible.configuration
+    previous_admin_root = accessible_config.admin_root_resolver
+    previous_access = admin_config.access_recording_resolver
+    accessible_config.admin_root_resolver = admin_root
+    admin_config.access_recording_resolver = access
     yield
   ensure
-    config.site_admin_recording_resolver = previous_site
-    config.access_recording_resolver = previous_access
+    accessible_config.admin_root_resolver = previous_admin_root
+    admin_config.access_recording_resolver = previous_access
   end
 end
