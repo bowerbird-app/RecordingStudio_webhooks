@@ -42,6 +42,8 @@ across the gem and dummy suites.
   nil. Do not set `allow_unauthorized_writes`.
 - Move a `site_admin_recording_resolver` to Accessible
   `admin_root_resolver`. The callable takes an optional `context:` keyword.
+- Dummy lock updates `msgpack` to 1.8.7 and `puma` to 8.1.0. Bundler Audit
+  flagged the previous versions. The dummy Gemfile constraints are unchanged.
 
 ## [0.9.1] - 2026-11-14
 
