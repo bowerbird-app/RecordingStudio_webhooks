@@ -8,17 +8,34 @@ module RecordingStudioWebhooks
       ResolverContext = Struct.new(:controller)
 
       def admin_root_recording
+        return accessible_admin_root if accessible_admin_root_configured?
+
+        access_recording_from_admin
+      end
+
+      def accessible_admin_root_configured?
+        return false unless defined?(RecordingStudioAccessible)
+        return false unless RecordingStudioAccessible.respond_to?(:configuration)
+        return false unless RecordingStudioAccessible.respond_to?(:admin_root)
+
+        RecordingStudioAccessible.configuration.admin_root_resolver.respond_to?(:call)
+      end
+
+      def accessible_admin_root
+        RecordingStudioAccessible.admin_root
+      rescue StandardError
+        nil
+      end
+
+      def access_recording_from_admin
         return unless defined?(RecordingStudioAdmin)
 
-        config = RecordingStudioAdmin.configuration
-        resolver = config.site_admin_recording_resolver || config.access_recording_resolver
+        resolver = RecordingStudioAdmin.configuration.access_recording_resolver
         return unless resolver
 
-        begin
-          resolver.call(ResolverContext.new(nil))
-        rescue StandardError
-          nil
-        end
+        resolver.call(ResolverContext.new(nil))
+      rescue StandardError
+        nil
       end
 
       def actor_for(context)

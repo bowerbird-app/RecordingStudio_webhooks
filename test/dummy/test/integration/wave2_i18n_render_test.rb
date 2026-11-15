@@ -20,7 +20,7 @@ class Wave2I18nRenderTest < ActionDispatch::IntegrationTest
       user.password_confirmation = "Password123!"
     end
     workspace = Workspace.create!(name: "Wave2 I18n Workspace #{SecureRandom.hex(4)}")
-    @recording = RecordingStudio.root_recording_for(workspace)
+    @recording = RecordingStudio.create_root_recording!(workspace, actor: @user)
     result = RecordingStudioAccessible.bootstrap_owner_access!(
       recording: @recording,
       actor: @user

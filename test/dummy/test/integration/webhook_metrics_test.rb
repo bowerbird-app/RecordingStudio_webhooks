@@ -28,8 +28,8 @@ class WebhookMetricsTest < ActiveSupport::TestCase
     )
     Current.actor = @staff
     @workspace = Workspace.create!(name: "Metrics #{SecureRandom.hex(4)}")
-    @root = RecordingStudio.root_recording_for(@workspace)
-    @admin_root = RecordingStudio.root_recording_for(AdminRoot.find_or_create_by!(name: "Admin"))
+    @root = RecordingStudio.create_root_recording!(@workspace, actor: @staff)
+    @admin_root = RecordingStudio.create_root_recording!(AdminRoot.find_or_create_by!(name: "Admin"), actor: @staff)
     bootstrap_owner!(@admin_root, @staff)
     bootstrap_owner!(@root, @staff)
     seed_webhooks!

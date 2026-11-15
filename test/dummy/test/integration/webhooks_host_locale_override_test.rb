@@ -50,7 +50,7 @@ class WebhooksHostLocaleOverrideTest < ActionDispatch::IntegrationTest
 
     sign_in @user
     workspace = Workspace.create!(name: "Boot Override #{SecureRandom.hex(4)}")
-    recording = RecordingStudio.root_recording_for(workspace)
+    recording = RecordingStudio.create_root_recording!(workspace, actor: @user)
     result = RecordingStudioAccessible.bootstrap_owner_access!(
       recording: recording,
       actor: @user
@@ -81,7 +81,7 @@ class WebhooksHostLocaleOverrideTest < ActionDispatch::IntegrationTest
 
     sign_in @user
     workspace = Workspace.create!(name: "Host Override #{SecureRandom.hex(4)}")
-    recording = RecordingStudio.root_recording_for(workspace)
+    recording = RecordingStudio.create_root_recording!(workspace, actor: @user)
     result = RecordingStudioAccessible.bootstrap_owner_access!(
       recording: recording,
       actor: @user

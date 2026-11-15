@@ -210,10 +210,10 @@ RecordingStudioWebhooks.configuration.dispatcher = ->(_attempt_id, wait_until: n
 
 begin
   # Create the root recording
-  admin_root_recording = RecordingStudio.root_recording_for(admin_root)
-  root_recording = RecordingStudio.root_recording_for(workspace)
-  accessible_root_recording = RecordingStudio.root_recording_for(accessible_workspace)
-  private_root_recording = RecordingStudio.root_recording_for(private_workspace)
+  admin_root_recording = RecordingStudio.create_root_recording!(admin_root, actor: user)
+  root_recording = RecordingStudio.create_root_recording!(workspace, actor: user)
+  accessible_root_recording = RecordingStudio.create_root_recording!(accessible_workspace, actor: user)
+  private_root_recording = RecordingStudio.create_root_recording!(private_workspace, actor: user)
 
   [admin_root_recording, root_recording, accessible_root_recording, private_root_recording].each do |recording|
     grant_admin_access.call(recording, user)

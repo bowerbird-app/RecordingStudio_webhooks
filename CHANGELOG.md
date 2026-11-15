@@ -2,6 +2,47 @@
 
 ## Unreleased
 
+## [0.10.0] - 2026-11-15
+
+Recording Studio 7. `root_recording_for` only finds a root. Dummy seeds and
+tests create roots with `create_root_recording!`.
+
+Test coverage is 96.02% lines (2802/2918) and 71.43% branches (710/994)
+across the gem and dummy suites.
+
+### Changed
+
+- Runtime `recording_studio` is `>= 7.0`, `< 8.0`. Accessible is
+  `>= 0.44.0`, `< 1.0`. Metrics stays `>= 0.7.2`, `< 1.0`.
+- Development pins: core `v7.0.0`, Accessible `v0.44.0`, Admin `v2.16.0`,
+  Trashable `v0.17.0`, Root Switchable `v0.15.1`. Flatpack stays `v0.1.356`,
+  Metrics stays `v0.8.0`, Cache stays `v0.6.3`, and Logs stays `v0.7.4`.
+  Those four still allow core 7.
+- The dummy `authorize_write` callback allows a present actor to create a
+  root when `recording` and `root_recording` are nil. Later writes still
+  need Accessible `:edit`. Access rows still go through
+  `AccessCreationContext`.
+- `Api::Access` reads `RecordingStudioAccessible.admin_root` when
+  `admin_root_resolver` is set. Admin no longer has
+  `site_admin_recording_resolver`. An unset resolver still falls back to
+  Admin `access_recording_resolver`.
+
+### Upgrade notes
+
+- Bump to `0.10.0`. No webhook table migration.
+- Install Recording Studio `>= 7.0`, `< 8.0` and copy its
+  `add_root_recording_id_to_recording_studio_events` migration. The dummy
+  app vendors that migration.
+- Pin Accessible `>= 0.44.0`, `< 1.0`. Trashable `0.17.0` satisfies
+  Accessible 0.44.
+- Replace setup that created a root by calling `root_recording_for` with
+  `RecordingStudio.create_root_recording!(recordable, actor:)`. Lookups stay
+  on `root_recording_for` and handle `nil`.
+- Keep `config.authorize_write`. Allow the create when `root_recording` is
+  nil. Do not set `allow_unauthorized_writes`.
+- Move a `site_admin_recording_resolver` to Accessible
+  `admin_root_resolver`. The callable takes an optional `context:` keyword.
+
 ## [0.9.1] - 2026-11-14
 
 Test coverage is 96.05% lines (2793/2908) and 71.5% branches (705/986)
@@ -562,7 +603,8 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.7.2...v0.8.0

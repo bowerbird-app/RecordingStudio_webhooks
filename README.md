@@ -233,7 +233,9 @@ filters status, provider, and endpoint in the filter modal.
 RecordingStudio Metrics (`>= 0.7.2`) at boot. Every metric uses
 `blast_radius: :site`, is exposed on the `:operations` API only, and is visible
 over the API only to actors with `:view` on the Admin root
-(`Api::Access.can_view?`). This gem does not call
+(`Api::Access.can_view?`). That root is
+`RecordingStudioAccessible.admin_root`. When `admin_root_resolver` is unset,
+API access falls back to Admin's `access_recording_resolver`. This gem does not call
 `RecordingStudioMetrics::Api.register!`. When RecordingStudio API is present,
 the host registers Metrics endpoints once:
 
@@ -317,13 +319,13 @@ Tests use a no-op dispatcher so CI can run without Redis; development uses
 Sidekiq. Sign in as `admin@admin.com` with password `Password`, then open
 **Webhook endpoints** from Admin webhooks. The demo never sends outbound requests.
 
-The dummy is on the Recording Studio 6.7 kit from `Gemfile` and
+The dummy is on the Recording Studio 7.0 kit from `Gemfile` and
 `test/dummy/Gemfile`. Runtime floors stay in `recording_studio_webhooks.gemspec`:
-core tag `v6.7.0` (runtime `>= 6.3.0`), Accessible tag `v0.31.0` (runtime
-`>= 0.24.2`), Root Switchable tag `v0.15.0`, Metrics tag `v0.8.0` (runtime
+core tag `v7.0.0` (runtime `>= 7.0`, `< 8.0`), Accessible tag `v0.44.0` (runtime
+`>= 0.44.0`, `< 1.0`), Root Switchable tag `v0.15.1`, Metrics tag `v0.8.0` (runtime
 `>= 0.7.2`, `< 1.0`), Flatpack tag `v0.1.356` (runtime `>= 0.1.341`), Admin
-tag `v2.13.0`, Cache tag `v0.6.3`, Logs tag `v0.7.4` (`require: false`),
-and Trashable tag `v0.14.0` (`require: false`).
+tag `v2.16.0`, Cache tag `v0.6.3`, Logs tag `v0.7.4` (`require: false`),
+and Trashable tag `v0.17.0` (`require: false`).
 Dummy Rails is `~> 8.1.1`; the gemspec is `rails ~> 8.1.0`, `sidekiq ~> 8.1.6`,
 and `view_component >= 4.14, < 5`. Authenticated dummy screens use
 Recording Studio's shared default layout. Engine controllers include
