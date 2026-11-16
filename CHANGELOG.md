@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+## [0.10.1] - 2026-11-16
+
+Staff admin reads stay on the current root.
+
+Test coverage is 96.14% lines (2815/2928) and 71.44% branches (713/998)
+across the gem and dummy suites.
+
+### Security
+
+- An attempt page opened by id loads the attempt only when its endpoint is
+  in the current root. A foreign id returns not found. The short attempt
+  URLs stay the same.
+- The stuck retries card value, oldest wait, and per-action chart use the
+  same root-scoped attempts as the Action attempts screen with stuck
+  retries selected.
+- Provider, endpoint, and action filter menus list the current root's
+  current endpoints. Older endpoint versions stay out of those menus.
+
+### Upgrade notes
+
+- Bump to `0.10.1`. No database migration.
+- Attempt URLs, intake, signature checks, dispatch, and retries are
+  unchanged.
+- `provider_filter_values`, `endpoint_filter_values`, and
+  `action_filter_values` take the admin context.
+
 ## [0.10.0] - 2026-11-15
 
 Recording Studio 7. `root_recording_for` only finds a root. Dummy seeds and

@@ -21,12 +21,18 @@ module RecordingStudioWebhooks
         @action_attempt = if @event
                             @event.action_attempts.find(params[:id])
                           else
-                            ActionAttempt.includes(inbound_event: :endpoint).find(params[:id])
+                            scoped_action_attempt
                           end
         @event ||= @action_attempt.inbound_event
         @endpoint ||= @event.endpoint
       rescue ActiveRecord::RecordNotFound
         raise ActionController::RoutingError, "Not Found"
+      end
+
+      def scoped_action_attempt
+        ActionAttempt.joins(inbound_event: :endpoint)
+                     .where(recording_studio_webhooks_endpoints: { id: endpoint_scope.select(:id) })
+                     .find(params[:id])
       end
     end
   end

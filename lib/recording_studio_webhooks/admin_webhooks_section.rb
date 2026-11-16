@@ -30,8 +30,8 @@ module RecordingStudioWebhooks
       InboundEvent.includes(:endpoint).where(endpoint_id: endpoint_ids)
     end
 
-    def provider_filter_values
-      Endpoint.current.distinct.order(:provider_name).pluck(:provider_name)
+    def provider_filter_values(context)
+      current_endpoints_for(context).distinct.order(:provider_name).pluck(:provider_name)
     end
 
     def provider_widget_rows(context)
@@ -298,16 +298,34 @@ module RecordingStudioWebhooks
       "/admin/screens/webhook_traffic?#{params.to_query}"
     end
 
-    def endpoint_filter_values
-      Endpoint.distinct.order(:label).pluck(:label)
+    def endpoint_filter_values(context)
+      current_endpoints_for(context).distinct.order(:label).pluck(:label)
     end
 
-    def action_filter_values
-      observed_actions = ActionAttempt.distinct.order(:action_name).pluck(:action_name).compact
+    def action_filter_values(context)
+      observed_actions = ActionAttempt.joins(:inbound_event)
+                                      .where(
+                                        recording_studio_webhooks_inbound_events: {
+                                          endpoint_id: current_endpoints_for(context).select(:id)
+                                        }
+                                      )
+                                      .distinct
+                                      .order(:action_name)
+                                      .pluck(:action_name)
+                                      .compact
       registered_actions = registered_action_rows.map(&:name).map(&:to_s).reject(&:empty?)
       action_names = (observed_actions + registered_actions).uniq.sort
 
       [ACTION_FILTER_ALL, *action_names]
+    end
+
+    def current_endpoints_for(context)
+      root_recording = context.respond_to?(:root_recording) ? context.root_recording : nil
+      return Endpoint.none unless root_recording
+
+      Endpoint.current
+              .joins(:recording_studio_recording)
+              .where(recording_studio_recordings: { root_recording_id: root_recording.id })
     end
 
     def action_row_view_url(action, context)
@@ -692,10 +710,10 @@ module RecordingStudioWebhooks
                  relation.where(recording_studio_webhooks_inbound_events: { status: value })
                }
         filter :provider,
-               options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
+               options: ->(context) { AdminWebhooksTrafficDefinition.provider_filter_values(context) },
                apply: ->(relation, value, _context) { relation.where(provider_name: value) }
         filter :endpoint,
-               options: -> { AdminWebhooksTrafficDefinition.endpoint_filter_values },
+               options: ->(context) { AdminWebhooksTrafficDefinition.endpoint_filter_values(context) },
                apply: lambda { |relation, value, _context|
                  relation.joins(:endpoint).where(recording_studio_webhooks_endpoints: { label: value })
                }
@@ -780,7 +798,7 @@ module RecordingStudioWebhooks
 
         query { |context| AdminWebhooksTrafficDefinition.provider_screen_relation(context) }
         filter :endpoint,
-               options: -> { AdminWebhooksTrafficDefinition.endpoint_filter_values },
+               options: ->(context) { AdminWebhooksTrafficDefinition.endpoint_filter_values(context) },
                apply: lambda { |relation, value, _context|
                  relation.where(recording_studio_webhooks_endpoints: { label: value })
                }
@@ -871,12 +889,12 @@ module RecordingStudioWebhooks
           end
         end
         filter :provider,
-               options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
+               options: ->(context) { AdminWebhooksTrafficDefinition.provider_filter_values(context) },
                apply: lambda { |relation, value, _context|
                  relation.where(provider_name: value)
                }
         filter :endpoint,
-               options: -> { AdminWebhooksTrafficDefinition.endpoint_filter_values },
+               options: ->(context) { AdminWebhooksTrafficDefinition.endpoint_filter_values(context) },
                apply: lambda { |relation, value, _context|
                  relation.where(label: value)
                }
@@ -974,18 +992,18 @@ module RecordingStudioWebhooks
                }
         filter :group_by, values: FILTERABLE_GROUPINGS, default: :day
         filter :provider,
-               options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
+               options: ->(context) { AdminWebhooksTrafficDefinition.provider_filter_values(context) },
                apply: lambda { |relation, value, _context|
                  relation.where(recording_studio_webhooks_inbound_events: { provider_name: value })
                }
         filter :endpoint,
-               options: -> { AdminWebhooksTrafficDefinition.endpoint_filter_values },
+               options: ->(context) { AdminWebhooksTrafficDefinition.endpoint_filter_values(context) },
                apply: lambda { |relation, value, _context|
                  relation.joins(inbound_event: :endpoint)
                          .where(recording_studio_webhooks_endpoints: { label: value })
                }
         filter :action_name,
-               options: -> { AdminWebhooksTrafficDefinition.action_filter_values },
+               options: ->(context) { AdminWebhooksTrafficDefinition.action_filter_values(context) },
                apply: lambda { |relation, value, _context|
                  selected = value.to_s
 
@@ -1164,12 +1182,12 @@ module RecordingStudioWebhooks
 
         query { |context| AdminWebhooksTrafficDefinition.endpoint_token_relation(context) }
         filter :provider,
-               options: -> { AdminWebhooksTrafficDefinition.provider_filter_values },
+               options: ->(context) { AdminWebhooksTrafficDefinition.provider_filter_values(context) },
                apply: lambda { |relation, value, _context|
                  relation.where(recording_studio_webhooks_endpoints: { provider_name: value })
                }
         filter :endpoint,
-               options: -> { AdminWebhooksTrafficDefinition.endpoint_filter_values },
+               options: ->(context) { AdminWebhooksTrafficDefinition.endpoint_filter_values(context) },
                apply: lambda { |relation, value, _context|
                  relation.where(recording_studio_webhooks_endpoints: { label: value })
                }

@@ -70,22 +70,25 @@ class AdminRootReadScopeTest < ActionDispatch::IntegrationTest
 
   test "another root's attempt is not found and the current root's attempt renders" do
     sign_in @viewer
-
     get "/admin/webhooks/action_attempts/#{@foreign_attempt.id}"
     assert_response :not_found
     refute_includes response.body, "foreign-payload-marker"
     refute_includes response.body, "foreign-history-marker"
 
+    sign_in @viewer
     get "/admin/webhooks/attempts/#{@foreign_attempt.id}"
     assert_response :not_found
     refute_includes response.body, "foreignprov.secret"
 
+    sign_in @viewer
     get nested_attempt_path(@foreign_endpoint, @foreign_attempt)
     assert_response :not_found
 
+    sign_in @viewer
     get nested_attempt_path(@own_endpoint, @foreign_attempt)
     assert_response :not_found
 
+    sign_in @viewer
     get "/admin/webhooks/action_attempts/#{@own_attempt.id}"
     assert_response :success
     assert_includes response.body, "localprov.kept"
@@ -93,6 +96,7 @@ class AdminRootReadScopeTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "own-history-marker"
     refute_includes response.body, "foreign-payload-marker"
 
+    sign_in @viewer
     get nested_attempt_path(@own_endpoint, @own_attempt)
     assert_response :success
     assert_includes response.body, "own-payload-marker"

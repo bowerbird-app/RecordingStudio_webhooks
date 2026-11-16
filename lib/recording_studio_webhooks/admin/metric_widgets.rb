@@ -19,7 +19,7 @@ module RecordingStudioWebhooks
         info { |context| MetricQuery.oldest_stuck_info(context) }
         change_good_when :down
         hide_change
-        value { |context| MetricQuery.scalar(MetricQuery::STUCK, context) }
+        value { |context| MetricQuery.stuck_count(context) }
         chart_type :bar
         series { |context| MetricQuery.stuck_series(context) }
         chart_options { CHART_OPTIONS }

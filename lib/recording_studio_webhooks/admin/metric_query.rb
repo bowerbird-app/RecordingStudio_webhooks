@@ -15,15 +15,19 @@ module RecordingStudioWebhooks
         result ? result.value.to_i : 0
       end
 
+      def stuck_count(admin_context)
+        scalar(STUCK, admin_context, **authorized_attempts(admin_context))
+      end
+
       def oldest_stuck_info(admin_context)
-        seconds = execute(OLDEST_STUCK_AGE, admin_context)&.value
+        seconds = execute(OLDEST_STUCK_AGE, admin_context, **authorized_attempts(admin_context))&.value
         return "Nothing is stuck." if seconds.nil?
 
         "Oldest wait is #{seconds.to_i} seconds past due."
       end
 
       def stuck_series(admin_context)
-        result = grouped_execute(STUCK, admin_context, group_by: "action_name")
+        result = grouped_execute(STUCK, admin_context, group_by: "action_name", **authorized_attempts(admin_context))
         points = Array(result&.groups).map do |row|
           { x: (row[:key] || row["key"]).to_s, y: (row[:value] || row["value"]).to_i }
         end
@@ -71,8 +75,12 @@ module RecordingStudioWebhooks
           interval: "week",
           start_at: range.begin,
           end_at: exclusive_end(range),
-          authorized_relation: AdminWebhooksTrafficDefinition.action_attempt_relation(admin_context)
+          **authorized_attempts(admin_context)
         )
+      end
+
+      def authorized_attempts(admin_context)
+        { authorized_relation: AdminWebhooksTrafficDefinition.action_attempt_relation(admin_context) }
       end
 
       def exclusive_end(range)
@@ -92,10 +100,10 @@ module RecordingStudioWebhooks
         nil
       end
 
-      def grouped_execute(identifier, admin_context, group_by:)
+      def grouped_execute(identifier, admin_context, group_by:, **params)
         return unless defined?(RecordingStudioMetrics::Admin)
 
-        context = RecordingStudioMetrics::Admin.context_from_admin(admin_context, **SITE)
+        context = RecordingStudioMetrics::Admin.context_from_admin(admin_context, **SITE, **params)
         RecordingStudioMetrics.execute(identifier, context: context, group_by: group_by)
       rescue RecordingStudioMetrics::Errors::AuthorizationError
         nil
