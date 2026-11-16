@@ -18,6 +18,17 @@ only; this gem has no production site). Keep the encrypted file. Do not mint a
 per-repo dummy master key. Set `RAILS_MASTER_KEY`, or write the shared key to
 `test/dummy/config/master.key`. That file is gitignored and is never committed.
 
+## Staff admin
+
+Staff admin reads use the current root. Accessible grants on that root
+decide who can open the screens. The attempt page loads an attempt only
+when its endpoint recording is in that root. The stuck retries card uses
+that same set of attempts. Provider, endpoint, and action menus list the
+current endpoints on that root.
+
+The operations metrics API stays site-wide. It still requires view access
+on the admin root.
+
 ## Intake
 
 Public intake uses `ActionController::API`, so it is stateless and has no

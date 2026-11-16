@@ -3,6 +3,15 @@
 This engine requires Recording Studio `>= 7.0`, `< 8.0`, Accessible
 `>= 0.44.0`, `< 1.0`, Metrics `>= 0.7.2`, `< 1.0`, and Flatpack `>= 0.1.341`.
 
+## 0.10.1
+
+No database migration. Attempt URLs, intake, signature checks, dispatch,
+and retries are unchanged.
+
+Staff admin attempt pages, the stuck retries card, and the provider,
+endpoint, and action filter menus stay on the current root. The filter
+helpers take the admin context.
+
 ## 0.10.0
 
 No webhook table migration. Recording Studio 7 adds

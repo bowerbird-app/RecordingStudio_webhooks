@@ -211,11 +211,16 @@ engine pages use the RecordingStudio Admin engine's Webhooks section path
 do not call a host helper named `recording_studio_admin_webhooks_path`.
 
 When RecordingStudio Admin is loaded, the Admin Webhooks hub shows metric
-cards that call `RecordingStudioMetrics::Admin.execute` (site scope). Stuck
-retries uses `webhook_attempts.stuck` (count plus a bar chart grouped by
-`action_name`) and `webhook_attempts.oldest_stuck_age`, and links to Action
-attempts with `stuck=1`. That filter is the same `Metrics::STUCK` rule and
-skips the default `completed_at` window so overdue retries still appear.
+cards that call `RecordingStudioMetrics::Admin.execute`. The metric
+registration stays site-wide for the operations API. The stuck retries card
+and the failed attempts card pass the current root's attempts as
+`authorized_relation`, so the cards match the Action attempts screen for
+that root. Stuck retries uses `webhook_attempts.stuck` (count plus a bar
+chart grouped by `action_name`) and `webhook_attempts.oldest_stuck_age`,
+and links to Action attempts with `stuck=1`. That filter is the same
+`Metrics::STUCK` rule and skips the default `completed_at` window so
+overdue retries still appear. Provider, endpoint, and action filter menus
+list the current root's current endpoints.
 The section lists Webhook traffic, Providers, Endpoints, Actions,
 Action attempts, and Tokens so those screens are enabled when the host
 restricts Admin to named sections. Failed attempts uses
