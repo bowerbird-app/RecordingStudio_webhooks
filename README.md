@@ -324,13 +324,13 @@ Tests use a no-op dispatcher so CI can run without Redis; development uses
 Sidekiq. Sign in as `admin@admin.com` with password `Password`, then open
 **Webhook endpoints** from Admin webhooks. The demo never sends outbound requests.
 
-The dummy is on the Recording Studio 7.0 kit from `Gemfile` and
+The dummy is on the Recording Studio 7.3 kit from `Gemfile` and
 `test/dummy/Gemfile`. Runtime floors stay in `recording_studio_webhooks.gemspec`:
-core tag `v7.0.0` (runtime `>= 7.0`, `< 8.0`), Accessible tag `v0.44.0` (runtime
-`>= 0.44.0`, `< 1.0`), Root Switchable tag `v0.15.1`, Metrics tag `v0.8.0` (runtime
-`>= 0.7.2`, `< 1.0`), Flatpack tag `v0.1.356` (runtime `>= 0.1.341`), Admin
-tag `v2.16.0`, Cache tag `v0.6.3`, Logs tag `v0.7.4` (`require: false`),
-and Trashable tag `v0.17.0` (`require: false`).
+core tag `v7.3.0` (runtime `>= 7.0`, `< 8.0`), Accessible tag `v0.45.1` (runtime
+`>= 0.44.0`, `< 1.0`), Root Switchable tag `v0.16.0`, Metrics tag `v0.9.0` (runtime
+`>= 0.7.2`, `< 1.0`), Flatpack tag `v0.1.377` (runtime `>= 0.1.341`), Admin
+tag `v2.18.0`, Cache tag `v0.7.0`, Logs tag `v0.8.0` (`require: false`),
+and Trashable tag `v1.0.1` (`require: false`).
 Dummy Rails is `~> 8.1.1`; the gemspec is `rails ~> 8.1.0`, `sidekiq ~> 8.1.6`,
 and `view_component >= 4.14, < 5`. Authenticated dummy screens use
 Recording Studio's shared default layout. Engine controllers include
