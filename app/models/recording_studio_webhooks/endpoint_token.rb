@@ -36,14 +36,16 @@ module RecordingStudioWebhooks
     before_update :prevent_credential_mutation
     before_destroy :prevent_destroy
 
+    scope :stable, lambda {
+      kept_token_recordings = ::RecordingStudio::Recording.kept.where(recordable_type: name)
+      where(id: kept_token_recordings.select(:recordable_id))
+    }
     scope :current, lambda { |at = Time.current|
-      joins("INNER JOIN recording_studio_recordings rs_recordings ON rs_recordings.recordable_type = '#{name}' AND rs_recordings.recordable_id = recording_studio_webhooks_endpoint_tokens.id")
+      stable
         .where(revoked_at: nil)
         .where(arel_table[:active_at].lteq(at))
         .where(arel_table[:expires_at].eq(nil).or(arel_table[:expires_at].gt(at)))
-    }
-    scope :stable, lambda {
-      joins("INNER JOIN recording_studio_recordings rs_recordings ON rs_recordings.recordable_type = '#{name}' AND rs_recordings.recordable_id = recording_studio_webhooks_endpoint_tokens.id")
+        .where(endpoint_id: Endpoint.kept.select(:id))
     }
 
     def self.authenticate(plaintext:, endpoint: nil, at: Time.current)
@@ -58,10 +60,7 @@ module RecordingStudioWebhooks
     end
 
     def current?(at = Time.current)
-      return false unless revoked_at.nil? && active_at <= at && (expires_at.nil? || expires_at > at)
-
-      stable_recording = RecordingStudioGateway.stable_recording_for(self)
-      stable_recording.present? && stable_recording.recordable_id == id
+      self.class.current(at).exists?(id: id)
     end
 
     def revoke!(at: Time.current, actor: nil)

@@ -13,6 +13,15 @@ module RecordingStudioWebhooks
         .where("rs_recordings.recordable_type = ?", name)
         .where("rs_recordings.recordable_id = recording_studio_webhooks_endpoints.id")
     }
+    scope :kept, lambda {
+      kept_recordings = ::RecordingStudio::Recording.kept
+      endpoint_recordings = ::RecordingStudio::Recording.kept.where(recordable_type: name)
+      where(
+        recording_studio_recording_id: endpoint_recordings.where(
+          root_recording_id: kept_recordings.select(:id)
+        ).select(:id)
+      )
+    }
 
     validates :provider_name, presence: true, format: { with: ProviderDefinition::NAME }
     validates :label, presence: true, length: { maximum: 255 }
@@ -86,6 +95,10 @@ module RecordingStudioWebhooks
         metadata: metadata,
         idempotency_key: idempotency_key
       )
+    end
+
+    def kept?
+      self.class.kept.exists?(id: id)
     end
 
     def snapshot

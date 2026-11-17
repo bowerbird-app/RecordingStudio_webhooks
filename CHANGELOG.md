@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Security
+
+- Inbound authentication succeeds only when the token recording, the endpoint
+  recording, and the endpoint's root recording are kept. A trashed endpoint
+  or workspace gets the same generic unauthorized response as an unknown or
+  disabled endpoint.
+
 ## [0.10.1] - 2026-11-16
 
 Staff admin reads stay on the current root.
