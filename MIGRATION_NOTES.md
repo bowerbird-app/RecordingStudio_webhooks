@@ -3,7 +3,7 @@
 This engine requires Recording Studio `>= 7.0`, `< 8.0`, Accessible
 `>= 0.44.0`, `< 1.0`, Metrics `>= 0.7.2`, `< 1.0`, and Flatpack `>= 0.1.341`.
 
-## Unreleased
+## 0.11.0
 
 Run the new engine migration. It adds `signing_secret` on endpoints:
 
