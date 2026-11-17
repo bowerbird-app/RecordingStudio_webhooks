@@ -6,7 +6,10 @@ Endpoint token plaintext exists only during issuance. The database stores a
 SHA-256 digest or an HMAC-SHA-256 digest when `token_digest_secret` is set,
 plus a short non-secret prefix. Rotation revokes older active tokens under a
 lock. Authentication considers only a current, unrevoked, unexpired token and
-uses a constant-time digest comparison.
+uses a constant-time digest comparison. The token recording, the endpoint
+recording, and that endpoint's root recording must all be kept. A trashed
+endpoint or workspace is rejected with the same generic unauthorized
+response as an unknown or disabled endpoint.
 
 Never put provider signing material, endpoint tokens, or secret-store paths in
 endpoint identity, metadata, policy, action snapshots, job arguments, source

@@ -33,6 +33,7 @@ module RecordingStudioWebhooks
 
       endpoint = endpoint_token.endpoint
       return failure(404, "endpoint_unavailable") unless endpoint
+      return failure(401, "endpoint_disabled") unless endpoint.kept?
       return failure(401, "endpoint_disabled") unless endpoint.enabled?
 
       provider = configuration.providers.fetch(endpoint.provider_name)

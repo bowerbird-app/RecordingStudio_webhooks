@@ -3,6 +3,13 @@
 This engine requires Recording Studio `>= 7.0`, `< 8.0`, Accessible
 `>= 0.44.0`, `< 1.0`, Metrics `>= 0.7.2`, `< 1.0`, and Flatpack `>= 0.1.341`.
 
+## 0.10.2
+
+No database migration. Inbound authentication requires the token recording,
+the endpoint recording, and the endpoint's root recording to be kept. A
+trashed endpoint or workspace is rejected with the same generic unauthorized
+response as an unknown or disabled endpoint.
+
 ## 0.10.1
 
 No database migration. Attempt URLs, intake, signature checks, dispatch,

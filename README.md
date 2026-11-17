@@ -134,7 +134,9 @@ generic JSON status: `accepted`, `duplicate`, `unauthorized`, `not_found`,
 
 The intake service:
 
-- performs current-token lookup with a constant-time digest comparison;
+- performs current-token lookup with a constant-time digest comparison, and
+  only when the token recording, the endpoint recording, and the endpoint's
+  root recording are kept;
 - enforces content type and payload-size limits;
 - invokes an optional provider signature verifier in memory;
 - invokes optional rate-limit and authorization hooks with redacted data;
