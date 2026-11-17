@@ -2,12 +2,22 @@
 
 ## Unreleased
 
+## [0.10.2] - 2026-11-17
+
+Inbound tokens are rejected when the endpoint or its workspace is trashed.
+
 ### Security
 
 - Inbound authentication succeeds only when the token recording, the endpoint
   recording, and the endpoint's root recording are kept. A trashed endpoint
   or workspace gets the same generic unauthorized response as an unknown or
   disabled endpoint.
+
+### Upgrade notes
+
+- Bump to `0.10.2`. No database migration.
+- Requests for a trashed endpoint or workspace are unauthorized. Kept
+  endpoints are unchanged.
 
 ## [0.10.1] - 2026-11-16
 
