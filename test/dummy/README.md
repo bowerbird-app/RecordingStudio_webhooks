@@ -24,6 +24,7 @@ Useful routes:
 
 - `/` — dummy overview;
 - `/admin/webhooks/endpoints` — engine administration;
-- `/webhooks/inbound/:endpoint_token` — public JSON intake;
+- `/webhooks/inbound/:endpoint_token` — public JSON intake for providers
+  that have a signature check; unsigned providers use the header URL;
 - `/users/sign_in` — Devise sign-in; and
 - `/up` — Rails health check.

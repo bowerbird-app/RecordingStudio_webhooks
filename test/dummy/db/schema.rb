@@ -188,6 +188,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_090000) do
     t.jsonb "policy_overrides", default: {}, null: false
     t.string "provider_name", null: false
     t.uuid "recording_studio_recording_id", null: false
+    t.text "signing_secret"
     t.datetime "updated_at", null: false
     t.index ["provider_name", "recording_studio_recording_id"], name: "index_rsw_endpoints_on_provider_and_recording"
     t.index ["provider_name"], name: "index_recording_studio_webhooks_endpoints_on_provider_name"

@@ -1,6 +1,27 @@
 # Changelog
 
-## Unreleased
+## [0.11.0] - 2026-11-17
+
+Providers must verify a signature or declare `unsigned: true`.
+
+### Security
+
+- Intake rejects a provider that has no signature check and is not marked
+  `unsigned: true`.
+- A path token is accepted only when the provider has a signature check.
+  Unsigned providers must send `Authorization: Bearer` or
+  `X-Recording-Studio-Webhook-Token`. The `rswh_` path segment is filtered
+  from request logs.
+- `hmac_signature` verifies HMAC-SHA256 over the raw body and a timestamp.
+  The per-endpoint secret is encrypted, shown once, and filtered from
+  inspect and logs.
+
+### Upgrade notes
+
+- Bump to `0.11.0`. Run the signing-secret migration.
+- Set Active Record encryption keys before creating HMAC endpoints.
+- Providers that previously omitted a signature verifier now fail closed
+  until they register one or pass `unsigned: true`.
 
 ## [0.10.2] - 2026-11-17
 
@@ -648,7 +669,7 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
-[Unreleased]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.10.0...HEAD
+[0.11.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.10.2...v0.11.0
 [0.10.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.8.0...v0.9.0

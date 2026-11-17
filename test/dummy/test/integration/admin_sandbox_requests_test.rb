@@ -40,7 +40,7 @@ class AdminSandboxRequestsTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "demo.received"
     assert_includes response.body, "[FILTERED]"
     assert_includes response.body, "within five minutes"
-    assert_includes response.body, "No signature verifier configured."
+    assert_includes response.body, "Signature verifier accepted payload."
     assert_includes response.body, "custom"
     redacted = response.body[/<code[^>]*language-json">(.*?)<\/code>/m, 1].to_s
     assert_includes redacted, "[FILTERED]"
@@ -157,6 +157,7 @@ class AdminSandboxRequestsTest < ActionDispatch::IntegrationTest
     )
     assert_response :success
     assert_match(/Endpoint resolved.{0,300}\bno\b/m, response.body)
+    assert_includes response.body, "No signature verifier configured."
     assert_includes response.body, "demo.received"
   end
 

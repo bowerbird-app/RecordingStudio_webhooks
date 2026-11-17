@@ -16,7 +16,8 @@ module RecordingStudioWebhooks
     end
 
     def create!
-      Endpoint.transaction do
+      generated_secret = endpoint.prepare_signing_secret!
+      created_endpoint = Endpoint.transaction do
         parent_recording = endpoint.recording_studio_recording
         root_recording = parent_recording.root_recording_or_self
         attributes_for_record = endpoint.attributes.except("id", "created_at", "updated_at", "recording_studio_recording_id")
@@ -48,6 +49,8 @@ module RecordingStudioWebhooks
         )
         created_endpoint
       end
+      created_endpoint.disclose_signing_secret!(generated_secret)
+      created_endpoint
     end
 
     def update!

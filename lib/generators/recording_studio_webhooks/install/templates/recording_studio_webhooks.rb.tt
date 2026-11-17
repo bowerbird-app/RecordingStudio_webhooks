@@ -13,12 +13,16 @@ RecordingStudioWebhooks.configure do |config|
   #   :recording_studio_webhooks, :token_digest_secret
   # )
 
-  # Register providers and actions in deterministic names. A provider verifier
-  # may inspect request bytes and headers in memory, but must not log them.
+  # Every provider needs a signature check, or unsigned: true.
+  # hmac_signature stores an encrypted per-endpoint secret. Set Active Record
+  # encryption keys before creating those endpoints.
   #
   # config.provider "example", policy: { max_retries: 2 } do |provider|
+  #   provider.hmac_signature
   #   provider.event_type ->(payload) { payload.fetch("type") }
   # end
+  #
+  # config.provider "internal", unsigned: true
   #
   # config.action "example.received", ->(context) { MyHandler.call(context) },
   #   provider: "example", event: "example.received"

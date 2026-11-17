@@ -2,5 +2,5 @@
 
 # lib/recording_studio_webhooks/version.rb
 module RecordingStudioWebhooks
-  VERSION = "0.10.2"
+  VERSION = "0.11.0"
 end

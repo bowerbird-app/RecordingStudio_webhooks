@@ -6,8 +6,9 @@ records. It validates and redacts intake data, persists immutable planning
 snapshots, and executes registered local actions through Sidekiq, Active Job,
 or a host-supplied dispatcher.
 
-It does not send outgoing webhooks, proxy requests, retain provider signing
-secrets, retain secret-store locations, or persist plaintext endpoint tokens.
+It does not send outgoing webhooks or proxy requests. It does not retain
+plaintext endpoint tokens or secret-store locations. The built-in HMAC
+verifier stores one encrypted signing secret per endpoint.
 
 ## Install
 
@@ -54,9 +55,13 @@ RecordingStudioWebhooks.configure do |config|
   config.endpoint_token_bytesize = 18
 
   config.provider "billing" do |provider|
+    provider.hmac_signature
     provider.event_type ->(payload) { payload.fetch("type") }
     provider.event_id ->(payload) { payload["id"] }
   end
+
+  # A provider that will never check a signature has to say so.
+  # config.provider "internal", unsigned: true
 
   config.action "billing.invoice_paid",
     ->(context) { InvoicePaidHandler.call(context) },
@@ -75,8 +80,12 @@ set to `nil` shows no recordings.
 
 Provider and action names are normalized to lowercase and duplicate names are
 rejected. Registry iteration is lexical and matching ties are deterministic.
-Providers may register a signature verifier, event type extractor, event ID
-extractor, and provider policy.
+Every provider needs a signature check, or `unsigned: true`. A provider
+with neither is rejected at intake. `provider.hmac_signature` checks
+HMAC-SHA256 over `"#{timestamp}.#{raw_body}"` using an encrypted per-endpoint
+secret. Header names and the timestamp window (default 5 minutes) are
+configurable. Providers may also register their own verifier, an event type
+extractor, an event ID extractor, and a provider policy.
 
 Action patterns are deliberately limited:
 
@@ -120,13 +129,14 @@ Content-Type: application/json
 
 `X-Recording-Studio-Webhook-Token` is also supported for providers that
 cannot send an Authorization header. Query-string tokens are intentionally unsupported.
-Build the header-only URL with `recording_studio_webhooks_inbound_header_path`
+Build the header URL with `recording_studio_webhooks_inbound_header_path`
 (engine: `inbound_header_path`).
-`recording_studio_webhooks_inbound_path(endpoint_token:)` still names the
-path-token route so existing host code keeps working. That route is
-deprecated: tokens in URLs end up in server logs. Previously issued
-`/inbound/:endpoint_token` URLs still authenticate. New tokens are not
-minted in the path.
+`recording_studio_webhooks_inbound_path(endpoint_token:)` names the path-token
+route. That route is accepted only when the provider has a signature check,
+because senders such as GitHub and Stripe cannot add a credential header.
+Unsigned providers must use a header. A path token for an unsigned provider
+is rejected. Rails' request log filters the `rswh_` path segment, and
+`endpoint_token` is in `filter_parameters`.
 The public controller is stateless and does not use browser sessions; all
 administrative endpoints retain Rails CSRF protection. It returns only a
 generic JSON status: `accepted`, `duplicate`, `unauthorized`, `not_found`,
@@ -138,7 +148,9 @@ The intake service:
   only when the token recording, the endpoint recording, and the endpoint's
   root recording are kept;
 - enforces content type and payload-size limits;
-- invokes an optional provider signature verifier in memory;
+- rejects a provider that has neither a signature check nor `unsigned: true`;
+- invokes a configured signature verifier in memory, or skips it when the
+  provider is explicitly unsigned;
 - invokes optional rate-limit and authorization hooks with redacted data;
 - canonicalizes payloads for race-safe deduplication;
 - persists only a redacted payload and an allowlisted provenance subset; and
@@ -169,6 +181,13 @@ keeps the four-table boundary.
 Issuing or rotating a token revokes every previous unrevoked token under a row
 lock. The resulting plaintext is available from the issuance object exactly
 once and is never serialized, logged, or stored.
+
+An endpoint whose provider uses `hmac_signature` gets a signing secret at
+creation. Active Record encryption stores it. The plaintext is shown once,
+the way a new token is, and is filtered from `inspect` and request logs.
+Set `active_record.encryption.primary_key`, `deterministic_key`, and
+`key_derivation_salt` before creating those endpoints. The dummy app derives
+them from `secret_key_base` when they are blank.
 
 ## Execution and retries
 

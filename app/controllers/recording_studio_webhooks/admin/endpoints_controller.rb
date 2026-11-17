@@ -19,13 +19,7 @@ module RecordingStudioWebhooks
         @endpoint.recording_studio_recording_id = selected_recording.id
 
         if @form_error.nil? && registered_provider?
-          Endpoint.transaction do
-            @endpoint = EndpointLifecycle.create!(endpoint: @endpoint, actor: current_admin_actor)
-            @endpoint.issue_token!(actor: current_admin_actor)
-          end
-
-          redirect_to "/admin/screens/endpoints",
-                      notice: Copy.t("flashes.endpoint_created", default: "Endpoint created.")
+          create_endpoint_and_respond
         else
           unless registered_provider?
             @form_error ||= Copy.t(
@@ -64,6 +58,26 @@ module RecordingStudioWebhooks
       end
 
       private
+
+      def create_endpoint_and_respond
+        disclosure = nil
+        Endpoint.transaction do
+          @endpoint = EndpointLifecycle.create!(endpoint: @endpoint, actor: current_admin_actor)
+          disclosure = @endpoint.signing_secret_disclosure
+          @endpoint.issue_token!(actor: current_admin_actor)
+        end
+        return redirect_created unless disclosure
+
+        @signing_secret = disclosure.plaintext_secret
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        render :secret, status: :created
+      end
+
+      def redirect_created
+        redirect_to "/admin/screens/endpoints",
+                    notice: Copy.t("flashes.endpoint_created", default: "Endpoint created.")
+      end
 
       def selected_recording
         requested_recording_id = endpoint_fields[:recording_studio_recording_id].to_s.strip

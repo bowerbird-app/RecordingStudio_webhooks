@@ -14,6 +14,7 @@ require "recording_studio_webhooks/result"
 require "recording_studio_webhooks/event_pattern"
 require "recording_studio_webhooks/policy"
 require "recording_studio_webhooks/policy_resolver"
+require "recording_studio_webhooks/hmac_signature"
 require "recording_studio_webhooks/provider_definition"
 require "recording_studio_webhooks/action_definition"
 require "recording_studio_webhooks/registry"
@@ -33,6 +34,7 @@ require "recording_studio_webhooks/admin/metric_widgets"
 require "recording_studio_webhooks/admin/registration"
 require "recording_studio_webhooks/metrics"
 require "recording_studio_webhooks/public_intake_guard"
+require "recording_studio_webhooks/filtered_inbound_path"
 require "recording_studio_webhooks/engine"
 
 module RecordingStudioWebhooks
@@ -43,6 +45,7 @@ module RecordingStudioWebhooks
 
     def configure
       yield(configuration) if block_given?
+      configuration.warn_unconfigured_providers!
       configuration
     end
 
