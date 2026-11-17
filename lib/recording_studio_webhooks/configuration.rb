@@ -210,11 +210,28 @@ module RecordingStudioWebhooks
     # Requires explicit absolute files from configured roots in lexical order.
     # It intentionally never asks Rails/Zeitwerk to infer a constant from a path.
     def discover!
-      return [].freeze unless automatic_discovery
-
-      files = (provider_roots + action_roots).flat_map { |root| ruby_files_under(root) }.uniq.sort
+      files = discovery_files
       files.each { |file| require file }
+      warn_unconfigured_providers!
       files.freeze
+    end
+
+    def discovery_files
+      return [] unless automatic_discovery
+
+      (provider_roots + action_roots).flat_map { |root| ruby_files_under(root) }.uniq.sort
+    end
+
+    # Names providers that will reject intake until they verify a signature
+    # or declare unsigned: true. Safe to call more than once.
+    def warn_unconfigured_providers!
+      providers.all.each do |provider|
+        next if provider.signature_declared?
+        next if warned_signature_gaps.include?(provider.name)
+
+        warned_signature_gaps << provider.name
+        warn_signature_gap(provider.name)
+      end
     end
 
     def report
@@ -295,6 +312,20 @@ module RecordingStudioWebhooks
 
     def dispatcher_name
       dispatcher.is_a?(Symbol) ? dispatcher.to_s : "custom"
+    end
+
+    def warned_signature_gaps
+      @warned_signature_gaps ||= []
+    end
+
+    def warn_signature_gap(name)
+      message = %(Recording Studio Webhooks provider "#{name}" has no signature check and is not marked unsigned.)
+      message = "#{message} Inbound requests for this provider are rejected."
+      if defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
+        Rails.logger.warn(message)
+      else
+        warn(message)
+      end
     end
   end
 end

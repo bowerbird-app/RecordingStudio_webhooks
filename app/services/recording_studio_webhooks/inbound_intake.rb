@@ -2,8 +2,8 @@
 
 # app/services/recording_studio_webhooks/inbound_intake.rb
 module RecordingStudioWebhooks
-  # Controller-independent public intake. The credential comes from a header
-  # or, for previously issued URLs, a deprecated path segment.
+  # Header credentials are the default. A path token is accepted only when
+  # the provider has a signature check.
   class InboundIntake
     SignatureContext = Struct.new(:raw_payload, :headers, :endpoint, :provider, keyword_init: true) do
       def inspect = "#<#{self.class.name} raw_payload=[FILTERED]>"
@@ -14,7 +14,7 @@ module RecordingStudioWebhooks
     def self.call(...) = new(...).call
 
     def initialize(token:, raw_payload: nil, payload: nil, content_type: nil, headers: {},
-      request_metadata: {}, event_type: nil, provider_event_id: nil, actor: nil)
+      request_metadata: {}, event_type: nil, provider_event_id: nil, actor: nil, token_source: "header")
       @token = token
       @raw_payload = raw_payload.nil? ? payload : raw_payload
       @content_type = content_type
@@ -23,6 +23,7 @@ module RecordingStudioWebhooks
       @event_type = event_type
       @provider_event_id = provider_event_id
       @actor = actor
+      @token_source = token_source.to_s
     end
 
     def call
@@ -38,13 +39,15 @@ module RecordingStudioWebhooks
 
       provider = configuration.providers.fetch(endpoint.provider_name)
       return failure(404, "provider_unavailable") unless provider
+      return failure(401, "signature_unconfigured") unless signature_declared?(provider)
+      return failure(401, "path_token_rejected") if path_token? && !signature_configured?(provider)
 
       return failure(415, "content_type_invalid") unless allowed_content_type?
 
       body = payload_string
       return failure(400, "payload_invalid") unless body
       return failure(413, "payload_too_large") if body.bytesize > configuration.max_payload_bytes
-      return failure(401, "signature_invalid") unless signature_valid?(provider, body, endpoint)
+      return failure(401, "signature_invalid") unless unsigned_provider?(provider) || signature_valid?(provider, body, endpoint)
 
       parsed_payload = parse_json(body)
       provenance = safe_provenance
@@ -133,11 +136,25 @@ module RecordingStudioWebhooks
       end
     end
 
+    def path_token? = @token_source == "path"
+
+    def signature_declared?(provider)
+      provider.respond_to?(:signature_declared?) && provider.signature_declared?
+    end
+
+    def signature_configured?(provider)
+      provider.respond_to?(:signature_verifier_configured?) && provider.signature_verifier_configured?
+    end
+
+    def unsigned_provider?(provider)
+      provider.respond_to?(:unsigned?) && provider.unsigned?
+    end
+
     def signature_valid?(provider, body, endpoint)
       verifier = provider.respond_to?(:signature_verifier_callable) ?
         provider.signature_verifier_callable :
         provider.instance_variable_get(:@signature_verifier)
-      return true unless verifier
+      return false if verifier.nil?
 
       context = SignatureContext.new(
         raw_payload: body,

@@ -13,7 +13,9 @@ response as an unknown or disabled endpoint.
 
 Never put provider signing material, endpoint tokens, or secret-store paths in
 endpoint identity, metadata, policy, action snapshots, job arguments, source
-control, or logs.
+control, or logs. The built-in HMAC verifier is the exception for storage: its
+per-endpoint secret lives in the encrypted `signing_secret` column, is shown
+once at creation, and is omitted from `inspect`.
 
 Dummy app credentials live in `test/dummy/config/credentials.yml.enc`. That file
 is encrypted with the shared RecordingStudio_* development master key (dev/test
@@ -36,20 +38,19 @@ on the admin root.
 
 Public intake uses `ActionController::API`, so it is stateless and has no
 cookie-backed CSRF surface. It accepts JSON with a credential header, validates
-request size and content type, and emits generic responses. Path-token URLs
-issued before 0.8.0 still authenticate and remain available as
-`recording_studio_webhooks_inbound_path(endpoint_token:)`; that route is
-deprecated because tokens in URLs end up in server logs. New URLs use
-`recording_studio_webhooks_inbound_header_path` and do not put the
-credential in the path. Administrative mutations retain standard Rails CSRF protection and
+request size and content type, and emits generic responses. A path token is
+accepted only when the provider has a signature check. Unsigned providers must
+use `Authorization: Bearer` or `X-Recording-Studio-Webhook-Token`.
+`ActionDispatch::Request#filtered_path` redacts an `rswh_` segment so the
+request log line does not include the token, and `endpoint_token` stays in
+`filter_parameters`. Administrative mutations retain standard Rails CSRF protection and
 authorize through Accessible on the current root unless the host replaces
 `admin_authorizer`.
 
 The public intake guard prevents Rails parameter parsing and request logging
 from buffering or recording the raw JSON body. It applies a declared-length
 check and the controller applies a bounded read for chunked requests. Raw
-payloads are used in memory for JSON parsing and optional signature
-verification. Before persistence, the engine filters configured and
+payloads are used in memory for JSON parsing and signature verification. Before persistence, the engine filters configured and
 secret-looking keys recursively. It stores a one-way canonical payload digest
 for deduplication and only an allowlisted provenance subset.
 

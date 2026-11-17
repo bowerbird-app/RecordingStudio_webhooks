@@ -2,23 +2,76 @@
 
 # lib/recording_studio_webhooks/provider_definition.rb
 module RecordingStudioWebhooks
+  # Signature mode for a provider: a verifier, the built-in HMAC check, or an
+  # explicit unsigned opt-out. Intake rejects a provider with none of these.
+  module ProviderSignature
+    def unsigned? = @unsigned == true
+
+    def hmac_signature? = signature_verifier_callable.is_a?(HmacSignature)
+
+    def signature_declared? = unsigned? || signature_verifier_configured?
+
+    def unsigned(value = :__rsw_no_value__)
+      return @unsigned if value == :__rsw_no_value__ || frozen?
+
+      @unsigned = boolean_flag!(value, "unsigned")
+    end
+
+    def hmac_signature(signature_header: nil, timestamp_header: nil, tolerance: nil)
+      return @signature_verifier if frozen?
+
+      options = {}
+      options[:signature_header] = signature_header if signature_header
+      options[:timestamp_header] = timestamp_header if timestamp_header
+      options[:tolerance] = tolerance if tolerance
+      @signature_verifier = HmacSignature.new(**options)
+    end
+
+    private
+
+    def validate_signature_mode!
+      return unless unsigned? && signature_verifier_configured?
+
+      raise ConfigurationError, "provider cannot be unsigned and use a signature check"
+    end
+
+    def boolean_flag!(value, label)
+      return value if [true, false].include?(value)
+
+      raise ConfigurationError, "#{label} must be true or false"
+    end
+
+    def assign_signature!(unsigned, signature_verifier, hmac)
+      @unsigned = boolean_flag!(unsigned, "unsigned")
+      @signature_verifier = signature_verifier
+      return if hmac == false || hmac.nil?
+      raise ConfigurationError, "provider cannot set hmac and a signature verifier" if @signature_verifier
+
+      @signature_verifier = HmacSignature.from(hmac)
+    end
+  end
+
   class ProviderDefinition
+    include ProviderSignature
+
     NAME = /\A[a-z][a-z0-9_-]*\z/
 
     attr_reader :name, :implementation, :policy_overrides, :event_policies,
       :event_type_extractor, :event_id_extractor, :source
 
     def initialize(name, implementation = nil, policy: {}, signature_verifier: nil,
-      event_type_extractor: nil, event_id_extractor: nil, event_policies: {}, source: nil, &block)
+      event_type_extractor: nil, event_id_extractor: nil, event_policies: {}, source: nil,
+      unsigned: false, hmac: false, &block)
       @name = normalize_name(name)
       @implementation = implementation
       @policy_overrides = Policy.normalize_override(policy)
       @event_policies = PolicyResolver.normalize_event_policies(event_policies)
-      @signature_verifier = signature_verifier
+      assign_signature!(unsigned, signature_verifier, hmac)
       @event_type_extractor = event_type_extractor
       @event_id_extractor = event_id_extractor
       instance_exec(self, &block) if block
       validate_callables!
+      validate_signature_mode!
       @source = normalize_source(source)
       @policy_overrides = ImmutableSnapshot.build(@policy_overrides)
       @event_policies = ImmutableSnapshot.build(@event_policies)

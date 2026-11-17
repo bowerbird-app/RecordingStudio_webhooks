@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Security
+
+- Intake rejects a provider that has no signature check and is not marked
+  `unsigned: true`.
+- A path token is accepted only when the provider has a signature check.
+  Unsigned providers must send `Authorization: Bearer` or
+  `X-Recording-Studio-Webhook-Token`. The `rswh_` path segment is filtered
+  from request logs.
+- `hmac_signature` verifies HMAC-SHA256 over the raw body and a timestamp.
+  The per-endpoint secret is encrypted, shown once, and filtered from
+  inspect and logs.
+
+### Upgrade notes
+
+- No version bump. Run the signing-secret migration.
+- Set Active Record encryption keys before creating HMAC endpoints.
+- Providers that previously omitted a signature verifier now fail closed
+  until they register one or pass `unsigned: true`.
+
 ## [0.10.2] - 2026-11-17
 
 Inbound tokens are rejected when the endpoint or its workspace is trashed.

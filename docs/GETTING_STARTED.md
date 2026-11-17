@@ -146,7 +146,7 @@ Authorization: Bearer rswh_example_token                      # Send the token i
 Content-Type: application/json                                # Send a supported JSON content type.
 ```
 
-When a provider cannot use `Authorization`, send the supported alternate header. Do not put tokens in a query string or in a newly minted path. Build `POST /<mount>/inbound` with `recording_studio_webhooks_inbound_header_path`. `recording_studio_webhooks_inbound_path(endpoint_token:)` still names `/inbound/:endpoint_token` so existing hosts keep working. That route is deprecated: tokens in URLs end up in server logs. Previously issued path-token URLs still authenticate.
+When a provider cannot use `Authorization`, send `X-Recording-Studio-Webhook-Token`. Do not put tokens in a query string. A path token is accepted only when that provider has a signature check. Unsigned providers must use a header. `recording_studio_webhooks_inbound_path(endpoint_token:)` names `/inbound/:endpoint_token`. The request log redacts the `rswh_` segment.
 
 ```text
 X-Recording-Studio-Webhook-Token: rswh_example_token         # Send the same issued token in the alternate header.
@@ -164,7 +164,7 @@ endpoint = RecordingStudioWebhooks::Endpoint.new(            # Build through a t
 )                                                             # Persist using the host's approved endpoint workflow.
 ```
 
-Never store signing secrets, tokens, or secret-store locations in endpoint metadata or identity fields.
+Never store signing secrets, tokens, or secret-store locations in endpoint metadata or identity fields. `hmac_signature` stores its secret in the encrypted `signing_secret` column and shows the plaintext once.
 
 ## Action Definitions
 

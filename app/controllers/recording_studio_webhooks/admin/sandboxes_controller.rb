@@ -159,7 +159,10 @@ module RecordingStudioWebhooks
         verifier = provider.respond_to?(:signature_verifier_callable) ?
           provider.signature_verifier_callable :
           provider.instance_variable_get(:@signature_verifier)
-        return { verified: true, message: "No signature verifier configured." } unless verifier
+        if provider.respond_to?(:unsigned?) && provider.unsigned?
+          return { verified: true, message: "Provider does not use a signature." }
+        end
+        return { verified: false, message: "No signature verifier configured." } unless verifier
 
         result = invoke_provider_callable(
           verifier,

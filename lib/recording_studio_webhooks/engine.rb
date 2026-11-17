@@ -19,7 +19,16 @@ module RecordingStudioWebhooks
         metadata_json
         policy_json
         endpoint_token
+        signing_secret
       ]
+    end
+
+    initializer "recording_studio_webhooks.filter_inbound_token_path" do
+      ActiveSupport.on_load(:action_dispatch_request) do
+        next if ancestors.include?(RecordingStudioWebhooks::FilteredInboundPath)
+
+        prepend RecordingStudioWebhooks::FilteredInboundPath
+      end
     end
 
     initializer "recording_studio_webhooks.load_configuration" do |app|

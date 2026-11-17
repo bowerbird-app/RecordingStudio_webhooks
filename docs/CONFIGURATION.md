@@ -20,8 +20,10 @@ settings.
 | `layout` | `nil` | `nil`, `false`, a layout name, or `->(controller:) { ... }` |
 
 Provider callbacks and intake hooks should return `true` to permit work. A
-false value or exception fails closed. Signature verifiers receive request bytes
-only in memory. Authorization and rate-limit hooks receive a redacted payload.
+false value or exception fails closed. Every provider needs a signature
+verifier or `unsigned: true`. `hmac_signature` is the built-in HMAC-SHA256
+check. Signature verifiers receive request bytes only in memory. Authorization
+and rate-limit hooks receive a redacted payload.
 
 Host apps should set `token_digest_secret` from encrypted credentials (see
 `recording_studio_webhooks.token_digest_secret` in the dummy credentials file)

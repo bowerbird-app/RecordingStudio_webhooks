@@ -51,6 +51,19 @@ class GeneratorTest < Minitest::Test
     refute_match(/t\.string :token\b/, template)
   end
 
+  def test_signing_secret_migration_template_adds_an_encrypted_column
+    template = File.read(
+      File.expand_path(
+        "../lib/generators/recording_studio_webhooks/migrations/templates/add_signing_secret_to_recording_studio_webhooks_endpoints.rb.tt",
+        __dir__
+      )
+    )
+
+    assert_includes template, "return if column_exists?(table, :signing_secret)"
+    assert_includes template, "add_column table, :signing_secret, :text"
+    refute_includes template, "t.string :token"
+  end
+
   def test_remove_plaintext_token_migration_template_drops_token_when_present
     template = File.read(
       File.expand_path(

@@ -2,7 +2,55 @@
 
 module RecordingStudioWebhooks
   class Endpoint < ApplicationRecord
+    # Shown once at creation. The encrypted column is what later requests verify.
+    class SigningSecretDisclosure
+      def initialize(endpoint:, plaintext_secret:)
+        @endpoint = endpoint
+        @plaintext_secret = plaintext_secret
+      end
+
+      def plaintext_secret
+        raise Error, "signing secret has already been disclosed" unless @plaintext_secret
+
+        secret = @plaintext_secret
+        @plaintext_secret = nil
+        secret
+      end
+
+      def inspect
+        "#<#{self.class.name} endpoint_id=#{@endpoint.id.inspect} secret=[FILTERED]>"
+      end
+    end
+
+    encrypts :signing_secret
+    self.filter_attributes += [:signing_secret]
+
     recording_studio_recordable label: "Webhook Endpoint", root: false, allowed_parent_types: ["Workspace"] if respond_to?(:recording_studio_recordable)
+
+    attr_accessor :signing_secret_disclosure
+
+    def self.generate_signing_secret
+      SecureRandom.urlsafe_base64(32)
+    end
+
+    def prepare_signing_secret!
+      provider = RecordingStudioWebhooks.configuration.providers.fetch(provider_name)
+      return if provider.nil? || !provider.respond_to?(:hmac_signature?) || !provider.hmac_signature?
+      return if signing_secret.present?
+
+      generated = self.class.generate_signing_secret
+      self.signing_secret = generated
+      generated
+    end
+
+    def disclose_signing_secret!(generated_secret)
+      return if generated_secret.nil?
+
+      self.signing_secret_disclosure = SigningSecretDisclosure.new(
+        endpoint: self,
+        plaintext_secret: generated_secret
+      )
+    end
 
     belongs_to :recording_studio_recording, class_name: "RecordingStudio::Recording"
     has_many :endpoint_tokens, dependent: :restrict_with_exception

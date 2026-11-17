@@ -4,16 +4,20 @@ module RecordingStudioWebhooks
   module Public
     # This controller intentionally uses the stateless API base instead of
     # weakening CSRF protection on the cookie-backed administrative controller.
-    # Public intake authenticates with an endpoint credential header. A
-    # path token is accepted only for URLs issued before 0.8.0.
+    # Public intake authenticates with Authorization: Bearer or
+    # X-Recording-Studio-Webhook-Token. A path token is accepted only when
+    # that endpoint's provider has a signature check. Unsigned providers
+    # must use a header. The path segment is filtered out of request logs.
     class IntakeController < ActionController::API
 
       def create
         raw_payload = bounded_raw_payload
         return render_invalid_payload if raw_payload.nil?
 
+        credential = intake_credential
         result = InboundIntake.call(
-          token: bearer_token,
+          token: credential.fetch(:token),
+          token_source: credential.fetch(:source),
           raw_payload: raw_payload,
           content_type: request.content_type,
           headers: signature_headers,
@@ -52,10 +56,14 @@ module RecordingStudioWebhooks
         request.path_parameters[key] || request.path_parameters[key.to_s]
       end
 
-      def bearer_token
+      def intake_credential
         route_token = route_value(:endpoint_token).to_s
-        return route_token if route_token.present?
+        return { token: route_token, source: "path" } if route_token.present?
 
+        { token: header_token, source: "header" }
+      end
+
+      def header_token
         authorization = request.get_header("HTTP_AUTHORIZATION").to_s
         bearer = authorization.match(/\ABearer ([^\s]+)\z/i)
         return bearer[1] if bearer

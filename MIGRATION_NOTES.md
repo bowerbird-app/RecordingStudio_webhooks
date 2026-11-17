@@ -3,6 +3,26 @@
 This engine requires Recording Studio `>= 7.0`, `< 8.0`, Accessible
 `>= 0.44.0`, `< 1.0`, Metrics `>= 0.7.2`, `< 1.0`, and Flatpack `>= 0.1.341`.
 
+## Unreleased
+
+Run the new engine migration. It adds `signing_secret` on endpoints:
+
+```bash
+bin/rails generate recording_studio_webhooks:migrations
+bin/rails db:migrate
+```
+
+Every provider needs a signature check, or `unsigned: true`. Intake rejects
+a provider with neither (`signature_unconfigured`). Unsigned providers
+authenticate with `Authorization: Bearer` or
+`X-Recording-Studio-Webhook-Token`. A path token is accepted only when the
+provider has a signature check.
+
+`provider.hmac_signature` checks HMAC-SHA256 of `"#{timestamp}.#{raw_body}"`.
+The per-endpoint secret is encrypted and shown once at creation. Set Active
+Record encryption keys (`primary_key`, `deterministic_key`,
+`key_derivation_salt`) before creating those endpoints.
+
 ## 0.10.2
 
 No database migration. Inbound authentication requires the token recording,

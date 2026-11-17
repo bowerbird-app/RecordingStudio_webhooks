@@ -37,6 +37,16 @@ module RecordingStudioWebhooks
                            "db/migrate/remove_plaintext_token_from_endpoint_tokens.rb"
       end
 
+      def copy_signing_secret_migration
+        if signing_secret_migration_exists?
+          say "skip  add_signing_secret_to_recording_studio_webhooks_endpoints.rb (already exists)", :yellow
+          return
+        end
+
+        migration_template "add_signing_secret_to_recording_studio_webhooks_endpoints.rb.tt",
+                           "db/migrate/add_signing_secret_to_recording_studio_webhooks_endpoints.rb"
+      end
+
       private
 
       def migration_exists?
@@ -48,6 +58,12 @@ module RecordingStudioWebhooks
       def remove_plaintext_token_migration_exists?
         Dir.glob(
           File.join(destination_root, "db/migrate", "*_remove_plaintext_token_from_endpoint_tokens.rb")
+        ).any?
+      end
+
+      def signing_secret_migration_exists?
+        Dir.glob(
+          File.join(destination_root, "db/migrate", "*_add_signing_secret_to_recording_studio_webhooks_endpoints.rb")
         ).any?
       end
     end
