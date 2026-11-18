@@ -2,6 +2,26 @@
 
 This engine requires Recording Studio `>= 7.0`, `< 8.0`, Accessible
 `>= 0.44.0`, `< 1.0`, Metrics `>= 0.7.2`, `< 1.0`, and Flatpack `>= 0.1.341`.
+Development Gemfiles pin Recording Studio `v7.7.1`. Accessible `v0.54.1`
+requires Recording Studio `>= 7.7.0`, `< 8.0`.
+
+## 0.11.1
+
+No webhook table migration.
+
+Hosts MUST run the Recording Studio 7.4, 7.5, and 7.7 migrations. Copy them
+from Recording Studio and migrate:
+
+- `add_recording_studio_recordings_root_type_creation_index` (7.4)
+- `enforce_recording_studio_recording_root_invariant` (7.5)
+- `replace_recording_studio_recordings_root_index` (7.7)
+
+The dummy app does not install those three migrations. Fresh host installs
+get the same changes from Recording Studio's `db/install_migrate`.
+
+Development pins: core `v7.7.1`, flat_pack `v0.1.378`, Accessible `v0.54.1`,
+Admin `v2.19.0`, Metrics `v0.9.2`, Logs `v0.8.1`, Trashable `v1.2.1`, Cache
+`v0.7.1`. Root Switchable stays `v0.16.0`.
 
 ## 0.11.0
 
