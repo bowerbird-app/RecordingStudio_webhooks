@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.11.1] - 2026-11-18
+
+Development Gemfiles pin Recording Studio `v7.7.1`, flat_pack `v0.1.378`,
+Accessible `v0.54.1`, Admin `v2.19.0`, Metrics `v0.9.2`, Logs `v0.8.1`,
+Trashable `v1.2.1`, and Cache `v0.7.1`. Root Switchable stays `v0.16.0`.
+
+### Upgrade notes
+
+- Bump to `0.11.1`. No webhook table migration.
+- Hosts MUST run the Recording Studio 7.4, 7.5, and 7.7 migrations:
+  `add_recording_studio_recordings_root_type_creation_index`,
+  `enforce_recording_studio_recording_root_invariant`, and
+  `replace_recording_studio_recordings_root_index`. Copy them from
+  Recording Studio. This gem's dummy does not install those migrations.
+- Accessible `v0.54.1` requires Recording Studio `>= 7.7.0`, `< 8.0`.
+- Gemspec ranges stay `recording_studio >= 7.0, < 8.0`,
+  `recording_studio_accessible >= 0.44.0, < 1.0`, and
+  `recording_studio_metrics >= 0.7.2, < 1.0`.
+
 ## [0.11.0] - 2026-11-17
 
 Providers must verify a signature or declare `unsigned: true`.
@@ -669,6 +688,7 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
+[0.11.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.10.2...v0.11.0
 [0.10.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.0...v0.9.1

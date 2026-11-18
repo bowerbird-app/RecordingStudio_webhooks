@@ -28,7 +28,7 @@ Background action                 # A worker runs your local Ruby code.
 
 ## Install
 
-This engine requires Recording Studio `>= 7.0`, `< 8.0`. Add the gem, generate its setup files, and apply its migrations.
+This engine requires Recording Studio `>= 7.0`, `< 8.0`. Development pins use Recording Studio `v7.7.1`. Add the gem, generate its setup files, and apply its migrations. Hosts MUST also run the Recording Studio 7.4, 7.5, and 7.7 migrations (`add_recording_studio_recordings_root_type_creation_index`, `enforce_recording_studio_recording_root_invariant`, and `replace_recording_studio_recordings_root_index`). Copy those from Recording Studio. This gem's dummy does not install them.
 
 ```bash
 bundle add recording_studio_webhooks                         # Add the engine to the host application.
