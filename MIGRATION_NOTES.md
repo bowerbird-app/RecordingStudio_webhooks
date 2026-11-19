@@ -2,8 +2,30 @@
 
 This engine requires Recording Studio `>= 7.0`, `< 8.0`, Accessible
 `>= 0.44.0`, `< 1.0`, Metrics `>= 0.7.2`, `< 1.0`, and Flatpack `>= 0.1.341`.
-Development Gemfiles pin Recording Studio `v7.7.1`. Accessible `v0.54.1`
+Development Gemfiles pin Recording Studio `v7.8.0`. Accessible `v0.56.0`
 requires Recording Studio `>= 7.7.0`, `< 8.0`.
+
+## 0.12.0
+
+No webhook table migration.
+
+Hosts MUST run the Recording Studio 7.4, 7.5 and 7.7 migrations if they have
+not. Copy them from Recording Studio and migrate:
+
+- `add_recording_studio_recordings_root_type_creation_index` (7.4)
+- `enforce_recording_studio_recording_root_invariant` (7.5)
+- `replace_recording_studio_recordings_root_index` (7.7)
+
+The dummy app does not install those three migrations.
+
+flat_pack 0.2.0 is supported; hosts moving to 0.2 must remove the manual
+`flat_pack/heroicons` importmap pin and any `flat-pack--icon` controller
+registration. Hosts on flat_pack 0.1.x still resolve. The gemspec floor stays
+`flat_pack >= 0.1.341`.
+
+Development pins: core `v7.8.0` (`~> 7.8`), flat_pack `v0.2.0` (`~> 0.2`),
+Accessible `v0.56.0`, Admin `v2.19.1`, Metrics `v0.10.0`, Logs `v0.8.2`,
+Trashable `v1.2.3`, Cache `v0.8.0`. Root Switchable is `v0.16.1`.
 
 ## 0.11.1
 

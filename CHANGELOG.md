@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.12.0] - 2026-11-19
+
+Development Gemfiles pin Recording Studio `v7.8.0` (`~> 7.8`), flat_pack
+`v0.2.0` (`~> 0.2`), Accessible `v0.56.0` (`~> 0.56`), Admin `v2.19.1`
+(`~> 2.19`), Metrics `v0.10.0` (`~> 0.10`), Logs `v0.8.2` (`~> 0.8`),
+Trashable `v1.2.3` (`~> 1.2`), and Cache `v0.8.0` (`~> 0.8`). Root
+Switchable moves to `v0.16.1` (`~> 0.16`). The dummy importmap drops the
+`flat_pack/heroicons` pin. Tailwind `@source` globs follow the installed
+`flatpack-<rev>` checkout.
+
+### Upgrade notes
+
+- Bump to `0.12.0`. No webhook table migration.
+- Hosts MUST run the Recording Studio 7.4, 7.5 and 7.7 migrations if they have not.
+- flat_pack 0.2.0 is supported; hosts moving to 0.2 must remove the manual `flat_pack/heroicons` importmap pin and any `flat-pack--icon` controller registration.
+- Gemspec ranges stay `recording_studio >= 7.0, < 8.0`,
+  `recording_studio_accessible >= 0.44.0, < 1.0`,
+  `recording_studio_metrics >= 0.7.2, < 1.0`, and
+  `flat_pack >= 0.1.341`. Hosts on flat_pack 0.1.x still resolve.
+
 ## [0.11.1] - 2026-11-18
 
 Development Gemfiles pin Recording Studio `v7.7.1`, flat_pack `v0.1.378`,
@@ -688,6 +708,7 @@ Recording Studio Webhooks now sits on the Recording Studio 4.2 kit.
 - The unrelated template package, sample page table, hooks, services, and
   generic rename workflow.
 
+[0.12.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.10.2...v0.11.0
 [0.10.0]: https://github.com/bowerbird-app/RecordingStudio_webhooks/compare/v0.9.1...v0.10.0

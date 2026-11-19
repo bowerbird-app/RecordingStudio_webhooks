@@ -28,7 +28,7 @@ Background action                 # A worker runs your local Ruby code.
 
 ## Install
 
-This engine requires Recording Studio `>= 7.0`, `< 8.0`. Development pins use Recording Studio `v7.7.1`. Add the gem, generate its setup files, and apply its migrations. Hosts MUST also run the Recording Studio 7.4, 7.5, and 7.7 migrations (`add_recording_studio_recordings_root_type_creation_index`, `enforce_recording_studio_recording_root_invariant`, and `replace_recording_studio_recordings_root_index`). Copy those from Recording Studio. This gem's dummy does not install them.
+This engine requires Recording Studio `>= 7.0`, `< 8.0`. Development pins use Recording Studio `v7.8.0` (`~> 7.8`) and flat_pack `v0.2.0` (`~> 0.2`). Add the gem, generate its setup files, and apply its migrations. Hosts MUST also run the Recording Studio 7.4, 7.5, and 7.7 migrations (`add_recording_studio_recordings_root_type_creation_index`, `enforce_recording_studio_recording_root_invariant`, and `replace_recording_studio_recordings_root_index`) if they have not. Copy those from Recording Studio. This gem's dummy does not install them. Hosts moving to flat_pack 0.2 must remove the manual `flat_pack/heroicons` importmap pin and any `flat-pack--icon` controller registration. Hosts on flat_pack 0.1.x still resolve.
 
 ```bash
 bundle add recording_studio_webhooks                         # Add the engine to the host application.
