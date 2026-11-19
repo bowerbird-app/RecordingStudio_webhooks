@@ -345,14 +345,18 @@ Tests use a no-op dispatcher so CI can run without Redis; development uses
 Sidekiq. Sign in as `admin@admin.com` with password `Password`, then open
 **Webhook endpoints** from Admin webhooks. The demo never sends outbound requests.
 
-The dummy is on the Recording Studio 7.7 kit from `Gemfile` and
+The dummy is on the Recording Studio 7.8 kit from `Gemfile` and
 `test/dummy/Gemfile`. Runtime floors stay in `recording_studio_webhooks.gemspec`:
-core tag `v7.7.1` (runtime `>= 7.0`, `< 8.0`), Accessible tag `v0.54.1` (runtime
-`>= 0.44.0`, `< 1.0`; Accessible `v0.54.1` itself requires Recording Studio
-`>= 7.7.0`, `< 8.0`), Root Switchable tag `v0.16.0`, Metrics tag `v0.9.2` (runtime
-`>= 0.7.2`, `< 1.0`), Flatpack tag `v0.1.378` (runtime `>= 0.1.341`), Admin
-tag `v2.19.0`, Cache tag `v0.7.1`, Logs tag `v0.8.1` (`require: false`),
-and Trashable tag `v1.2.1` (`require: false`).
+core tag `v7.8.0` (`~> 7.8`; runtime `>= 7.0`, `< 8.0`), Accessible tag `v0.56.0`
+(`~> 0.56`; runtime `>= 0.44.0`, `< 1.0`; Accessible `v0.56.0` itself requires
+Recording Studio `>= 7.7.0`, `< 8.0`), Root Switchable tag `v0.16.1` (`~> 0.16`),
+Metrics tag `v0.10.0` (`~> 0.10`; runtime `>= 0.7.2`, `< 1.0`), Flatpack tag
+`v0.2.0` (`~> 0.2`; runtime `>= 0.1.341`), Admin tag `v2.19.1` (`~> 2.19`),
+Cache tag `v0.8.0` (`~> 0.8`), Logs tag `v0.8.2` (`~> 0.8`, `require: false`),
+and Trashable tag `v1.2.3` (`~> 1.2`, `require: false`).
+Hosts moving to flat_pack 0.2 remove the manual `flat_pack/heroicons` importmap
+pin and any `flat-pack--icon` controller registration. The dummy importmap does
+not pin heroicons.
 Hosts MUST run the Recording Studio 7.4, 7.5, and 7.7 migrations
 (`add_recording_studio_recordings_root_type_creation_index`,
 `enforce_recording_studio_recording_root_invariant`, and

@@ -57,8 +57,8 @@ class CursorInstallTest < Minitest::Test
   end
 
   ECOSYSTEM_TAGS = {
-    "Gemfile" => %w[v7.7.1 v0.1.378 v0.54.1 v2.19.0 v0.9.2 v1.2.1 v0.8.1],
-    "test/dummy/Gemfile" => %w[v7.7.1 v0.1.378 v0.54.1 v2.19.0 v0.9.2 v1.2.1 v0.8.1 v0.7.1 v0.16.0]
+    "Gemfile" => %w[v7.8.0 v0.2.0 v0.56.0 v2.19.1 v0.10.0 v1.2.3 v0.8.2],
+    "test/dummy/Gemfile" => %w[v7.8.0 v0.2.0 v0.56.0 v2.19.1 v0.10.0 v1.2.3 v0.8.2 v0.8.0 v0.16.1]
   }.freeze
 
   def test_gemfiles_pin_ecosystem_release_tags
@@ -76,6 +76,17 @@ class CursorInstallTest < Minitest::Test
         assert_includes lock, "tag: #{tag}", "#{relative}.lock"
       end
     end
+  end
+
+  def test_dummy_importmap_drops_flat_pack_heroicons_pin
+    importmap = File.read(File.join(ROOT, "test/dummy/config/importmap.rb"))
+    controllers = File.read(File.join(ROOT, "test/dummy/app/javascript/application.js"))
+    tailwind = File.read(File.join(ROOT, "test/dummy/app/assets/tailwind/application.css"))
+
+    refute_includes importmap, "flat_pack/heroicons"
+    refute_includes importmap, "flat-pack--icon"
+    refute_includes controllers, "flat-pack--icon"
+    assert_includes tailwind, "bundler/gems/flatpack-*/app/components"
   end
 
   def test_lockfiles_pin_current_gem_version

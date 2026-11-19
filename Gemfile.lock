@@ -1,27 +1,27 @@
 GIT
   remote: https://github.com/bowerbird-app/RecordingStudio.git
-  revision: 332ba217cb0dd610a411f92137a54109673ad026
-  tag: v7.7.1
+  revision: 65ce2d0198b37d14429d4189772d29a9ab0b39cf
+  tag: v7.8.0
   specs:
-    recording_studio (7.7.1)
+    recording_studio (7.8.0)
       flat_pack (>= 0.1.315)
       rails (>= 8.1.4.1)
 
 GIT
   remote: https://github.com/bowerbird-app/RecordingStudio_accessible.git
-  revision: c8d637cea060796c86ab0d50af776de98748c190
-  tag: v0.54.1
+  revision: 592b244747b7390b4db6e5b7454c3ff473f681b2
+  tag: v0.56.0
   specs:
-    recording_studio_accessible (0.54.1)
+    recording_studio_accessible (0.56.0)
       rails (~> 8.1.0)
       recording_studio (>= 7.7.0, < 8.0)
 
 GIT
   remote: https://github.com/bowerbird-app/RecordingStudio_admin.git
-  revision: eb4a0dd4bb8354b16721b756d86377ad25c05c24
-  tag: v2.19.0
+  revision: da6d2e12456bb5b7c6e923bf2093057bfb072ef3
+  tag: v2.19.1
   specs:
-    recording_studio_admin (2.19.0)
+    recording_studio_admin (2.19.1)
       flat_pack (>= 0.1.341)
       rails (~> 8.1.0)
       recording_studio (>= 7.0.0, < 8.0)
@@ -32,29 +32,29 @@ GIT
 
 GIT
   remote: https://github.com/bowerbird-app/RecordingStudio_logs.git
-  revision: 5257420b7831b9849ecfaebf4ceecacc6f60b050
-  tag: v0.8.1
+  revision: d48c413d8c1ad1acf0a9083c32d10d62c0ea8d8c
+  tag: v0.8.2
   specs:
-    recording_studio_logs (0.8.1)
+    recording_studio_logs (0.8.2)
       rails (~> 8.1.0)
       recording_studio (>= 7.0, < 8.0)
       recording_studio_metrics (>= 0.9.0, < 1.0)
 
 GIT
   remote: https://github.com/bowerbird-app/RecordingStudio_metrics.git
-  revision: d9b9b2074a66a20d463477b83c5c12548830b99d
-  tag: v0.9.2
+  revision: 782080ddda956dbe8b7c3f999a40bd74e37aabb3
+  tag: v0.10.0
   specs:
-    recording_studio_metrics (0.9.2)
+    recording_studio_metrics (0.10.0)
       rails (~> 8.1.0)
       recording_studio (>= 7.0, < 8.0)
 
 GIT
   remote: https://github.com/bowerbird-app/RecordingStudio_trashable.git
-  revision: 279418ccffada261ad771f42e398dd3bb571b9c1
-  tag: v1.2.1
+  revision: e9951c34c7584978c5fbf0daaa5f863e25620e69
+  tag: v1.2.3
   specs:
-    recording_studio_trashable (1.2.1)
+    recording_studio_trashable (1.2.3)
       flat_pack (>= 0.1.315)
       rails (~> 8.1.0)
       recording_studio (>= 7.0, < 8.0)
@@ -62,10 +62,10 @@ GIT
 
 GIT
   remote: https://github.com/bowerbird-app/flatpack.git
-  revision: 26ff760b7a4c3657d3197d275a95050a221b6961
-  tag: v0.1.378
+  revision: 2286d0f8c494a67f7a71370d2987cfc435b0c430
+  tag: v0.2.0
   specs:
-    flat_pack (0.1.378)
+    flat_pack (0.2.0)
       pagy (~> 9.0)
       rails (>= 7.1, < 9)
       tailwind_merge (>= 1.5.2, < 2)
@@ -74,7 +74,7 @@ GIT
 PATH
   remote: .
   specs:
-    recording_studio_webhooks (0.11.1)
+    recording_studio_webhooks (0.12.0)
       flat_pack (>= 0.1.341)
       rails (~> 8.1.0)
       recording_studio (>= 7.0, < 8.0)
@@ -363,14 +363,14 @@ PLATFORMS
 
 DEPENDENCIES
   debug
-  flat_pack!
+  flat_pack (~> 0.2)!
   minitest-mock
-  recording_studio!
-  recording_studio_accessible!
-  recording_studio_admin!
-  recording_studio_logs!
-  recording_studio_metrics!
-  recording_studio_trashable!
+  recording_studio (~> 7.8)!
+  recording_studio_accessible (~> 0.56)!
+  recording_studio_admin (~> 2.19)!
+  recording_studio_logs (~> 0.8)!
+  recording_studio_metrics (~> 0.10)!
+  recording_studio_trashable (~> 1.2)!
   recording_studio_webhooks!
   rubocop
   rubocop-rails
@@ -402,7 +402,7 @@ CHECKSUMS
   drb (2.2.3) sha256=0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373
   erb (6.0.7) sha256=c5ca6dc25b0ef974a44dc8f59fe847577122483b1968a38dec305c60bf91ee92
   erubi (1.13.1) sha256=a082103b0885dbc5ecf1172fede897f9ebdb745a4b97a5e8dc63953db1ee4ad9
-  flat_pack (0.1.378)
+  flat_pack (0.2.0)
   globalid (1.4.0) sha256=037f12fbf1d9d7a014d501c2d5c77356fd4ddd96d7a7991d6700bba96706f427
   i18n (1.15.2) sha256=00f9eb62412fe593b2a65a97daa75300d37abb8f7202ec748e94b6d46a9dd1b5
   io-console (0.9.5) sha256=83dd9bbf4c4680416629245b39cd4212eb5f4d9a4ea91804870c1f6b846414d5
@@ -449,13 +449,13 @@ CHECKSUMS
   rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
   rbs (4.2.0) sha256=51f7b886dcc05bc09e10b901daa6a81829f6adc03101d6ca9ea4aac6103e0674
   rdoc (8.1.0) sha256=befc37880a5cfd36dcb176c748b5fd5ee39dd3536a75e81824e4972ce230f60a
-  recording_studio (7.7.1)
-  recording_studio_accessible (0.54.1)
-  recording_studio_admin (2.19.0)
-  recording_studio_logs (0.8.1)
-  recording_studio_metrics (0.9.2)
-  recording_studio_trashable (1.2.1)
-  recording_studio_webhooks (0.11.1)
+  recording_studio (7.8.0)
+  recording_studio_accessible (0.56.0)
+  recording_studio_admin (2.19.1)
+  recording_studio_logs (0.8.2)
+  recording_studio_metrics (0.10.0)
+  recording_studio_trashable (1.2.3)
+  recording_studio_webhooks (0.12.0)
   redis-client (0.31.0) sha256=6820cb2a21e6795a823141f50fd25e655de2b8dc8ff833b43509a27b0263fd75
   regexp_parser (2.11.3) sha256=ca13f381a173b7a93450e53459075c9b76a10433caadcb2f1180f2c741fc55a4
   reline (0.7.0) sha256=5b012d8e55dbf9d450f12bde2cf7d15ff546ae80b3f8f3b30e570d431815583d
